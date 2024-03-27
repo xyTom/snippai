@@ -1,30 +1,46 @@
-import React, { useState } from 'react'
-import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-  return (
-    <div className='App'>
-      <div className='logo-box'>
+import './App.css';
+import React, { useState } from 'react';
 
-      </div>
-      <h1>Electron + Vite + React</h1>
-      <div className='card'>
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className='read-the-docs'>
-        Click on the Electron + Vite logo to learn more
-      </p>
-      <div className='flex-center'>
-        Place static files into the<code>/public</code> folder <img style={{ width: '5em' }} src='./node.svg' alt='Node logo' />
-      </div>
-    </div>
-  )
+
+declare global {
+  interface Window {
+    electronAPI: any;
+  }
 }
 
-export default App
+function App() {
+  const [result, setresult] = useState(null);
+  window.electronAPI.onScreenShotRes((value:string) => {
+    console.log('onScreenShotRes', value);
+    setresult(value);
+  })
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src="./public/logo.png" className="App-logo" alt="logo" />
+        <p>
+          Press <code>Ctrl + Shift + A</code> to make a screenshot.
+        </p>
+        {/* <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a> */}
+        <div>
+        {result && <p>{result}</p>}
+      </div>
+      {result && <button onClick={() => {
+        navigator.clipboard.writeText(result)
+      }
+      }>Copy</button>}
+      </header>
+
+    </div>
+  );
+}
+
+export default App;
