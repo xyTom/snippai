@@ -19,7 +19,7 @@ export default defineConfig((env) => {
     resolve: {
       preserveSymlinks: true,
       alias: {
-        '@': `${root}/src/renderer`,
+        '@': `${root}/src/`,
       },
     },
     clearScreen: false,

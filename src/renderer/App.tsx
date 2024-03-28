@@ -3,12 +3,15 @@ import './App.css';
 import React, { useState,useEffect } from 'react';
 import gemini from './models/gemini';
 import logo from './assets/logo.png';
+import DisplayTextResult from './components/displayTextResult';
 
 declare global {
   interface Window {
     electronAPI: any;
   }
 }
+
+
 
 function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
@@ -62,8 +65,9 @@ function App() {
         navigator.clipboard.writeText(result)
       }
       }>Copy</button>}
+      <DisplayTextResult />
       </header>
-
+     
     </div>
   );
 }
