@@ -2,6 +2,7 @@
 import './App.css';
 import React, { useState,useEffect } from 'react';
 import gemini from './models/gemini';
+import logo from './assets/logo.png';
 
 declare global {
   interface Window {
@@ -48,7 +49,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         {/* <!-- if no screenshot result, show the logo --> */}
-        {!screenShotResult && <img src="./public/logo.png" className="App-logo" alt="logo" />}
+        {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}
         <p className="mb-2">
           Press <code>{shortcut}</code> to make a screenshot.
         </p>
