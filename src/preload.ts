@@ -4,5 +4,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    onScreenShotRes: (callback:any) => ipcRenderer.on('vision-result', (_event, value) => callback(value))
+    onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value) => callback(value)),
+    removeListener(channel: string, func: (...args: unknown[]) => void) {
+        ipcRenderer.removeListener(channel, (_event, ...args) => func(...args));
+    },
+    removeAllListeners(channel: string) {
+        ipcRenderer.removeAllListeners(channel);
+    },
 })
+
+console.log('preload.ts loaded');

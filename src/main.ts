@@ -1,4 +1,4 @@
-import { app, BrowserWindow,globalShortcut,ipcMain,Menu } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
 import path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Screenshots = require('electron-screenshots');
@@ -23,12 +23,12 @@ const createWindow = () => {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
-  
+
 };
 
 // This method will be called when Electron has finished
@@ -57,22 +57,34 @@ app.on('activate', () => {
 // code. You can also put them in separate files and import them here.
 app.whenReady().then(() => {
   const screenshots = new Screenshots();
-  globalShortcut.register("ctrl+shift+a", () => {
-    //minimize the main window
-    mainWindow.minimize();
-    //wait the main window minimize
-    setTimeout(() => {
-      screenshots.startCapture();
-    }, 200);
-    //screenshots.$view.webContents.openDevTools();
-  });
+  //if it is a macos, use command instead of ctrl
+  if (process.platform === "darwin") {
+    globalShortcut.register("Command+Shift+A", () => {
+      //minimize the main window
+      mainWindow.minimize();
+      //wait the main window minimize
+      setTimeout(() => {
+        screenshots.startCapture();
+      }, 200);
+    });
+  } else {
+    globalShortcut.register("ctrl+shift+a", () => {
+      //minimize the main window
+      mainWindow.minimize();
+      //wait the main window minimize
+      setTimeout(() => {
+        screenshots.startCapture();
+      }, 200);
+      //screenshots.$view.webContents.openDevTools();
+    });
+  }
   globalShortcut.register("esc", () => {
     if (screenshots.$win?.isFocused()) {
       screenshots.endCapture();
     }
   });
   // 点击确定按钮回调事件
-  screenshots.on("ok", (e:any, buffer:Uint8Array, bounds:any) => {
+  screenshots.on("ok", (e: any, buffer: Uint8Array, bounds: any) => {
     //console.log("ok capture", buffer);
     //buffer is Uint8Array, to base64
 
@@ -83,6 +95,8 @@ app.whenReady().then(() => {
     //   mainWindow.webContents.send("vision-result", res);
     // }
     // );
+    //send the base64 to the main window
+    mainWindow.webContents.send("screenshot-result", base64);
     //show the main window
     mainWindow.show();
   });
@@ -103,7 +117,7 @@ app.whenReady().then(() => {
     console.log("save capture", buffer, bounds);
   });
   // 保存后的回调事件
-  screenshots.on("afterSave", (e: any, buffer:Uint8Array, bounds: any, isSaved: any) => {
+  screenshots.on("afterSave", (e: any, buffer: Uint8Array, bounds: any, isSaved: any) => {
     console.log("afterSave capture", buffer, bounds);
     console.log("isSaved", isSaved) // 是否保存成功
   });
