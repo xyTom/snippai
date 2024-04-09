@@ -30,12 +30,13 @@ function App() {
         setResult(res);
       });
     };
-  
-    window.electronAPI.onScreenShotRes(handler);
-    return () => {
-      window.electronAPI.removeAllListeners('screenshot-result');
-    };
-
+  //check if there exists electronAPI, if exists, then it is running in electron, if not, it is running in browser
+    if (window.electronAPI) {
+      window.electronAPI.onScreenShotRes(handler);
+      return () => {
+        window.electronAPI.removeAllListeners('screenshot-result');
+      };
+    } 
   }); // Only run the effect on mount
 
   //check platform to show the correct shortcut
