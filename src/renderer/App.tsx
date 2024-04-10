@@ -5,6 +5,7 @@ import gemini from './models/gemini';
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
+
 declare global {
   interface Window {
     electronAPI: any;
@@ -34,6 +35,7 @@ function App() {
     const handler = (value: string) => {
       console.log('onScreenShotRes', value);
       setscreenShotResult(value);
+      setResult(null);
       setLoading(true);
       gemini(value).then((res) => {
         console.log('gemini res', res);
@@ -58,7 +60,7 @@ function App() {
   }
 
   return (
-    <div className="App">
+    <div className="App dark">
       <header className="App-header">
         {/* <!-- if no screenshot result, show the logo --> */}
         {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}

@@ -20,14 +20,19 @@ export default function displayTextResult(props: { text: string, onTextChange: (
     }, 1000)
   }
   return (
-    <div className="grid w-full max-w-lg gap-2 min-h-60 text-black">
-      <div className="relative">
-        <Textarea value={props.text} className="w-full text-lg antialiased font-medium" onChange={handleTextChange} />
-        <Button className="absolute top-1 right-1" size="icon" variant="outline" onClick={handleCopy}>
+    <div className="grid w-full max-w-lg gap-2 min-h-56 pb-3">
+      {/* <div className="relative"> */}
+        <Textarea value={props.text} className="w-full text-lg antialiased font-medium pr-11" onChange={handleTextChange} />
+        <Button 
+        // className="absolute top-1 right-1" size="icon" 
+          variant="outline" 
+          onClick={handleCopy}>
           {copied ? <ClipboardCheckIcon className="w-5 h-5" /> :<ClipboardIcon className="w-5 h-5" /> }
-          <span className="sr-only">Copy</span>
+          <span 
+          // className="sr-only"
+          > Copy</span>
         </Button>
-      </div>
+      {/* </div> */}
     </div>
   )
 }
@@ -81,7 +86,7 @@ function ClipboardIcon (props: React.SVGProps<SVGSVGElement>) {
     height="24"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#000000"
+    stroke="#FFFFFF"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
