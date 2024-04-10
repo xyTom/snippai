@@ -20,7 +20,7 @@ export default function displayTextResult(props: { text: string, onTextChange: (
     }, 1000)
   }
   return (
-    <div className="grid w-full max-w-lg gap-2 min-h-56 pb-3">
+    <div className="grid w-full max-w-lg gap-2 min-h-60 pb-3">
       {/* <div className="relative"> */}
         <Textarea value={props.text} className="w-full text-lg antialiased font-medium" onChange={handleTextChange} />
         <Button 
