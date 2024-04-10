@@ -22,7 +22,7 @@ export default function displayTextResult(props: { text: string, onTextChange: (
   return (
     <div className="grid w-full max-w-lg gap-2 min-h-56 pb-3">
       {/* <div className="relative"> */}
-        <Textarea value={props.text} className="w-full text-lg antialiased font-medium pr-11" onChange={handleTextChange} />
+        <Textarea value={props.text} className="w-full text-lg antialiased font-medium" onChange={handleTextChange} />
         <Button 
         // className="absolute top-1 right-1" size="icon" 
           variant="outline" 
