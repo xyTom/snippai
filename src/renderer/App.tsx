@@ -1,6 +1,6 @@
 
 import './App.css';
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useRef } from 'react';
 import gemini from './models/gemini';
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
@@ -19,6 +19,12 @@ function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  //Model loading
+  const [ready, setReady] = useState(null);
+  const [disabled, setDisabled] = useState(false);
+  const [progressItems, setProgressItems] = useState([]);
+  // Create a reference to the worker object.
+  const worker = useRef(null);
   //When user enter text in the textarea, update the result
   const handleTextChange = (text: string) => {
     console.log("handleTextChange", text)
@@ -47,13 +53,73 @@ function App() {
         setResult(res);
       });
     };
+    if (!worker.current) {
+      // Create the worker if it does not yet exist.
+      worker.current = new Worker(new URL('./worker.js', import.meta.url), {
+        type: 'module'
+      });
+    }
+        // Create a callback function for messages from the worker thread.
+        const onMessageReceived = (e:any) => {
+          switch (e.data.status) {
+            case 'initiate':
+              // Model file start load: add a new progress item to the list.
+              setReady(false);
+              setProgressItems(prev => [...prev, e.data]);
+              break;
+    
+            case 'progress':
+              // Model file progress: update one of the progress items.
+              setProgressItems(
+                prev => prev.map(item => {
+                  if (item.file === e.data.file) {
+                    return { ...item, progress: e.data.progress }
+                  }
+                  return item;
+                })
+              );
+              break;
+    
+            case 'done':
+              // Model file loaded: remove the progress item from the list.
+              setProgressItems(
+                prev => prev.filter(item => item.file !== e.data.file)
+              );
+              break;
+    
+            case 'ready':
+              // Pipeline ready: the worker is ready to accept messages.
+              setReady(true);
+              break;
+    
+            case 'update':
+              // Generation update: update the output text.
+              console.log(e.data.output);
+              break;
+    
+            case 'complete':
+              // Generation complete: re-enable the "Translate" button
+              setDisabled(false);
+              break;
+          }
+        }
+    // Attach the callback function as an event listener.
+    worker.current.addEventListener('message', onMessageReceived);
+
   //check if there exists electronAPI, if exists, then it is running in electron, if not, it is running in browser
     if (window.electronAPI) {
       window.electronAPI.onScreenShotRes(handler);
       return () => {
         window.electronAPI.removeAllListeners('screenshot-result');
+          // Define a cleanup function for when the component is unmounted.
+        worker.current.removeEventListener('message', onMessageReceived);
       };
-    } 
+    } else{
+        // Define a cleanup function for when the component is unmounted.
+      return () => {
+        worker.current.removeEventListener('message', onMessageReceived);
+      };
+    }
   }); // Only run the effect on mount
 
   //check platform to show the correct shortcut
