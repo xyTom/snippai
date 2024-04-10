@@ -3,6 +3,8 @@ import './App.css';
 import React, { useState,useEffect } from 'react';
 import gemini from './models/gemini';
 import logo from './assets/logo.png';
+import DisplayTextResult from './components/displayTextResult';
+import LoadingSkeleton from './components/loadingSkeleton';
 
 declare global {
   interface Window {
@@ -10,9 +12,17 @@ declare global {
   }
 }
 
+
+
 function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  //When user enter text in the textarea, update the result
+  const handleTextChange = (text: string) => {
+    console.log("handleTextChange", text)
+    setResult(text)
+  }
   // window.electronAPI.onScreenShotRes((value:string) => {
   //   console.log('onScreenShotRes', value);
   //   setscreenShotResult(value);
@@ -25,8 +35,11 @@ function App() {
     const handler = (value: string) => {
       console.log('onScreenShotRes', value);
       setscreenShotResult(value);
+      setResult(null);
+      setLoading(true);
       gemini(value).then((res) => {
         console.log('gemini res', res);
+        setLoading(false);
         setResult(res);
       });
     };
@@ -47,7 +60,7 @@ function App() {
   }
 
   return (
-    <div className="App">
+    <div className="App dark">
       <header className="App-header">
         {/* <!-- if no screenshot result, show the logo --> */}
         {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}
@@ -57,14 +70,19 @@ function App() {
         {/* <!-- if has screenshot result, show the result --> */}
         {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="max-w-full mb-2" />}
         <div>
-        {result && <p>{result}</p>}
+        {/* {result && <p>{result}</p>} */}
       </div>
-      {result && <button onClick={() => {
+      {/* {result && <button onClick={() => {
         navigator.clipboard.writeText(result)
       }
-      }>Copy</button>}
+      }>Copy</button>} */}
+      {loading && <LoadingSkeleton /> }
+      {result &&
+      <DisplayTextResult text={result} onTextChange={handleTextChange} />
+      }
+      
       </header>
-
+     
     </div>
   );
 }
