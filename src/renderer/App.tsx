@@ -209,11 +209,9 @@ function App() {
         >
           <ImageIcon className="w-5 h-5 mr-1" />
           Screenshot</Badge> </div>}
+        <div className='max-w-[90%]'>
+        {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
-        {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="max-w-[90%] mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800" />}
-        <div>
-        {/* {result && <p>{result}</p>} */}
-      </div>
       <div className="flex space-x-2">
       <PromptSelect handlePromptChange={handlePromptChange} />
       {/*only show the api key button when the model is gpt4 */}
@@ -235,6 +233,7 @@ function App() {
       {result &&
       <DisplayTextResult text={result} onTextChange={handleTextChange} />
       }
+      </div>
       </header>
       
      <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} />
