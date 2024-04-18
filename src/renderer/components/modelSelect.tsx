@@ -17,17 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover"
-
-const models = [
-  {
-    value: "gemini",
-    label: "Google Gemini",
-  },
-  {
-    value: "gpt4",
-    label: "OpenAI GPT-4",
-  },
-]
+import { models } from "../lib/models"
 
 export default function selectModel(props:{handleModelChange:Function}) {
   const [open, setOpen] = React.useState(false)

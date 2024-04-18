@@ -1,7 +1,7 @@
 
 import './App.css';
 import React, { useState,useEffect,useRef } from 'react';
-import gemini from './models/gemini';
+import models from './models';
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
@@ -103,11 +103,17 @@ function App() {
       setscreenShotResult(value);
       setResult(null);
       setLoading(true);
-      gemini(value).then((res) => {
-        console.log('gemini res', res);
+      let modelInstance = new models(model);
+      modelInstance.run(prompt, value).then((res: string) => {
+        console.log('model res', res);
         setLoading(false);
         setResult(res);
       });
+      // gemini(value).then((res) => {
+      //   console.log('gemini res', res);
+      //   setLoading(false);
+      //   setResult(res);
+      // });
     };
     if (!worker.current) {
       // Create the worker if it does not yet exist.
@@ -199,7 +205,7 @@ function App() {
     </div>
         {/* <!-- if no screenshot result, show the logo --> */}
         {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}
-        {!screenShotResult &&<p className="mb-2">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        {!screenShotResult &&<p className="mb-2">
           Press <code>{shortcut}</code> to make a screenshot.
         </p>}
         {/* <!-- if has screenshot result, show the result --> */}
