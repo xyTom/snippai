@@ -31,8 +31,23 @@ const models = [
 
 export default function selectModel(props:{handleModelChange:Function}) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("gemini")
-  props.handleModelChange(value)
+  //read the model from local storage
+  let model = localStorage.getItem("model")
+  if (model && models.find((m) => m.value === model)) {
+    model = model
+  }else{
+    model = "gemini"
+  }
+  const [value, setValue] = React.useState(model)
+  
+  //when the model is updated, update the parent state
+  React.useEffect(() => {
+    props.handleModelChange(value)
+    //save the model to local storage
+    localStorage.setItem("model", value)
+  }, [value])
+
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

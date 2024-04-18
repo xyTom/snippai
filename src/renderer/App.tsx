@@ -7,6 +7,11 @@ import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
 import { Badge } from "./components/ui/badge"
 import ModelSelect from './components/modelSelect';
+import ApiKeyInput from './components/apiKeyInput';
+import PromptSelect from './components/promptSelect';
+import { KeyRound } from "lucide-react"
+import { Button } from "./components/ui/button"
+
 declare global {
   interface Window {
     electronAPI: any;
@@ -19,10 +24,36 @@ function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
   //Model loading
   const [ready, setReady] = useState(null);
   const [disabled, setDisabled] = useState(false);
   const [progressItems, setProgressItems] = useState([]);
+
+  //Input Model
+  const [apiKey, setApiKey] = useState('');
+  //read the api key from local storage
+  useEffect(() => {
+    const key = localStorage.getItem('apiKey');
+    if (key) {
+      setApiKey(key);
+    }
+  }, []);
+  const [openDialog, setOpenDialog] = useState(false);
+  const handleOpenChange = (value: boolean) => {
+    setOpenDialog(value);
+  }
+  //AI model selection
+  const [model, setModel] = useState('gemini');
+  useEffect(() => {
+    const model = localStorage.getItem('model');
+    if (model) {
+      setModel(model);
+    }
+  }, []);
+  //Prompt selection
+  const [prompt, setPrompt] = useState('Auto');
+  
   // Create a reference to the worker object.
   const worker = useRef(null);
   //When user enter text in the textarea, update the result
@@ -32,6 +63,31 @@ function App() {
   }
   const handleModelChange = (value: string) => {
     console.log('handleModelChange', value);
+    setModel(value);
+    if (value === 'gpt4') {
+      isApiKeyEmpty();
+    }
+  }
+  //handle api key change
+  const handleApiKeyChange = (value: string) => {
+    console.log('handleApiKeyChange', value);
+    setApiKey(value);
+    //save the api key to local storage
+    localStorage.setItem('apiKey', value);
+    //close the dialog
+    setOpenDialog(false);
+  }
+  //check if api key is empty
+  const isApiKeyEmpty = () => {
+    if (apiKey === '') {
+      setOpenDialog(true);
+    }
+  }
+
+  //handle prompt change
+  const handlePromptChange = (value: string) => {
+    console.log('handlePromptChange', value);
+    setPrompt(value);
   }
   // window.electronAPI.onScreenShotRes((value:string) => {
   //   console.log('onScreenShotRes', value);
@@ -158,6 +214,12 @@ function App() {
         <div>
         {/* {result && <p>{result}</p>} */}
       </div>
+      <div className="flex space-x-2">
+      <PromptSelect handlePromptChange={handlePromptChange} />
+      {/*only show the api key button when the model is gpt4 */}
+      {model === 'gpt4' &&
+      <ApiKeyButton onClick={()=>setOpenDialog(true)} />}
+      </div>
       {/* {result && <button onClick={() => {
         navigator.clipboard.writeText(result)
       }
@@ -173,9 +235,10 @@ function App() {
       {result &&
       <DisplayTextResult text={result} onTextChange={handleTextChange} />
       }
-      
       </header>
-     
+      
+     <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} />
+
     </div>
   );
 }
@@ -217,6 +280,15 @@ function FileIcon(props:React.SVGProps<SVGSVGElement>) {
       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
+  )
+}
+
+
+export function ApiKeyButton(props: { onClick: () => void }) {
+  return (
+    <Button variant="outline" size="icon" className="mt-auto" onClick={props.onClick}>
+      <KeyRound className="h-10 w-5" />
+    </Button>
   )
 }
 
