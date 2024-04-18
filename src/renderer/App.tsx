@@ -199,7 +199,7 @@ function App() {
     </div>
         {/* <!-- if no screenshot result, show the logo --> */}
         {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}
-        {!screenShotResult &&<p className="mb-2">
+        {!screenShotResult &&<p className="mb-2">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
           Press <code>{shortcut}</code> to make a screenshot.
         </p>}
         {/* <!-- if has screenshot result, show the result --> */}
@@ -212,7 +212,7 @@ function App() {
         <div className='max-w-[90%]'>
         {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
-      <div className="flex space-x-2">
+      <div className="flex space-x-2 mb-2">
       <PromptSelect handlePromptChange={handlePromptChange} />
       {/*only show the api key button when the model is gpt4 */}
       {model === 'gpt4' &&
