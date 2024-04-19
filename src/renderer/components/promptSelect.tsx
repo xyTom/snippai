@@ -6,8 +6,8 @@ export default function promptSelect(props: { handlePromptChange: Function }) {
     return (
         <Tabs defaultValue="Auto" onValueChange={(value) => props.handlePromptChange(value)}>
             <TabsList>
-                {promptOptions.map((prompt) => (
-                    <TabsTrigger value={prompt.value}>{prompt.label}</TabsTrigger>
+                {promptOptions.map((prompt,index) => (
+                    <TabsTrigger key={index} value={prompt.value}>{prompt.label}</TabsTrigger>
                 ))}
             </TabsList>
         </Tabs>

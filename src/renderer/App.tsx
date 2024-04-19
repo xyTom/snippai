@@ -1,7 +1,7 @@
 
 import './App.css';
 import React, { useState,useEffect,useRef } from 'react';
-import models from './models';
+import aiModels from './models';
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
@@ -11,6 +11,7 @@ import ApiKeyInput from './components/apiKeyInput';
 import PromptSelect from './components/promptSelect';
 import { KeyRound } from "lucide-react"
 import { Button } from "./components/ui/button"
+import { promptOptions } from './lib/models';
 
 declare global {
   interface Window {
@@ -88,6 +89,23 @@ function App() {
   const handlePromptChange = (value: string) => {
     console.log('handlePromptChange', value);
     setPrompt(value);
+    if(screenShotResult === null) {
+      return;
+    } else {
+    setResult(null);
+    setLoading(true);
+    aiModels.create(model).then((model: aiModels) => {
+      const fullPrompt = promptOptions.find((p) => p.value === value).prompt;
+      return model.run(screenShotResult,fullPrompt);
+    }).then((res: string) => {
+      console.log('model res', res);
+      setResult(res);
+      setLoading(false);
+    }).catch((error: any) => {
+      console.log('model error', error);
+      setLoading(false);
+    });
+    }
   }
   // window.electronAPI.onScreenShotRes((value:string) => {
   //   console.log('onScreenShotRes', value);
@@ -103,11 +121,16 @@ function App() {
       setscreenShotResult(value);
       setResult(null);
       setLoading(true);
-      let modelInstance = new models(model);
-      modelInstance.run(prompt, value).then((res: string) => {
+      aiModels.create(model).then((model: aiModels) => {
+        const fullPrompt = promptOptions.find((p) => p.value === prompt).prompt;
+        return model.run(value,fullPrompt);
+      }).then((res: string) => {
         console.log('model res', res);
         setLoading(false);
         setResult(res);
+      }).catch((error: any) => {
+        console.log('model error', error);
+        setLoading(false);
       });
       // gemini(value).then((res) => {
       //   console.log('gemini res', res);
@@ -218,7 +241,7 @@ function App() {
         <div className='max-w-[90%]'>
         {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
-      <div className="flex space-x-2 mb-2">
+      <div className="flex space-x-2 mb-2 justify-center">
       <PromptSelect handlePromptChange={handlePromptChange} />
       {/*only show the api key button when the model is gpt4 */}
       {model === 'gpt4' &&
