@@ -1,12 +1,18 @@
 
 import './App.css';
-import React, { useState,useEffect } from 'react';
-import gemini from './models/gemini';
+import React, { useState,useEffect,useRef } from 'react';
+import aiModels from './models';
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
 import { Badge } from "./components/ui/badge"
 import ModelSelect from './components/modelSelect';
+import ApiKeyInput from './components/apiKeyInput';
+import PromptSelect from './components/promptSelect';
+import { KeyRound } from "lucide-react"
+import { Button } from "./components/ui/button"
+import { promptOptions } from './lib/models';
+
 declare global {
   interface Window {
     electronAPI: any;
@@ -19,6 +25,38 @@ function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  //Model loading
+  const [ready, setReady] = useState(null);
+  const [disabled, setDisabled] = useState(false);
+  const [progressItems, setProgressItems] = useState([]);
+
+  //Input Model
+  const [apiKey, setApiKey] = useState('');
+  //read the api key from local storage
+  useEffect(() => {
+    const key = localStorage.getItem('apiKey');
+    if (key) {
+      setApiKey(key);
+    }
+  }, []);
+  const [openDialog, setOpenDialog] = useState(false);
+  const handleOpenChange = (value: boolean) => {
+    setOpenDialog(value);
+  }
+  //AI model selection
+  const [model, setModel] = useState('gemini');
+  useEffect(() => {
+    const model = localStorage.getItem('model');
+    if (model) {
+      setModel(model);
+    }
+  }, []);
+  //Prompt selection
+  const [prompt, setPrompt] = useState('Auto');
+  
+  // Create a reference to the worker object.
+  const worker = useRef(null);
   //When user enter text in the textarea, update the result
   const handleTextChange = (text: string) => {
     console.log("handleTextChange", text)
@@ -26,6 +64,48 @@ function App() {
   }
   const handleModelChange = (value: string) => {
     console.log('handleModelChange', value);
+    setModel(value);
+    if (value === 'gpt4') {
+      isApiKeyEmpty();
+    }
+  }
+  //handle api key change
+  const handleApiKeyChange = (value: string) => {
+    console.log('handleApiKeyChange', value);
+    setApiKey(value);
+    //save the api key to local storage
+    localStorage.setItem('apiKey', value);
+    //close the dialog
+    setOpenDialog(false);
+  }
+  //check if api key is empty
+  const isApiKeyEmpty = () => {
+    if (apiKey === '') {
+      setOpenDialog(true);
+    }
+  }
+
+  //handle prompt change
+  const handlePromptChange = (value: string) => {
+    console.log('handlePromptChange', value);
+    setPrompt(value);
+    if(screenShotResult === null) {
+      return;
+    } else {
+    setResult(null);
+    setLoading(true);
+    aiModels.create(model).then((model: aiModels) => {
+      const fullPrompt = promptOptions.find((p) => p.value === value).prompt;
+      return model.run(screenShotResult,fullPrompt);
+    }).then((res: string) => {
+      console.log('model res', res);
+      setResult(res);
+      setLoading(false);
+    }).catch((error: any) => {
+      console.log('model error', error);
+      setLoading(false);
+    });
+    }
   }
   // window.electronAPI.onScreenShotRes((value:string) => {
   //   console.log('onScreenShotRes', value);
@@ -41,19 +121,90 @@ function App() {
       setscreenShotResult(value);
       setResult(null);
       setLoading(true);
-      gemini(value).then((res) => {
-        console.log('gemini res', res);
+      aiModels.create(model).then((model: aiModels) => {
+        const fullPrompt = promptOptions.find((p) => p.value === prompt).prompt;
+        return model.run(value,fullPrompt);
+      }).then((res: string) => {
+        console.log('model res', res);
         setLoading(false);
         setResult(res);
+      }).catch((error: any) => {
+        console.log('model error', error);
+        setLoading(false);
       });
+      // gemini(value).then((res) => {
+      //   console.log('gemini res', res);
+      //   setLoading(false);
+      //   setResult(res);
+      // });
     };
+    if (!worker.current) {
+      // Create the worker if it does not yet exist.
+      worker.current = new Worker(new URL('./worker.js', import.meta.url), {
+        type: 'module'
+      });
+    }
+        // Create a callback function for messages from the worker thread.
+        const onMessageReceived = (e:any) => {
+          switch (e.data.status) {
+            case 'initiate':
+              // Model file start load: add a new progress item to the list.
+              setReady(false);
+              setProgressItems(prev => [...prev, e.data]);
+              break;
+    
+            case 'progress':
+              // Model file progress: update one of the progress items.
+              setProgressItems(
+                prev => prev.map(item => {
+                  if (item.file === e.data.file) {
+                    return { ...item, progress: e.data.progress }
+                  }
+                  return item;
+                })
+              );
+              break;
+    
+            case 'done':
+              // Model file loaded: remove the progress item from the list.
+              setProgressItems(
+                prev => prev.filter(item => item.file !== e.data.file)
+              );
+              break;
+    
+            case 'ready':
+              // Pipeline ready: the worker is ready to accept messages.
+              setReady(true);
+              break;
+    
+            case 'update':
+              // Generation update: update the output text.
+              console.log(e.data.output);
+              break;
+    
+            case 'complete':
+              // Generation complete: re-enable the "Translate" button
+              setDisabled(false);
+              break;
+          }
+        }
+    // Attach the callback function as an event listener.
+    worker.current.addEventListener('message', onMessageReceived);
+
   //check if there exists electronAPI, if exists, then it is running in electron, if not, it is running in browser
     if (window.electronAPI) {
       window.electronAPI.onScreenShotRes(handler);
       return () => {
         window.electronAPI.removeAllListeners('screenshot-result');
+          // Define a cleanup function for when the component is unmounted.
+        worker.current.removeEventListener('message', onMessageReceived);
       };
-    } 
+    } else{
+        // Define a cleanup function for when the component is unmounted.
+      return () => {
+        worker.current.removeEventListener('message', onMessageReceived);
+      };
+    }
   }); // Only run the effect on mount
 
   //check platform to show the correct shortcut
@@ -81,15 +232,20 @@ function App() {
           Press <code>{shortcut}</code> to make a screenshot.
         </p>}
         {/* <!-- if has screenshot result, show the result --> */}
-        {screenShotResult && <Badge variant="secondary"
+        {screenShotResult && <div className='pt-[2.5rem]'>
+          <Badge variant="secondary"
         className='mb-2 antialiased font-medium'
         >
           <ImageIcon className="w-5 h-5 mr-1" />
-          Screenshot</Badge> }
+          Screenshot</Badge> </div>}
+        <div className='max-w-[90%]'>
+        {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
-        {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="max-w-[90%] mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800" />}
-        <div>
-        {/* {result && <p>{result}</p>} */}
+      <div className="flex space-x-2 mb-2 justify-center">
+      <PromptSelect handlePromptChange={handlePromptChange} />
+      {/*only show the api key button when the model is gpt4 */}
+      {model === 'gpt4' &&
+      <ApiKeyButton onClick={()=>setOpenDialog(true)} />}
       </div>
       {/* {result && <button onClick={() => {
         navigator.clipboard.writeText(result)
@@ -106,9 +262,11 @@ function App() {
       {result &&
       <DisplayTextResult text={result} onTextChange={handleTextChange} />
       }
-      
+      </div>
       </header>
-     
+      
+     <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} />
+
     </div>
   );
 }
@@ -150,6 +308,15 @@ function FileIcon(props:React.SVGProps<SVGSVGElement>) {
       <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
+  )
+}
+
+
+export function ApiKeyButton(props: { onClick: () => void }) {
+  return (
+    <Button variant="outline" size="icon" className="mt-auto" onClick={props.onClick}>
+      <KeyRound className="h-10 w-5" />
+    </Button>
   )
 }
 

@@ -9,6 +9,7 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 let mainWindow: BrowserWindow;
+
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -18,6 +19,15 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  // Detect when the window is closed
+  mainWindow.on('close', () => {
+    console.log('Main window closed');
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -56,28 +66,27 @@ app.on('activate', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 app.whenReady().then(() => {
-  const screenshots = new Screenshots();
-  //if it is a macos, use command instead of ctrl
-  if (process.platform === "darwin") {
-    globalShortcut.register("Command+Shift+A", () => {
-      //minimize the main window
-      mainWindow.minimize();
-      //wait the main window minimize
-      setTimeout(() => {
-        screenshots.startCapture();
-      }, 200);
-    });
-  } else {
-    globalShortcut.register("ctrl+shift+a", () => {
-      //minimize the main window
-      mainWindow.minimize();
-      //wait the main window minimize
-      setTimeout(() => {
-        screenshots.startCapture();
-      }, 200);
-      //screenshots.$view.webContents.openDevTools();
-    });
-  }
+  const screenshots = new Screenshots({singleWindow: true,});
+  globalShortcut.register("CommandOrControl+Shift+A", () => {
+    //check if the screenshot window is already opened
+    if (screenshots.$win?.isFocused()) {
+      return;
+    }
+    let screenshotDelay =500;
+    //check if the main window is minimized
+    if (mainWindow.isMinimized()) {
+      screenshotDelay = 0;
+    }
+    //mainWindow.hide();
+    //minimize the main window
+    mainWindow.minimize();
+    //wait the main window minimize
+    setTimeout(() => {
+      screenshots.startCapture();
+    }, screenshotDelay);
+    //after the screenshot windows is intialized, decrease the delay
+
+  });
   globalShortcut.register("esc", () => {
     if (screenshots.$win?.isFocused()) {
       screenshots.endCapture();
