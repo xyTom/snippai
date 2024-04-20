@@ -32,6 +32,9 @@ export default function selectModel(props:{handleModelChange:Function}) {
   
   //when the model is updated, update the parent state
   React.useEffect(() => {
+    if (!value) {
+      setValue(model)
+    }
     props.handleModelChange(value)
     //save the model to local storage
     localStorage.setItem("model", value)
