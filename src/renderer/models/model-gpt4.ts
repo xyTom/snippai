@@ -11,7 +11,7 @@ async function GPT(image:string, prompt:string, APIKey:string): Promise<string> 
               {
                 type: "image_url",
                 image_url: {
-                    "url": image,
+                    "url": `data:image/jpeg;base64,${image}`,
                 },
               },
             ],
