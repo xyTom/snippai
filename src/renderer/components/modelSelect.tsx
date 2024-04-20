@@ -52,7 +52,7 @@ export default function selectModel(props:{handleModelChange:Function}) {
         >
           {value
             ? models.find((model) => model.value === value)?.label
-            : "Select framework..."}
+            : ""}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
