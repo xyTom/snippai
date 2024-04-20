@@ -23,7 +23,7 @@ export const models = [
   ]
 
 export const promptOptions = {
-    "Gemini":[
+    "gemini":[
     {
         value: "Auto",
         label: "Auto",

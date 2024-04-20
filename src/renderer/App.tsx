@@ -146,8 +146,8 @@ function App() {
       setResult(null);
       setLoading(true);
       aiModels.create(model).then((modelInstance: aiModels) => {
-        const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
-        return modelInstance.run(value, fullPrompt);
+        const fullPrompt = promptOptions[model].find((p) => p.value === prompt).prompt;
+        return modelInstance.run(value,fullPrompt);
       }).then((res: string) => {
         console.log('model res', res);
         setLoading(false);
@@ -266,7 +266,7 @@ function App() {
         {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
       <div className="flex space-x-2 mb-2 justify-center">
-      <PromptSelect handlePromptChange={handlePromptChange} />
+      <PromptSelect handlePromptChange={handlePromptChange} model={model}/>
       {/*only show the api key button when the model is gpt4 */}
       {
       models.find((m) => m.value === model)?.requireApiKey
