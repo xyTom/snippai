@@ -87,6 +87,9 @@ function App() {
   }
   const handleModelChange = (value: string) => {
     console.log('handleModelChange', value);
+    if (value === model || !value) {
+      return;
+    }
     setModel(value);
     //read the api key for new model from local storage
     if (keyMap.has(value)) {

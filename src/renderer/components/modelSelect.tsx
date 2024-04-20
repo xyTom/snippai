@@ -29,13 +29,24 @@ export default function selectModel(props:{handleModelChange:Function}) {
     model = "gemini"
   }
   const [value, setValue] = React.useState(model)
-  
-  //when the model is updated, update the parent state
+
+
   React.useEffect(() => {
+    // if the value is empty, set it to the previous model
+    if (!value) {
+      setValue(model)
+    }
     props.handleModelChange(value)
     //save the model to local storage
     localStorage.setItem("model", value)
   }, [value])
+
+  // //when the model is updated, update the parent state
+  // React.useEffect(() => {
+  //   props.handleModelChange(value)
+  //   //save the model to local storage
+  //   localStorage.setItem("model", value)
+  // }, [value])
 
 
   return (
@@ -49,7 +60,7 @@ export default function selectModel(props:{handleModelChange:Function}) {
         >
           {value
             ? models.find((model) => model.value === value)?.label
-            : "Select framework..."}
+            : ""}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

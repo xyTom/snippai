@@ -12,7 +12,6 @@ export default function promptSelect(props: { handlePromptChange: Function, mode
                 ))}
             </TabsList>
         </Tabs>
-        
     )
 }
 
