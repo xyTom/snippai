@@ -1,4 +1,3 @@
-import OpenAI from 'openai';
 async function GPT(image:string, prompt:string, APIKey:string): Promise<string> {
     const myHeaders = new Headers();
     myHeaders.append("authorization", `Bearer ${APIKey}`);
