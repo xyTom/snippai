@@ -146,8 +146,11 @@ function App() {
       setResult(null);
       setLoading(true);
       aiModels.create(model).then((modelInstance: aiModels) => {
-        const fullPrompt = promptOptions[model].find((p) => p.value === prompt).prompt;
-        return modelInstance.run(value,fullPrompt);
+        const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+        if (models.find((m) => m.value === model)?.requireApiKey) {
+          return modelInstance.run(value, fullPrompt, apiKey);
+        }
+        return modelInstance.run(value, fullPrompt);
       }).then((res: string) => {
         console.log('model res', res);
         setLoading(false);
