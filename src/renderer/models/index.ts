@@ -19,7 +19,13 @@ export default class aiModel {
         return new aiModel(module.default);
     }
 
-    async run(prompt: string, image: string) {
+    async run(prompt: string, image: string, apiKey?:string, baseURL?:string) {
+        if (apiKey) {
+            if (baseURL) {
+                return this.model(prompt, image, apiKey, baseURL);
+            }
+            return this.model(prompt, image, apiKey);
+        }
         return this.model(prompt, image);
     }
 }

@@ -2,6 +2,8 @@
 import './App.css';
 import React, { useState,useEffect,useRef } from 'react';
 import aiModels from './models';
+//disable the eslint warning for the import of the logo
+// eslint-disable-next-line
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';
@@ -11,7 +13,7 @@ import ApiKeyInput from './components/apiKeyInput';
 import PromptSelect from './components/promptSelect';
 import { KeyRound } from "lucide-react"
 import { Button } from "./components/ui/button"
-import { promptOptions } from './lib/models';
+import { promptOptions, models } from './lib/models';
 
 declare global {
   interface Window {
@@ -31,19 +33,6 @@ function App() {
   const [disabled, setDisabled] = useState(false);
   const [progressItems, setProgressItems] = useState([]);
 
-  //Input Model
-  const [apiKey, setApiKey] = useState('');
-  //read the api key from local storage
-  useEffect(() => {
-    const key = localStorage.getItem('apiKey');
-    if (key) {
-      setApiKey(key);
-    }
-  }, []);
-  const [openDialog, setOpenDialog] = useState(false);
-  const handleOpenChange = (value: boolean) => {
-    setOpenDialog(value);
-  }
   //AI model selection
   const [model, setModel] = useState('gemini');
   useEffect(() => {
@@ -52,6 +41,40 @@ function App() {
       setModel(model);
     }
   }, []);
+  //read model list, if require api, create a dictionary to store the api key
+  let keyMap = new Map();
+  models.forEach((model) => {
+    if (model.requireApiKey) {
+      keyMap.set(model.value, '');
+    }
+  });
+
+  const [apiKey, setApiKey] = useState('');
+  //read the api key from local storage
+  useEffect(() => {
+    const keys = localStorage.getItem('apiKeyMap');
+    console.log('keys', keys);
+    if (keys) {
+      const keyMapObj = JSON.parse(keys);
+      console.log('keyMapObj', keyMapObj);
+      for (const [key, value] of Object.entries(keyMapObj)) {
+        console.log('key', key, 'value', value);  
+        keyMap.set(key, value);
+        console.log('keyMap', keyMap);
+      }
+    }
+    console.log('model', model);
+    if (keyMap.has(model)) {
+      console.log('setApiKey', keyMap.get(model));
+      setApiKey(keyMap.get(model));
+    }
+  }, [model]);
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const handleOpenChange = (value: boolean) => {
+    setOpenDialog(value);
+  }
+
   //Prompt selection
   const [prompt, setPrompt] = useState('Auto');
   
@@ -65,16 +88,19 @@ function App() {
   const handleModelChange = (value: string) => {
     console.log('handleModelChange', value);
     setModel(value);
-    if (value === 'gpt4') {
+    //read the api key for new model from local storage
+    if (keyMap.has(value)) {
+      setApiKey(keyMap.get(value));
       isApiKeyEmpty();
     }
   }
   //handle api key change
   const handleApiKeyChange = (value: string) => {
     console.log('handleApiKeyChange', value);
+    keyMap.set(model, value);
     setApiKey(value);
     //save the api key to local storage
-    localStorage.setItem('apiKey', value);
+    localStorage.setItem('apiKeyMap', JSON.stringify(Object.fromEntries(keyMap)));
     //close the dialog
     setOpenDialog(false);
   }
@@ -94,9 +120,9 @@ function App() {
     } else {
     setResult(null);
     setLoading(true);
-    aiModels.create(model).then((model: aiModels) => {
-      const fullPrompt = promptOptions.find((p) => p.value === value).prompt;
-      return model.run(screenShotResult,fullPrompt);
+    aiModels.create(model).then((modelInstance: aiModels) => {
+      const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+      return modelInstance.run(screenShotResult,fullPrompt);
     }).then((res: string) => {
       console.log('model res', res);
       setResult(res);
@@ -121,9 +147,12 @@ function App() {
       setscreenShotResult(value);
       setResult(null);
       setLoading(true);
-      aiModels.create(model).then((model: aiModels) => {
-        const fullPrompt = promptOptions.find((p) => p.value === prompt).prompt;
-        return model.run(value,fullPrompt);
+      aiModels.create(model).then((modelInstance: aiModels) => {
+        const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+        if (models.find((m) => m.value === model)?.requireApiKey) {
+          return modelInstance.run(value, fullPrompt, apiKey);
+        }
+        return modelInstance.run(value, fullPrompt);
       }).then((res: string) => {
         console.log('model res', res);
         setLoading(false);
@@ -242,9 +271,11 @@ function App() {
         {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
       <div className="flex space-x-2 mb-2 justify-center">
-      <PromptSelect handlePromptChange={handlePromptChange} />
+      <PromptSelect handlePromptChange={handlePromptChange} model={model}/>
       {/*only show the api key button when the model is gpt4 */}
-      {model === 'gpt4' &&
+      {
+      models.find((m) => m.value === model)?.requireApiKey
+       &&
       <ApiKeyButton onClick={()=>setOpenDialog(true)} />}
       </div>
       {/* {result && <button onClick={() => {
@@ -265,7 +296,7 @@ function App() {
       </div>
       </header>
       
-     <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} />
+     <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} model={model} />
 
     </div>
   );
