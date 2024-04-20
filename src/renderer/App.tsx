@@ -120,9 +120,9 @@ function App() {
     } else {
     setResult(null);
     setLoading(true);
-    aiModels.create(model).then((model: aiModels) => {
-      const fullPrompt = promptOptions.find((p) => p.value === value).prompt;
-      return model.run(screenShotResult,fullPrompt);
+    aiModels.create(model).then((modelInstance: aiModels) => {
+      const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+      return modelInstance.run(screenShotResult,fullPrompt);
     }).then((res: string) => {
       console.log('model res', res);
       setResult(res);
