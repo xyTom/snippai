@@ -2,6 +2,8 @@
 import './App.css';
 import React, { useState,useEffect,useRef } from 'react';
 import aiModels from './models';
+//disable the eslint warning for the import of the logo
+// eslint-disable-next-line
 import logo from './assets/logo.png';
 import DisplayTextResult from './components/displayTextResult';
 import LoadingSkeleton from './components/loadingSkeleton';

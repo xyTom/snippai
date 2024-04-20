@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 async function GPT(image:string, prompt:string, APIKey:string): Promise<string> {
-    const openai = new OpenAI({ apiKey: APIKey });
+    const openai = new OpenAI({ apiKey: APIKey, dangerouslyAllowBrowser: true});
     const response = await openai.chat.completions.create({
         model: "gpt-4-vision-preview",
         messages: [
