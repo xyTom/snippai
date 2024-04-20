@@ -12,6 +12,7 @@ import PromptSelect from './components/promptSelect';
 import { KeyRound } from "lucide-react"
 import { Button } from "./components/ui/button"
 import { promptOptions } from './lib/models';
+import Renderlatex from'./components/render-latex';
 
 declare global {
   interface Window {
@@ -25,6 +26,8 @@ function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  
 
   //Model loading
   const [ready, setReady] = useState(null);
@@ -262,6 +265,7 @@ function App() {
       {result &&
       <DisplayTextResult text={result} onTextChange={handleTextChange} />
       }
+      <Renderlatex />
       </div>
       </header>
       
