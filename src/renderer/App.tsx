@@ -22,6 +22,8 @@ import {
 } from "./components/ui/tooltip"
 import { useToast } from "./components/ui/use-toast"
 import { Toaster } from "./components/ui/toaster"
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import DisplayLatex  from './components/displayLatex';
 
 declare global {
   interface Window {
@@ -261,6 +263,7 @@ function App() {
   }
 
   return (
+    
     <div className="App dark">
 
       <header className="App-header relative">
@@ -292,7 +295,9 @@ function App() {
             <PromptSelect handlePromptChange={handlePromptChange} model={model} />
 
             {/* When there is result or onError, show the retry button */}
-            {(onError || result)
+            {(result)
+            && <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />}
+            {(onError)
             && <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />}
             {result && <TrashButton onClick={() => {setscreenShotResult(null); setResult(null); setOnError(false)}} />}
             {/*only show the api key button when the model is gpt4 */}
@@ -316,6 +321,9 @@ function App() {
           {result &&
             <DisplayTextResult text={result} onTextChange={handleTextChange} />
           }
+          <MathJaxContext>
+          {(result && prompt=="Formula" ) && <DisplayLatex latex={result} />}
+          </MathJaxContext>
         </div>
       </header>
 

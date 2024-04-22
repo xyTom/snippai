@@ -60,6 +60,7 @@
     "@radix-ui/react-toast": "^1.1.5",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@xenova/transformers": "^2.16.1",
+    "better-react-mathjax": "^2.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.0",
