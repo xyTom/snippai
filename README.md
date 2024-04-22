@@ -4,6 +4,8 @@
 
 Snippai is a versatile and intelligent snipping tool powered by advanced AI algorithms. It offers a range of features to enhance your snipping experience, making it more efficient and productive. From identifying formulas and text within images to analyzing and describing the content of images, Snippai brings a new level of intelligence to snipping tools.
 
+![Snippai Screenshot](https://im.gurl.eu.org/file/71ad74a8b7e799ff7e06c.png)
+
 ## Features
 
 ### Formula Recognition
