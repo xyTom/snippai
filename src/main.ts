@@ -1,5 +1,10 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
 import path from 'path';
+import * as Sentry from "@sentry/electron/main";
+
+Sentry.init({
+  dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
+});
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Screenshots = require('electron-screenshots');
 

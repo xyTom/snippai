@@ -2,6 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from 'electron';
+import "@sentry/electron/preload";
 
 contextBridge.exposeInMainWorld('electronAPI', {
     onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value) => callback(value)),
