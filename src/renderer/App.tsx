@@ -49,6 +49,23 @@ function App() {
   //notification
   const { toast } = useToast()
 
+  //MathJax Config
+  const config = {
+    loader: { load: ["[tex]/html"] },
+    tex: {
+      packages: { "[+]": ["html"] },
+      inlineMath: [
+        ["$", "$"],
+        ["\\(", "\\)"]
+      ],
+      displayMath: [
+        ["$$", "$$"],
+        ["\\[", "\\]"],
+        ["```latex", "```"],
+      ]
+    }
+  };
+
   //AI model selection
   const [model, setModel] = useState('gemini');
   useEffect(() => {
@@ -321,7 +338,7 @@ function App() {
           {result &&
             <DisplayTextResult text={result} onTextChange={handleTextChange} />
           }
-          <MathJaxContext>
+          <MathJaxContext version={3} config={config}>
           {(result && prompt=="Formula" ) && <DisplayLatex latex={result} />}
           </MathJaxContext>
         </div>
