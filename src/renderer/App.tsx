@@ -328,19 +328,14 @@ function App() {
       }
       }>Copy</button>} */}
           {loading && <LoadingSkeleton />}
-          {result &&
-            <Badge variant="secondary"
-              className='mb-2 antialiased font-medium'
-            >
-              <FileIcon className="w-5 h-5 mr-1" />
-              Result</Badge>
-          }
-          {result &&
-            <DisplayTextResult text={result} onTextChange={handleTextChange} />
-          }
+
           <MathJaxContext version={3} config={config}>
           {(result && prompt=="Formula" ) && <DisplayLatex latex={result} />}
           </MathJaxContext>
+          {result &&
+            <DisplayTextResult text={result} onTextChange={handleTextChange} />
+          }
+
         </div>
       </header>
 
