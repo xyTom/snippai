@@ -281,20 +281,20 @@ function App() {
 
   return (
     
-    <div className="App dark">
+    <div className="App dark select-none">
 
       <header className="App-header relative">
         <div className="flex	h-8 px-4 md:px-6 w-full shrink-0 absolute top-[0.5rem] right-0">
           <div className="hidden sm:flex" >
             <span className="sr-only">Snippai</span>
           </div>
-          <div className="ml-auto space-x-4 flex text-white">
+          <div className="ml-auto space-x-4 flex text-white select-none">
             <ModelSelect handleModelChange={handleModelChange} />
           </div>
         </div>
         {/* <!-- if no screenshot result, show the logo --> */}
-        {!screenShotResult && <img src={logo} className="App-logo" alt="logo" />}
-        {!screenShotResult && <p className="mb-2">
+        {!screenShotResult && <img src={logo} className="App-logo select-none" alt="logo" />}
+        {!screenShotResult && <p className="mb-2 select-none">
           Press <code>{shortcut}</code> to make a screenshot.
         </p>}
         {/* <!-- if has screenshot result, show the result --> */}
@@ -390,7 +390,7 @@ export function ApiKeyButton(props: { onClick: () => void }) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button variant="outline" size="icon" className="mt-auto" onClick={props.onClick}>
             <KeyRound className="h-10 w-5" />
           </Button>
@@ -407,7 +407,7 @@ export function RetryButton(props: { onClick: () => void }) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button variant="secondary" size="icon" onClick={props.onClick}>
             <RotateCw className="h-10 w-5" />
           </Button>
@@ -425,7 +425,7 @@ export function TrashButton(props: { onClick: () => void }) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button variant="destructive" size="icon" onClick={props.onClick}>
             <Trash2 className="h-10 w-5" />
           </Button>

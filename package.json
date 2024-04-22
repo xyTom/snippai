@@ -59,6 +59,7 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
     "@radix-ui/react-tooltip": "^1.0.7",
+    "@sentry/electron": "^4.23.0",
     "@xenova/transformers": "^2.16.1",
     "better-react-mathjax": "^2.0.3",
     "class-variance-authority": "^0.7.0",
