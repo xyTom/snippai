@@ -44,7 +44,7 @@ Contributions to Snippai are welcome! Whether you're interested in adding new fe
 
 ## Support
 
-For any questions, issues, or feedback, please contact us at [support@snippai.com](mailto:support@snippai.com). We're here to help!
+For any questions, issues, or feedback, please create a [issue](https://github.com/xyTom/snippai/issues/new). We're here to help!
 
 ## Acknowledgments
 
