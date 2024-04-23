@@ -35,7 +35,7 @@ declare global {
 
 function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState("null");
   const [loading, setLoading] = useState(false);
 
   //retry button
@@ -408,7 +408,7 @@ export function RetryButton(props: { onClick: () => void }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="secondary" size="icon" onClick={props.onClick}>
+          <Button className="mt-auto" variant="secondary" size="icon" onClick={props.onClick}>
             <RotateCw className="h-10 w-5" />
           </Button>
         </TooltipTrigger>
@@ -426,7 +426,7 @@ export function TrashButton(props: { onClick: () => void }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="destructive" size="icon" onClick={props.onClick}>
+          <Button className="mt-auto" variant="destructive" size="icon" onClick={props.onClick}>
             <Trash2 className="h-10 w-5" />
           </Button>
         </TooltipTrigger>
