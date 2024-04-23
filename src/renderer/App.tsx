@@ -35,7 +35,7 @@ declare global {
 
 function App() {
   const [screenShotResult, setscreenShotResult] = useState(null);
-  const [result, setResult] = useState("null");
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   //retry button
@@ -309,7 +309,9 @@ function App() {
           {screenShotResult && <img src={`data:image/png;base64,${screenShotResult}`} alt="screenshot" className="mb-2 rounded-lg object-center border border-gray-100 dark:border-gray-800 mx-auto" />}
 
           <div className="flex space-x-2 mb-2 justify-center">
-            <PromptSelect handlePromptChange={handlePromptChange} model={model} />
+            <PromptSelect handlePromptChange={handlePromptChange} model={model} disabled={loading}/>
+            {/* <button onClick={() => setLoading(!loading)} className="btn" 
+            >set loading</button> */}
 
             {/* When there is result or onError, show the retry button */}
             {(result)
