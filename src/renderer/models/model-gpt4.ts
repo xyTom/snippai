@@ -4,7 +4,7 @@ async function GPT(image:string, prompt:string, APIKey:string): Promise<string> 
     myHeaders.append("authorization", `Bearer ${APIKey}`);
     myHeaders.append("content-type", "application/json");
     const raw = JSON.stringify({
-      "model": "gpt-4-vision-preview",
+      "model": "gpt-4o",
       "messages": [
         {
           "role": "user",
