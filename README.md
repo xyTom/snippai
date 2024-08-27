@@ -62,3 +62,9 @@ Snippai utilizes various open-source libraries and technologies, and we would li
 ---
 
 Enjoy smarter snipping with Snippai! ;)
+
+## Sponsor
+
+Fastly is generously donating their services to support our project. You can find more about Fastly [here](https://fastly.com).
+
+<img src="https://github.com/user-attachments/assets/4a055f32-2271-422f-9da8-df0ca19b2ab0" alt="Fastly Logo" width="160"/>
