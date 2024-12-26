@@ -1,7 +1,7 @@
 {
   "name": "snippai",
   "productName": "Snippai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A snipping app with AI",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -65,7 +65,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.0",
-    "electron-screenshots": "^0.5.26",
+    "electron-screenshots": "^0.5.27",
     "electron-squirrel-startup": "^1.0.0",
     "lucide-react": "^0.363.0",
     "openai": "^4.32.1",
