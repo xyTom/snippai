@@ -14,6 +14,14 @@ export default defineConfig((env) => {
     base: './',
     build: {
       outDir: `.vite/renderer/${name}`,
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+          }
+        }
+      }
     },
     plugins: [pluginExposeRenderer(name)],
     resolve: {
