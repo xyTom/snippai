@@ -9,12 +9,12 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
+    asar: {
+      unpack: '**/node_modules/electron-screenshots/**',
+    },
     name: 'Snippai',
     appBundleId: 'com.snapbit.snippai',
-    extraResource: [
-      'node_modules/electron-screenshots'
-    ],
+    
   },
   rebuildConfig: {},
   makers: [

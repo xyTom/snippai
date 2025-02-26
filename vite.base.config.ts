@@ -5,7 +5,9 @@ import pkg from './package.json';
 
 export const builtins = ['electron', ...builtinModules.map((m) => [m, `node:${m}`]).flat()];
 
-export const external = [...builtins, ...Object.keys('dependencies' in pkg ? (pkg.dependencies as Record<string, unknown>) : {})];
+// 修改 external 变量，排除 electron-screenshots
+const dependencies = 'dependencies' in pkg ? Object.keys(pkg.dependencies as Record<string, unknown>) : [];
+export const external = [...builtins, ...dependencies.filter(dep => dep !== 'electron-screenshots')];
 
 export function getBuildConfig(env: ConfigEnv<'build'>): UserConfig {
   const { root, mode, command } = env;
