@@ -9,20 +9,27 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: {
-      unpack: '**/node_modules/electron-screenshots/**',
-    },
+    asar: true,
     name: 'Snippai',
     appBundleId: 'com.snapbit.snippai',
-    
+    ignore: (path) => {
+      if (!path) return false;
+      if (path.startsWith("/package.json")) return false;
+      // add only the /.vite folder from the project root, ignoring the one in node_modules.
+      if (path.startsWith("/.vite")) return false; 
+      if (path.startsWith("/node_modules")) return false;
+      // if (path.includes('node_modules/electron-screenshots')) return false;
+      return true;
+    },
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
-    new MakerZIP({}, ['win32','darwin']),
+    new MakerZIP({}, ['win32', 'darwin']),
     new MakerRpm({}),
     new MakerDeb({})
   ],
+
   plugins: [
     new VitePlugin({
       build: [
