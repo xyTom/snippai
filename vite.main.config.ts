@@ -1,6 +1,5 @@
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
-import { viteExternalsPlugin } from "vite-plugin-externals";
 import { getBuildConfig, getBuildDefine, external, pluginHotRestart } from './vite.base.config';
 
 // https://vitejs.dev/config
@@ -19,11 +18,7 @@ export default defineConfig((env) => {
         external,
       },
     },
-    plugins: [pluginHotRestart('restart'),
-      viteExternalsPlugin({
-        "electron-screenshots": 'require("electron-screenshots")', // 模块名称: 全局变量
-      }),
-    ],
+    plugins: [pluginHotRestart('restart')],
     define,
     resolve: {
       // Load the Node.js entry.

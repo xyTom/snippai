@@ -6,8 +6,7 @@ Sentry.init({
   dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
 });
 
-const Screenshots = require('electron-screenshots');
-
+const Screenshots  = require('electron-screenshots');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -155,13 +154,6 @@ if (!gotTheLock) {
 
     const screenshots = new Screenshots({
       singleWindow: true,
-      // 添加以下配置以提高截图质量
-      enableHighAccuracy: true,
-      // 为macOS添加特殊配置
-      screenshotOptions: {
-        types: ['screen'],
-        captures: 'fullscreen',
-      }
     });
     
     // 在截图前设置比例
