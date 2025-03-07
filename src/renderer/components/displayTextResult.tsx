@@ -1,15 +1,18 @@
-
 import { Textarea } from "../../renderer/components/ui/textarea"
 import { Button } from "../../renderer/components/ui/button"
-import React from "react"
+import React, { useEffect, useRef } from "react"
 
 export default function displayTextResult(props: { text: string, onTextChange: (text: string) => void}) {
   const [copied, setCopied] = React.useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
   console.log("displayTextResult", props.text)
+  
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     console.log("handleTextChange", event.target.value)
     props.onTextChange(event.target.value)
   }
+  
   const handleCopy = () => {
     console.log("handleCopy")
     navigator.clipboard.writeText(props.text)
@@ -19,10 +22,32 @@ export default function displayTextResult(props: { text: string, onTextChange: (
       setCopied(false)
     }, 1000)
   }
+  
+  // 自动调整文本框高度的函数
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      // 先将高度设为自动，以便获取内容的实际高度
+      textarea.style.height = 'auto'
+      // 然后设置为滚动高度
+      textarea.style.height = `${textarea.scrollHeight}px`
+    }
+  }
+  
+  // 当文本内容变化时调整高度
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [props.text])
+  
   return (
     <div className="grid w-full gap-2 min-h-60 pb-3 min-w-60">
       {/* <div className="relative"> */}
-        <Textarea value={props.text} className="w-full text-lg antialiased font-medium" onChange={handleTextChange} />
+        <Textarea 
+          ref={textareaRef}
+          value={props.text} 
+          className="w-full text-lg antialiased font-medium overflow-hidden" 
+          onChange={handleTextChange} 
+        />
         <Button 
         // className="absolute top-1 right-1" size="icon" 
           variant="outline" 

@@ -38,7 +38,7 @@ export const promptOptions = {
     {
         value: "Text",
         label: "Text",
-        prompt: "Please return the result of OCR text recognition (only return the recognized text, do not add other descriptions)",
+        prompt: "Please return the result of OCR text recognition (only return the recognized text, do not add other descriptions) Return should be the original text in the image, don't add any other descriptions or explanations.",
     },
     {
         value: "Code",
@@ -64,6 +64,11 @@ export const promptOptions = {
         value:"Color",
         label:"Color",
         prompt:"Please return the color information in the image, use #RRGGBB format to describe the color.",
+    },
+    {
+        value: "Translate",
+        label: "Translate",
+        prompt: "Please help me translate the text in this image to my language. Only return the translated text, don't add any additional descriptions or explanations.",
     }
     ],
     "gpt4":[
@@ -107,6 +112,11 @@ export const promptOptions = {
         value:"Color",
         label:"Color",
         prompt:"Please return the color information in the image, use #RRGGBB format to describe the color.",
+    },
+    {
+        value: "Translate",
+        label: "Translate",
+        prompt: "Please help me translate the text in this image to my language. Only return the translated text, don't add any additional descriptions or explanations.",
     }
     ]
 }

@@ -1,4 +1,3 @@
-
 import './App.css';
 import React, { useState, useEffect, useRef } from 'react';
 import aiModels from './models';
@@ -10,6 +9,8 @@ import LoadingSkeleton from './components/loadingSkeleton';
 import { Badge } from "./components/ui/badge"
 import ModelSelect from './components/modelSelect';
 import ApiKeyInput from './components/apiKeyInput';
+import LanguageInput from './components/languageInput';
+import { LanguageButton } from './components/languageButton';
 import PromptSelect from './components/promptSelect';
 import { KeyRound, RotateCw, Trash2 } from "lucide-react"
 import { Button } from "./components/ui/button"
@@ -74,6 +75,22 @@ function App() {
       setModel(model);
     }
   }, []);
+  
+  //Language selection
+  const [language, setLanguage] = useState('english');
+  const [openLanguageDialog, setOpenLanguageDialog] = useState(false);
+  
+  useEffect(() => {
+    const language = localStorage.getItem('language');
+    if (language) {
+      setLanguage(language);
+    }
+  }, []);
+  
+  const handleLanguageOpenChange = (value: boolean) => {
+    setOpenLanguageDialog(value);
+  }
+  
   //read model list, if require api, create a dictionary to store the api key
   let keyMap = new Map();
   models.forEach((model) => {
@@ -130,6 +147,18 @@ function App() {
       isApiKeyEmpty();
     }
   }
+  
+  //handle language change
+  const handleLanguageChange = (value: string) => {
+    console.log('handleLanguageSave', value);
+    if (value === language || !value) {
+      return;
+    }
+    setLanguage(value);
+    //save the language to local storage
+    localStorage.setItem('language', value);
+  }
+  
   //handle api key change
   const handleApiKeyChange = (value: string) => {
     console.log('handleApiKeyChange', value);
@@ -153,7 +182,11 @@ function App() {
     setLoading(true);
     aiModels.create(model).then((modelInstance: aiModels) => {
       console.log('prompt', prompt);
-      const fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+      let fullPrompt = promptOptions[model as keyof typeof promptOptions].find((p) => p.value === prompt).prompt;
+      
+      // Add language instruction
+      fullPrompt += ` Please answer in ${language}.`;
+
       console.log('fullPrompt', fullPrompt);
       if (models.find((m) => m.value === model)?.requireApiKey) {
         return modelInstance.run(value, fullPrompt, apiKey);
@@ -184,7 +217,7 @@ function App() {
     if (screenShotResult !== null) {
       recoginzeScreenshot(screenShotResult);
     }
-  }, [prompt, screenShotResult]);
+  }, [prompt, screenShotResult, language]);
   // window.electronAPI.onScreenShotRes((value:string) => {
   //   console.log('onScreenShotRes', value);
   //   setscreenShotResult(value);
@@ -289,6 +322,7 @@ function App() {
             <span className="sr-only">Snippai</span>
           </div>
           <div className="ml-auto space-x-4 flex text-white select-none">
+            <LanguageButton onClick={() => setOpenLanguageDialog(true)} language={language} />
             <ModelSelect handleModelChange={handleModelChange} />
           </div>
         </div>
@@ -342,6 +376,7 @@ function App() {
       </header>
 
       <ApiKeyInput apikey={apiKey} onKeySave={handleApiKeyChange} open={openDialog} onOpenChange={handleOpenChange} model={model} />
+      <LanguageInput language={language} onLanguageSave={handleLanguageChange} open={openLanguageDialog} onOpenChange={handleLanguageOpenChange} />
       <Toaster />
     </div>
   );
