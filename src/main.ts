@@ -161,12 +161,6 @@ function registerScreenshotShortcuts(): void {
     }, screenshotDelay);
   });
 
-  // Register escape key to cancel screenshot
-  globalShortcut.register("esc", () => {
-    if (screenshots.$win?.isFocused()) {
-      screenshots.endCapture();
-    }
-  });
 }
 
 /**
@@ -174,6 +168,10 @@ function registerScreenshotShortcuts(): void {
  * @param {number} scaleFactor - The display scale factor
  */
 function setupScreenshotEventHandlers(scaleFactor: number): void {
+  // 保存之前活跃的应用程序信息
+  let previouslyFocusedApp: string | null = null;
+
+
   // Handle successful screenshot capture
   screenshots.on("ok", (e: any, buffer: Uint8Array, bounds: any) => {
     const base64 = Buffer.from(buffer).toString("base64");
@@ -197,6 +195,9 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   screenshots.on("cancel", () => {
     console.log("Screenshot capture cancelled");
     showMainWindow();
+    
+    // 尝试将焦点还给之前的应用程序
+    restorePreviousFocus(previouslyFocusedApp);
   });
 
   // Handle screenshot save
@@ -208,6 +209,57 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   screenshots.on("afterSave", (e: any, buffer: Uint8Array, bounds: any, isSaved: any) => {
     console.log("Screenshot afterSave event", isSaved);
   });
+  
+  screenshots.on('windowCreated', ($win: Electron.BrowserWindow) => {
+    $win.on('focus', () => {
+      if (process.platform === 'darwin') {
+        try {
+          // 记录当前活跃的应用程序，以便稍后恢复
+          const { execSync } = require('child_process');
+          previouslyFocusedApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
+          console.log('Previously focused app:', previouslyFocusedApp);
+        } catch (error) {
+          console.error('Failed to get frontmost app:', error);
+          previouslyFocusedApp = null;
+        }
+        app.focus({steal: true});
+      }
+      globalShortcut.register('esc', () => {
+        if ($win?.isFocused()) {
+          screenshots.endCapture();
+        }
+        restorePreviousFocus(previouslyFocusedApp);
+      });
+    });
+
+    $win.on('blur', () => {
+      globalShortcut.unregister('esc');
+    });
+  });
+}
+
+/**
+ * 尝试将焦点还给之前的应用程序
+ * @param {string | null} appName - 之前活跃的应用程序名称
+ */
+function restorePreviousFocus(appName: string | null): void {
+  if (!appName || process.platform !== 'darwin') return;
+  
+  setTimeout(() => {
+    try {
+      const { exec } = require('child_process');
+
+      exec(`osascript -e 'tell application "${appName}" to activate'`, (error: any) => {
+        if (error) {
+          console.error('Failed to restore focus:', error);
+        } else {
+          console.log('Focus restored to:', appName);
+        }
+      });
+    } catch (error) {
+      console.error('Error restoring focus:', error);
+    }
+  }, 10); 
 }
 
 /**
