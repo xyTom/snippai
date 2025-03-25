@@ -2,9 +2,9 @@ name: Build and Release
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   build:
@@ -52,7 +52,7 @@ jobs:
   release:
     name: Create Release
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
