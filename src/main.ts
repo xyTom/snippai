@@ -17,6 +17,8 @@ if (require('electron-squirrel-startup')) {
 // Global reference to the main window to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
 let screenshots: any = null;
+// 保存所有便签窗口的引用
+let stickyNotes: BrowserWindow[] = [];
 
 /**
  * Creates and configures the main application window
@@ -29,7 +31,9 @@ function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 800,
     height: 600,
-    backgroundColor: '#ffffff',
+    minWidth: 600,
+    minHeight: 300,
+    backgroundColor: '#000000',
     show: false, // Don't show until ready
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -263,6 +267,70 @@ function restorePreviousFocus(appName: string | null): void {
 }
 
 /**
+ * Creates a sticky note window with the screenshot and result
+ * @param {string} screenshot - Base64 encoded screenshot
+ * @param {string} result - Analysis result
+ * @returns {BrowserWindow} The sticky note window
+ */
+function createStickyNoteWindow(screenshot: string, result: string | null): BrowserWindow {
+  // 创建一个新的浮动窗口
+  const stickyNote = new BrowserWindow({
+    width: 400,
+    height: 500,
+    minWidth: 300,
+    frame: false, // 无边框窗口
+    backgroundColor: '#000000',
+    resizable: true,
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: true,
+    },
+    skipTaskbar: true, // 不在任务栏显示
+    titleBarStyle: 'hidden', // 隐藏标题栏
+    transparent: true, // 背景透明
+  });
+
+  // 加载主界面并传递isSticky参数（不包含大型数据如截图和结果）
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    // 开发模式：添加查询参数
+    stickyNote.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}?isSticky=true`);
+  } else {
+    // 生产模式：使用hash参数
+    const filePath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
+    stickyNote.loadFile(filePath, {
+      hash: `isSticky=true`
+    }).catch(err => {
+      console.error('Failed to load sticky note file:', err);
+    });
+  }
+
+  // 等待窗口准备好后，通过IPC发送截图和结果数据
+  stickyNote.webContents.on('did-finish-load', () => {
+    stickyNote.webContents.send('sticky-note-data', {
+      screenshot,
+      result: result || ''
+    });
+  });
+
+  // 添加窗口关闭事件
+  stickyNote.on('closed', () => {
+    // 从数组中移除窗口引用
+    stickyNotes = stickyNotes.filter(note => note !== stickyNote);
+  });
+
+  // 保存窗口引用
+  stickyNotes.push(stickyNote);
+
+  if (process.platform === 'darwin') {
+    stickyNote.setWindowButtonVisibility(false);
+  }
+
+  return stickyNote;
+}
+
+/**
  * Handles application initialization and lifecycle
  */
 function initializeApp(): void {
@@ -289,6 +357,9 @@ function initializeApp(): void {
 
   // Set up screenshot functionality
   setupScreenshots();
+  
+  // 设置IPC处理程序
+  setupIpcHandlers();
 }
 
 /**
@@ -325,6 +396,58 @@ function setupAppEventHandlers(): void {
     } else {
       showMainWindow();
     }
+  });
+}
+
+/**
+ * 设置所有IPC处理程序
+ */
+function setupIpcHandlers(): void {
+  // 处理pinToScreen请求
+  ipcMain.handle('pin-to-screen', (_event, data) => {
+    console.log('Pin to screen requested', data);
+    const { screenshot, result } = data;
+    createStickyNoteWindow(screenshot, result);
+    return true;
+  });
+  
+  // 处理便签窗口的置顶切换
+  ipcMain.handle('toggle-sticky-note-pin', (_event, { isPinned }) => {
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win) {
+      win.setAlwaysOnTop(isPinned);
+    }
+    return true;
+  });
+  
+  // 处理便签窗口的大小调整
+  ipcMain.handle('resize-sticky-note', (_event, { width, height }) => {
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win) {
+      win.setSize(width, height);
+    }
+    return true;
+  });
+  
+  // 处理便签窗口的拖动
+  ipcMain.handle('drag-sticky-note', (_event) => {
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win) {
+      // 不能直接使用startDrag方法，因为BrowserWindow没有此方法
+      // 对于无边框窗口，Electron提供了-webkit-app-region CSS属性来实现拖动
+      // 已经在HTML/CSS中通过-webkit-app-region: drag实现了拖动功能
+      // 这里只是一个空操作，实际的拖动行为由浏览器处理
+    }
+    return true;
+  });
+
+  // 处理打开开发者工具的请求
+  ipcMain.handle('open-dev-tools', (_event) => {
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win) {
+      win.webContents.openDevTools({ mode: 'detach' });
+    }
+    return true;
   });
 }
 

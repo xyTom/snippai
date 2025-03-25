@@ -75,4 +75,50 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* 为便签模式添加透明背景 */
+  html, body {
+    background-color: transparent;
+  }
+}
+
+/* 便签模式样式 */
+.sticky-mode {
+  background-color: rgba(30, 30, 46, 0.9);
+  color: #f8f8f2;
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.sticky-mode .titlebar {
+  -webkit-app-region: drag;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sticky-mode .controls {
+  -webkit-app-region: no-drag;
+}
+
+.sticky-mode .resize-handle {
+  width: 15px;
+  height: 15px;
+  cursor: nwse-resize;
+  -webkit-app-region: no-drag;
+}
+
+.sticky-mode .result-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: rgba(40, 42, 54, 0.5);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.5;
 }

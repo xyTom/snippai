@@ -2,7 +2,11 @@ import { Textarea } from "../../renderer/components/ui/textarea"
 import { Button } from "../../renderer/components/ui/button"
 import React, { useEffect, useRef } from "react"
 
-export default function displayTextResult(props: { text: string, onTextChange: (text: string) => void}) {
+export default function displayTextResult(props: { 
+  text: string, 
+  onTextChange: (text: string) => void, 
+  isStickyMode?: boolean 
+}) {
   const [copied, setCopied] = React.useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
@@ -25,6 +29,9 @@ export default function displayTextResult(props: { text: string, onTextChange: (
   
   // 自动调整文本框高度的函数
   const adjustTextareaHeight = () => {
+    // 在钉图模式下不调整高度
+    if (props.isStickyMode) return
+    
     const textarea = textareaRef.current
     if (textarea) {
       // 先将高度设为自动，以便获取内容的实际高度
@@ -40,24 +47,20 @@ export default function displayTextResult(props: { text: string, onTextChange: (
   }, [props.text])
   
   return (
-    <div className="grid w-full gap-2 min-h-60 pb-3 min-w-60">
-      {/* <div className="relative"> */}
-        <Textarea 
-          ref={textareaRef}
-          value={props.text} 
-          className="w-full text-lg antialiased font-medium overflow-hidden" 
-          onChange={handleTextChange} 
-        />
-        <Button 
-        // className="absolute top-1 right-1" size="icon" 
-          variant="outline" 
-          onClick={handleCopy}>
-          {copied ? <ClipboardCheckIcon className="w-5 h-5" /> :<ClipboardIcon className="w-5 h-5" /> }
-          <span 
-          // className="sr-only"
-          > Copy</span>
-        </Button>
-      {/* </div> */}
+    <div className={`grid w-full gap-2 ${props.isStickyMode ? '' : 'pb-3 min-h-60'} min-w-60`}>
+      <Textarea 
+        ref={textareaRef}
+        value={props.text} 
+        className={`w-full text-lg antialiased font-medium ${props.isStickyMode ? '' : 'overflow-hidden'}`}
+        onChange={handleTextChange} 
+        style={props.isStickyMode ? { height: 'auto' } : undefined}
+      />
+      <Button 
+        variant="outline" 
+        onClick={handleCopy}>
+        {copied ? <ClipboardCheckIcon className="w-5 h-5" /> :<ClipboardIcon className="w-5 h-5" /> }
+        <span>Copy</span>
+      </Button>
     </div>
   )
 }
