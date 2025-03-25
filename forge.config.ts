@@ -11,6 +11,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     name: 'Snippai',
+    executableName: 'snippai',
     appBundleId: 'com.snapbit.snippai',
     ignore: (path) => {
       if (!path) return false;
@@ -26,8 +27,18 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['win32', 'darwin']),
-    new MakerRpm({}),
-    new MakerDeb({})
+    new MakerRpm({
+      options: {
+        bin: 'snippai',
+        name: 'snippai'
+      }
+    }),
+    new MakerDeb({
+      options: {
+        bin: 'snippai',
+        name: 'snippai'
+      }
+    })
   ],
 
   plugins: [
