@@ -411,9 +411,8 @@ function App() {
   // 切换便签的固定状态
   const toggleStickyNotePin = useCallback(() => {
     if (!window.electronAPI?.toggleStickyNotePin) return;
-    
     const newPinState = !isPinned;
-    window.electronAPI.toggleStickyNotePin(newPinState);
+    window.electronAPI.toggleStickyNotePin({ isPinned: newPinState });
     setIsPinned(newPinState);
   }, [isPinned]);
   

@@ -3,7 +3,7 @@ import { Pin, X } from "lucide-react";
 import DevTools from './icons/DevTools';
 
 // 检查是否在开发模式下
-const isDevelopment = !!(typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && MAIN_WINDOW_VITE_DEV_SERVER_URL);
+const isDevelopment = window.electronAPI.isDevelopment;
 
 interface StickyNoteTitleBarProps {
   isPinned: boolean;
