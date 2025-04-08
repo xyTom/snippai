@@ -524,8 +524,8 @@ function App() {
           </>
         )}
         
-        <div className={`${horizontalLayout ? 'max-w-[95%] pt-16' : 'max-w-[90%]'} h-full`}>
-          {/* 钉图模式下不需要标题栏占位，因为我们已经在容器高度中减去了标题栏高度 */}
+        <div className={`${horizontalLayout ? 'max-w-[95%] pt-6' : 'max-w-[90%] pt-6'} h-full`}>
+        {/* 钉图模式下不需要标题栏占位，因为我们已经在容器高度中减去了标题栏高度 */}
           {/* 水平布局时的内容 */}
           {horizontalLayout && screenShotResult && (
             <div className="flex flex-col gap-4 w-full h-full">
