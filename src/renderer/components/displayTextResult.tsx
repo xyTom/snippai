@@ -1,8 +1,8 @@
-import { Textarea } from "../../renderer/components/ui/textarea"
-import { Button } from "../../renderer/components/ui/button"
+import { Textarea } from "./ui/textarea"
+import { Button } from "./ui/button"
 import React, { useEffect, useRef } from "react"
 
-export default function displayTextResult(props: { 
+export default function DisplayTextResult(props: { 
   text: string, 
   onTextChange: (text: string) => void, 
   isStickyMode?: boolean 
@@ -10,7 +10,7 @@ export default function displayTextResult(props: {
   const [copied, setCopied] = React.useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
-  console.log("displayTextResult", props.text)
+  console.log("DisplayTextResult", props.text)
   
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     console.log("handleTextChange", event.target.value)

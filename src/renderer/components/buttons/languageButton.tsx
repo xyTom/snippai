@@ -1,12 +1,14 @@
+"use client";
+
 import React from "react"
-import { Button } from "../components/ui/button"
+import { Button } from "../ui/button"
 import { Globe } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../components/ui/tooltip"
+} from "../ui/tooltip"
 
 export function LanguageButton(props: { onClick: () => void, language: string }) {
   return (
@@ -14,7 +16,7 @@ export function LanguageButton(props: { onClick: () => void, language: string })
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="outline" size="icon" className="mt-auto" onClick={props.onClick}>
-            <Globe className="h-10 w-5" />
+            <Globe className="h-5 w-5" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

@@ -19,6 +19,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resizeStickyNote: (data: any) => ipcRenderer.invoke('resize-sticky-note', data),
     dragStickyNote: () => ipcRenderer.invoke('drag-sticky-note'),
     openDevTools: () => ipcRenderer.invoke('open-dev-tools'),
+    getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
+    saveAppSettings: (data: any) => ipcRenderer.invoke('save-app-settings', data),
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 })
 
 console.log('preload.ts loaded');

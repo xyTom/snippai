@@ -2,7 +2,7 @@ import React from 'react';
 import { MathJaxContext } from 'better-react-mathjax';
 import LoadingSkeleton from './loadingSkeleton';
 import DisplayLatex from './displayLatex';
-import DisplayTextResult from './displayTextResult';
+import DisplayTextResult from './DisplayTextResult';
 
 interface ResultDisplayProps {
   loading: boolean;

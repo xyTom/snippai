@@ -8,9 +8,10 @@ import { Badge } from "./components/ui/badge"
 import ModelSelect from './components/modelSelect';
 import ApiKeyInput from './components/apiKeyInput';
 import LanguageInput from './components/languageInput';
-import { LanguageButton } from './components/languageButton';
+import { LanguageButton } from './components/buttons/languageButton';
 import { useToast } from "./components/ui/use-toast"
 import { Toaster } from "./components/ui/toaster"
+import SettingsPage from './components/SettingsPage';
 
 // 导入提取的组件
 import StickyNoteTitleBar from './components/StickyNoteTitleBar';
@@ -25,6 +26,7 @@ import { RetryButton } from './components/buttons/RetryButton';
 import { CopyImageButton } from './components/buttons/CopyImageButton';
 import { PinButton } from './components/buttons/PinButton';
 import { TrashButton } from './components/buttons/TrashButton';
+import { SettingsButton } from './components/buttons/SettingsButton';
 
 import { promptOptions, models } from './lib/models';
 
@@ -78,6 +80,9 @@ function App() {
   
   const [apiKey, setApiKey] = useState('');
   
+  // 设置页面状态
+  const [openSettings, setOpenSettings] = useState(false);
+  
   // 工作线程引用
   const worker = useRef<Worker | null>(null);
   
@@ -97,7 +102,7 @@ function App() {
     
     checkIsStickyMode();
     
-    if (isStickyMode && window.electronAPI) {
+    if (isStickyMode) {
       const handleStickyNoteData = (data: {screenshot: string, result: string}) => {
 
         if (data.screenshot) {
@@ -109,10 +114,10 @@ function App() {
         }
       };
       
-      window.electronAPI.onStickyNoteData(handleStickyNoteData);
+      window.electronAPI?.onStickyNoteData(handleStickyNoteData);
       
       return () => {
-        window.electronAPI.removeListener('sticky-note-data', handleStickyNoteData);
+        window.electronAPI?.removeListener('sticky-note-data', handleStickyNoteData);
       };
     }
   }, [isStickyMode]);
@@ -292,23 +297,41 @@ function App() {
       setscreenShotResult(value);
     };
     
-    if (window.electronAPI) {
-      window.electronAPI.onScreenShotRes(handleScreenShotRes);
+    // Register screenshot result handler
+    window.electronAPI?.onScreenShotRes(handleScreenShotRes);
       
-      return () => {
-        window.electronAPI.removeAllListeners('screenshot-result');
-        worker.current?.removeEventListener('message', onMessageReceived);
-      };
-    } else {
-      return () => {
-        worker.current?.removeEventListener('message', onMessageReceived);
-      };
-    }
+    return () => {
+      window.electronAPI?.removeAllListeners('screenshot-result');
+      worker.current?.removeEventListener('message', onMessageReceived);
+    };
   }, []);
   
-  // 使用useMemo优化平台相关的快捷键计算
-  const shortcut = useMemo(() => {
-    return window.navigator.platform === 'MacIntel' ? 'Command + Shift + A' : 'Ctrl + Shift + A';
+  // 存储当前配置的快捷键
+  const [shortcut, setShortcut] = useState('');
+  
+  // 加载并格式化快捷键显示
+  useEffect(() => {
+    const loadShortcut = async () => {
+      try {
+        const settings = await window.electronAPI?.getAppSettings();
+        if (settings?.shortcuts?.screenshot) {
+          // 格式化快捷键显示
+          let formattedShortcut = settings.shortcuts.screenshot
+            .replace('CommandOrControl', window.navigator.platform === 'MacIntel' ? 'Command' : 'Ctrl')
+            .split('+').join(' + ');
+          setShortcut(formattedShortcut);
+        } else {
+          // 如果没有设置，使用默认值
+          setShortcut(window.navigator.platform === 'MacIntel' ? 'Command + Shift + A' : 'Ctrl + Shift + A');
+        }
+      } catch (error) {
+        console.error('Failed to load shortcut settings:', error);
+        // 加载失败时使用默认值
+        setShortcut(window.navigator.platform === 'MacIntel' ? 'Command + Shift + A' : 'Ctrl + Shift + A');
+      }
+    };
+    
+    loadShortcut();
   }, []);
   
   // 检测图片尺寸并决定是否显示悬浮按钮
@@ -388,7 +411,7 @@ function App() {
   const pinToScreen = useCallback(() => {
     if (screenShotResult && window.electronAPI?.pinToScreen) {
       try {
-        window.electronAPI.pinToScreen({
+        window.electronAPI?.pinToScreen({
           screenshot: screenShotResult,
           result: result
         });
@@ -412,7 +435,7 @@ function App() {
   const toggleStickyNotePin = useCallback(() => {
     if (!window.electronAPI?.toggleStickyNotePin) return;
     const newPinState = !isPinned;
-    window.electronAPI.toggleStickyNotePin({ isPinned: newPinState });
+    window.electronAPI?.toggleStickyNotePin({ isPinned: newPinState });
     setIsPinned(newPinState);
   }, [isPinned]);
   
@@ -428,7 +451,7 @@ function App() {
     const handleMouseMove = (e: MouseEvent) => {
       const width = startWidth + e.clientX - startX;
       const height = startHeight + e.clientY - startY;
-      window.electronAPI.resizeStickyNote({ width, height });
+      window.electronAPI?.resizeStickyNote({ width, height });
     };
     
     const handleMouseUp = () => {
@@ -476,6 +499,7 @@ function App() {
               <span className="sr-only">Snippai</span>
             </div>
             <div className="ml-auto space-x-4 flex text-white select-none">
+              <SettingsButton onClick={() => setOpenSettings(true)} />
               <LanguageButton onClick={() => setOpenLanguageDialog(true)} language={language} />
               <ModelSelect handleModelChange={handleModelChange} />
             </div>
@@ -535,15 +559,13 @@ function App() {
           />
           
           {/* 结果显示 */}
-          {/* {!isStickyMode &&  */}
-          <ResultDisplay 
-            loading={loading}
-            result={result}
-            prompt={prompt}
-            handleTextChange={handleTextChange}
-            isStickyMode={isStickyMode}
-          />
-          {/* } */}
+            <ResultDisplay 
+              loading={loading}
+              result={result}
+              prompt={prompt}
+              handleTextChange={handleTextChange}
+              isStickyMode={isStickyMode}
+            />
         </div>
       </main>
 
@@ -562,6 +584,10 @@ function App() {
             onLanguageSave={handleLanguageChange} 
             open={openLanguageDialog} 
             onOpenChange={handleLanguageOpenChange} 
+          />
+          <SettingsPage
+            open={openSettings}
+            onClose={() => setOpenSettings(false)}
           />
         </>
       )}

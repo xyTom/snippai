@@ -142,8 +142,16 @@ function setupScreenshots(): void {
  * Registers keyboard shortcuts for screenshot functionality
  */
 function registerScreenshotShortcuts(): void {
-  // Register global shortcut for taking screenshots
-  globalShortcut.register("CommandOrControl+Shift+A", () => {
+  // Unregister any existing shortcuts first
+  globalShortcut.unregisterAll();
+  
+  // Get the shortcut from settings with fallback to default
+  const shortcutKey = getSettingValue('shortcuts.screenshot', "CommandOrControl+Shift+A");
+  
+  console.log('Registering screenshot shortcut:', shortcutKey);
+  
+  // Register the shortcut with the current key from settings
+  globalShortcut.register(shortcutKey, () => {
     // Skip if screenshot window is already focused
     if (screenshots.$win?.isFocused()) {
       return;
@@ -154,7 +162,7 @@ function registerScreenshotShortcuts(): void {
     if (!mainWindow?.isDestroyed()) {
       if (!mainWindow.isMinimized()) {
         screenshotDelay = 500;
-        }
+      }
       // Minimize main window before taking screenshot
       mainWindow.minimize();
     }
@@ -164,7 +172,6 @@ function registerScreenshotShortcuts(): void {
       screenshots.startCapture();
     }, screenshotDelay);
   });
-
 }
 
 /**
@@ -180,6 +187,22 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   screenshots.on("ok", (e: any, buffer: Uint8Array, bounds: any) => {
     const base64 = Buffer.from(buffer).toString("base64");
     console.log("Base64 image captured with scale factor:", scaleFactor);
+    
+    // Check app settings for auto-copy preference
+    const isAutoCopyDisabled = getSettingValue('general.autoCopyToClipboard') === false;
+    
+    // Handle auto-copy based on settings
+    if (isAutoCopyDisabled) {
+      // Prevent default behavior (copying to clipboard)
+      e.preventDefault();
+      console.log('Auto copy to clipboard is disabled');
+      
+      // Manually end capture since we prevented the default behavior
+      screenshots.endCapture();
+    } else {
+      // Use library's default implementation (copies to clipboard and ends capture)
+      console.log('Auto copy to clipboard is enabled');
+    }
 
     // Send screenshot data to renderer process
     if (!mainWindow?.isDestroyed()) {
@@ -400,6 +423,43 @@ function setupAppEventHandlers(): void {
 }
 
 /**
+ * Gets a setting value from the app settings file
+ * @param {string} path - The dot-notation path to the setting (e.g., 'general.autoCopyToClipboard')
+ * @param {any} defaultValue - The default value to return if the setting is not found
+ * @returns {any} The setting value or the default value
+ */
+function getSettingValue(path: string, defaultValue: any = null): any {
+  try {
+    const fs = require('fs');
+    const pathModule = require('path');
+    const settingsPath = pathModule.join(app.getPath('userData'), 'app-settings.json');
+    
+    if (!fs.existsSync(settingsPath)) {
+      return defaultValue;
+    }
+    
+    const data = fs.readFileSync(settingsPath, 'utf8');
+    const settings = JSON.parse(data);
+    
+    // Handle dot notation path (e.g., 'general.autoCopyToClipboard')
+    const parts = path.split('.');
+    let current = settings;
+    
+    for (const part of parts) {
+      if (current === undefined || current === null) {
+        return defaultValue;
+      }
+      current = current[part];
+    }
+    
+    return current !== undefined ? current : defaultValue;
+  } catch (error) {
+    console.error(`Error getting setting value for ${path}:`, error);
+    return defaultValue;
+  }
+}
+
+/**
  * 设置所有IPC处理程序
  */
 function setupIpcHandlers(): void {
@@ -448,6 +508,63 @@ function setupIpcHandlers(): void {
       win.webContents.openDevTools({ mode: 'detach' });
     }
     return true;
+  });
+  
+  
+  
+  // 获取应用程序设置
+  ipcMain.handle('get-app-settings', () => {
+    try {
+      const settings = app.getPath('userData');
+      const fs = require('fs');
+      const path = require('path');
+      const settingsPath = path.join(settings, 'app-settings.json');
+      
+      if (fs.existsSync(settingsPath)) {
+        const data = fs.readFileSync(settingsPath, 'utf8');
+        return JSON.parse(data);
+      }
+      
+      // 如果设置文件不存在，返回默认设置
+      const defaultSettings = {
+        shortcuts: {
+          screenshot: 'CommandOrControl+Shift+A'
+        },
+        general: {
+          autoCopyToClipboard: true
+        }
+      };
+      
+      return defaultSettings;
+    } catch (error) {
+      console.error('Error reading app settings:', error);
+      return null;
+    }
+  });
+  
+  // 保存应用程序设置
+  ipcMain.handle('save-app-settings', (_event, data) => {
+    try {
+      const settings = app.getPath('userData');
+      const fs = require('fs');
+      const path = require('path');
+      const settingsPath = path.join(settings, 'app-settings.json');
+      
+      fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2));
+      
+      // Update shortcuts after saving settings
+      registerScreenshotShortcuts();
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving app settings:', error);
+      return false;
+    }
+  });
+  
+  // 获取应用程序版本
+  ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
   });
 }
 

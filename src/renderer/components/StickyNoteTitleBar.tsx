@@ -2,8 +2,8 @@ import React from 'react';
 import { Pin, X } from "lucide-react";
 import DevTools from './icons/DevTools';
 
-// 检查是否在开发模式下
-const isDevelopment = window.electronAPI.isDevelopment;
+// Check if we're in development mode
+const isDevelopment = window.electronAPI?.isDevelopment;
 
 interface StickyNoteTitleBarProps {
   isPinned: boolean;
@@ -32,7 +32,7 @@ const StickyNoteTitleBar: React.FC<StickyNoteTitleBarProps> = ({ isPinned, toggl
         {isDevelopment && (
           <button 
             className="control-btn w-6 h-6 rounded-md bg-gray-800/90 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors flex items-center justify-center shadow-sm mr-2"
-            onClick={() => window.electronAPI.openDevTools()}
+            onClick={() => window.electronAPI?.openDevTools()}
           >
             <DevTools className="h-3.5 w-3.5" />
           </button>
