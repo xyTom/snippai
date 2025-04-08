@@ -20,7 +20,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
   general: {
     autoCopyToClipboard: true,
-    autoStart: false
+    autoStart: false,
+    horizontalLayout: false
   }
 };
 

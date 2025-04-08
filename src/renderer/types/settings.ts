@@ -23,4 +23,5 @@ export interface ShortcutSettings {
 export interface GeneralSettings {
   autoCopyToClipboard: boolean;
   autoStart: boolean;
+  horizontalLayout: boolean;
 }

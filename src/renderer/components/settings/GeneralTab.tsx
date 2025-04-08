@@ -83,6 +83,15 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           checked={settings.autoStart}
           onChange={(checked) => handleSettingChange('autoStart', checked)}
         />
+        
+        {/* Layout setting */}
+        <SettingToggle
+          id="horizontal-layout"
+          title="Horizontal Layout"
+          description="Display screenshot and results side by side instead of top to bottom"
+          checked={settings.horizontalLayout}
+          onChange={(checked) => handleSettingChange('horizontalLayout', checked)}
+        />
       </div>
 
       <div className="pt-4 flex justify-end gap-2">

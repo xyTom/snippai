@@ -83,6 +83,9 @@ function App() {
   // 设置页面状态
   const [openSettings, setOpenSettings] = useState(false);
   
+  // 布局设置
+  const [horizontalLayout, setHorizontalLayout] = useState(false);
+  
   // 工作线程引用
   const worker = useRef<Worker | null>(null);
   
@@ -324,8 +327,13 @@ function App() {
           // 如果没有设置，使用默认值
           setShortcut(window.navigator.platform === 'MacIntel' ? 'Command + Shift + A' : 'Ctrl + Shift + A');
         }
+        
+        // 加载布局设置
+        if (settings?.general?.horizontalLayout !== undefined) {
+          setHorizontalLayout(settings.general.horizontalLayout);
+        }
       } catch (error) {
-        console.error('Failed to load shortcut settings:', error);
+        console.error('Failed to load app settings:', error);
         // 加载失败时使用默认值
         setShortcut(window.navigator.platform === 'MacIntel' ? 'Command + Shift + A' : 'Ctrl + Shift + A');
       }
@@ -516,56 +524,107 @@ function App() {
           </>
         )}
         
-        {/* 显示截图标题 */}
-        {screenShotResult && !isStickyMode && (
-          <div className='pt-[2.5rem]'>
-            <Badge variant="secondary" className='mb-2 antialiased font-medium'>
-              <ImageIcon className="w-5 h-5 mr-1" />
-              Screenshot
-            </Badge>
-          </div>
-        )}
-        
-        <div className='max-w-[90%] h-full'>
+        <div className={`${horizontalLayout ? 'max-w-[95%]' : 'max-w-[90%]'} h-full`}>
           {/* 钉图模式标题栏占位 */}
           {isStickyMode && (
             <div className="titlebar-placeholder h-[45px]"></div>
           )}
-          {/* 显示截图 */}
-          {screenShotResult && (
-            <ScreenshotDisplay 
-              screenShotResult={screenShotResult}
-                showFloatingButton={showFloatingButton}
+          {/* 水平布局时的内容 */}
+          {horizontalLayout && screenShotResult && (
+            <div className="flex flex-col gap-4 w-full pt-[2.5rem]">
+              {/* 操作按钮 */}
+              <ActionButtons 
+                isStickyMode={isStickyMode}
+                loading={loading}
+                model={model}
+                result={result}
+                onError={onError}
+                screenShotResult={screenShotResult}
+                handlePromptChange={handlePromptChange}
+                recoginzeScreenshot={recoginzeScreenshot}
                 copyImageToClipboard={copyImageToClipboard}
                 imageCopied={imageCopied}
+                pinToScreen={pinToScreen}
+                clearScreenshot={clearScreenshot}
+                openApiKeyDialog={openApiKeyDialog}
               />
+              
+              {/* 截图和结果并排显示 */}
+              <div className="flex gap-4">
+                {/* 左侧截图区域 */}
+                <div className="flex-1 min-w-0">
+                  <ScreenshotDisplay 
+                    screenShotResult={screenShotResult}
+                    showFloatingButton={showFloatingButton}
+                    copyImageToClipboard={copyImageToClipboard}
+                    imageCopied={imageCopied}
+                  />
+                </div>
+                
+                {/* 右侧结果区域 */}
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <ResultDisplay 
+                    loading={loading}
+                    result={result}
+                    prompt={prompt}
+                    handleTextChange={handleTextChange}
+                    isStickyMode={isStickyMode}
+                  />
+                </div>
+              </div>
+            </div>
           )}
-
-          {/* 操作按钮 */}
-          <ActionButtons 
-            isStickyMode={isStickyMode}
-            loading={loading}
-            model={model}
-            result={result}
-            onError={onError}
-            screenShotResult={screenShotResult}
-            handlePromptChange={handlePromptChange}
-            recoginzeScreenshot={recoginzeScreenshot}
-            copyImageToClipboard={copyImageToClipboard}
-            imageCopied={imageCopied}
-            pinToScreen={pinToScreen}
-            clearScreenshot={clearScreenshot}
-            openApiKeyDialog={openApiKeyDialog}
-          />
           
-          {/* 结果显示 */}
-            <ResultDisplay 
-              loading={loading}
-              result={result}
-              prompt={prompt}
-              handleTextChange={handleTextChange}
-              isStickyMode={isStickyMode}
-            />
+          {/* 垂直布局时的内容 (默认布局) */}
+          {(!horizontalLayout || !screenShotResult) && (
+            <>
+              {/* 显示截图标题 */}
+              {screenShotResult && !isStickyMode && (
+                <div className='pt-[2.5rem]'>
+                  <Badge variant="secondary" className='mb-2 antialiased font-medium'>
+                    <ImageIcon className="w-5 h-5 mr-1" />
+                    Screenshot
+                  </Badge>
+                </div>
+              )}
+
+              {/* 显示截图 */}
+              {screenShotResult && (
+                <ScreenshotDisplay 
+                  screenShotResult={screenShotResult}
+                  showFloatingButton={showFloatingButton}
+                  copyImageToClipboard={copyImageToClipboard}
+                  imageCopied={imageCopied}
+                />
+              )}
+
+              {/* 操作按钮 */}
+              <ActionButtons 
+                isStickyMode={isStickyMode}
+                loading={loading}
+                model={model}
+                result={result}
+                onError={onError}
+                screenShotResult={screenShotResult}
+                handlePromptChange={handlePromptChange}
+                recoginzeScreenshot={recoginzeScreenshot}
+                copyImageToClipboard={copyImageToClipboard}
+                imageCopied={imageCopied}
+                pinToScreen={pinToScreen}
+                clearScreenshot={clearScreenshot}
+                openApiKeyDialog={openApiKeyDialog}
+              />
+              
+              {/* 结果显示 */}
+              <ResultDisplay 
+                loading={loading}
+                result={result}
+                prompt={prompt}
+                handleTextChange={handleTextChange}
+                isStickyMode={isStickyMode}
+              />
+            </>
+          )}
         </div>
       </main>
 
