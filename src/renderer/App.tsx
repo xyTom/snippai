@@ -491,7 +491,7 @@ function App() {
   // 渲染组件
   return (
     <div className={`App dark select-none ${isStickyMode ? 'sticky-mode' : ''}`}>
-      <main className={`App-header relative ${isStickyMode ? 'pt-5 h-full pb-4 overflow-y-auto' : ''}`}>
+      <main className={`App-header relative ${isStickyMode ? 'h-full overflow-y-auto' : ''} ${!horizontalLayout && isStickyMode ? 'pt-9 pb-2' : ''}`}>
         {/* 便签模式标题栏 */}
         {isStickyMode && (
           <StickyNoteTitleBar 
@@ -524,14 +524,11 @@ function App() {
           </>
         )}
         
-        <div className={`${horizontalLayout ? 'max-w-[95%]' : 'max-w-[90%]'} h-full`}>
-          {/* 钉图模式标题栏占位 */}
-          {isStickyMode && (
-            <div className="titlebar-placeholder h-[45px]"></div>
-          )}
+        <div className={`${horizontalLayout ? 'max-w-[95%] pt-16' : 'max-w-[90%]'} h-full`}>
+          {/* 钉图模式下不需要标题栏占位，因为我们已经在容器高度中减去了标题栏高度 */}
           {/* 水平布局时的内容 */}
           {horizontalLayout && screenShotResult && (
-            <div className="flex flex-col gap-4 w-full pt-[2.5rem]">
+            <div className="flex flex-col gap-4 w-full h-full">
               {/* 操作按钮 */}
               <ActionButtons 
                 isStickyMode={isStickyMode}
@@ -550,7 +547,7 @@ function App() {
               />
               
               {/* 截图和结果并排显示 */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-grow h-full">
                 {/* 左侧截图区域 */}
                 <div className="flex-1 min-w-0">
                   <ScreenshotDisplay 
@@ -562,13 +559,14 @@ function App() {
                 </div>
                 
                 {/* 右侧结果区域 */}
-                <div className="flex-1 min-w-0 flex flex-col">
+                <div className="flex-1 min-w-0 flex flex-col h-full">
                   <ResultDisplay 
                     loading={loading}
                     result={result}
                     prompt={prompt}
                     handleTextChange={handleTextChange}
                     isStickyMode={isStickyMode}
+                    horizontalLayout={horizontalLayout}
                   />
                 </div>
               </div>
@@ -622,6 +620,7 @@ function App() {
                 prompt={prompt}
                 handleTextChange={handleTextChange}
                 isStickyMode={isStickyMode}
+                horizontalLayout={horizontalLayout}
               />
             </>
           )}
@@ -647,6 +646,12 @@ function App() {
           <SettingsPage
             open={openSettings}
             onClose={() => setOpenSettings(false)}
+            onSettingsUpdate={(settings) => {
+              // Update layout setting immediately without restart
+              if (settings.general.horizontalLayout !== undefined) {
+                setHorizontalLayout(settings.general.horizontalLayout);
+              }
+            }}
           />
         </>
       )}

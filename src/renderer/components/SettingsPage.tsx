@@ -28,12 +28,13 @@ const DEFAULT_SETTINGS: AppSettings = {
 interface SettingsPageProps {
   open: boolean;
   onClose: () => void;
+  onSettingsUpdate?: (settings: AppSettings) => void;
 }
 
 /**
  * Settings page component that provides a UI for customizing application settings
  */
-const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUpdate }) => {
   // State management
   const [appSettings, setAppSettings] = React.useState<AppSettings>(DEFAULT_SETTINGS);
   const [activeTab, setActiveTab] = React.useState<SettingsTab>('general');
@@ -106,10 +107,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose }) => {
    * Update specific settings category
    */
   const updateSettings = <T extends keyof AppSettings>(category: T, newSettings: AppSettings[T]): void => {
-    setAppSettings((prevSettings: AppSettings) => ({
-      ...prevSettings,
-      [category]: newSettings
-    }));
+    setAppSettings((prevSettings: AppSettings) => {
+      const updatedSettings = {
+        ...prevSettings,
+        [category]: newSettings
+      };
+      
+      // Notify parent component about settings changes
+      if (onSettingsUpdate) {
+        onSettingsUpdate(updatedSettings);
+      }
+      
+      return updatedSettings;
+    });
   };
   
   // Handler functions

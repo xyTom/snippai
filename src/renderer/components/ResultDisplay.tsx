@@ -10,6 +10,7 @@ interface ResultDisplayProps {
   prompt: string;
   handleTextChange: (text: string) => void;
   isStickyMode?: boolean;
+  horizontalLayout?: boolean;
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ 
@@ -17,9 +18,10 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
   result, 
   prompt, 
   handleTextChange,
-  isStickyMode
+  isStickyMode,
+  horizontalLayout
 }) => (
-  <>
+  <div className={`${horizontalLayout ? 'h-full flex flex-col' : ''}`}>
     {loading && <LoadingSkeleton />}
     
     <MathJaxContext version={3} config={{
@@ -40,8 +42,8 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
       {(result && prompt === "Formula") && <DisplayLatex latex={result} />}
     </MathJaxContext>
     
-    {result && <DisplayTextResult text={result} onTextChange={handleTextChange} isStickyMode={isStickyMode} />}
-  </>
+    {result && <DisplayTextResult text={result} onTextChange={handleTextChange} isStickyMode={isStickyMode} horizontalLayout={horizontalLayout} />}
+  </div>
 );
 
 export default ResultDisplay; 

@@ -29,7 +29,7 @@ function createMainWindow(): BrowserWindow {
   
   // Configure the browser window
   const window = new BrowserWindow({
-    width: 800,
+    width: 830,
     height: 600,
     minWidth: 600,
     minHeight: 300,
@@ -296,11 +296,14 @@ function restorePreviousFocus(appName: string | null): void {
  * @returns {BrowserWindow} The sticky note window
  */
 function createStickyNoteWindow(screenshot: string, result: string | null): BrowserWindow {
+  // 检查布局设置
+  const isHorizontalLayout = getSettingValue('general.horizontalLayout', false);
+  
   // 创建一个新的浮动窗口
   const stickyNote = new BrowserWindow({
-    width: 400,
-    height: 500,
-    minWidth: 300,
+    width: isHorizontalLayout ? 700 : 400,
+    height: isHorizontalLayout ? 400 : 500,
+    minWidth: isHorizontalLayout ? 600 : 300,
     frame: false, // 无边框窗口
     backgroundColor: '#000000',
     resizable: true,
@@ -538,7 +541,17 @@ function setupIpcHandlers(): void {
   ipcMain.handle('resize-sticky-note', (_event, { width, height }) => {
     const win = BrowserWindow.fromWebContents(_event.sender);
     if (win) {
-      win.setSize(width, height);
+      // 检查布局设置
+      const isHorizontalLayout = getSettingValue('general.horizontalLayout', false);
+      
+      // 根据布局设置调整大小
+      if (isHorizontalLayout) {
+        // 水平布局时保持更宽的尺寸
+        const adjustedWidth = Math.max(width, 600);
+        win.setSize(adjustedWidth, height);
+      } else {
+        win.setSize(width, height);
+      }
     }
     return true;
   });
