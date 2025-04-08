@@ -1,6 +1,9 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
 import path from 'path';
 import * as Sentry from "@sentry/electron/main";
+import { logger, LogLevel, createLogger } from './utils/logger';
+import { DEFAULT_LANG, getLanguage } from './utils/i18n';
+import { ScreenshotsOpts } from './types/screenshots';
 
 // Initialize Sentry for error tracking
 Sentry.init({
@@ -119,9 +122,22 @@ function setupScreenshots(): void {
   const scaleFactor = primaryDisplay.scaleFactor;
   console.log('Primary Display Scale Factor:', scaleFactor);
 
-  // Initialize screenshot module
+  // Create a dedicated logger for screenshots module
+  const screenshotsLogger = createLogger({
+    namespace: 'snippai:screenshots',
+    level: LogLevel.DEBUG,
+    consoleOutput: true
+  });
+  
+  // Get language setting from app settings with fallback to English
+  const languageCode = getSettingValue('general.language', 'en');
+  const lang = getLanguage(languageCode);
+  
+  // Initialize screenshot module with options
   screenshots = new Screenshots({
     singleWindow: true,
+    lang: lang,
+    logger: screenshotsLogger.createLoggerFn()
   });
 
   // Set zoom factor when capture starts
@@ -179,14 +195,21 @@ function registerScreenshotShortcuts(): void {
  * @param {number} scaleFactor - The display scale factor
  */
 function setupScreenshotEventHandlers(scaleFactor: number): void {
-  // 保存之前活跃的应用程序信息
+  // Create a dedicated logger for screenshot event handlers
+  const eventLogger = createLogger({
+    namespace: 'snippai:screenshots:events',
+    level: LogLevel.DEBUG,
+    consoleOutput: true
+  });
+  
+  // Save previously active application information
   let previouslyFocusedApp: string | null = null;
-
 
   // Handle successful screenshot capture
   screenshots.on("ok", (e: any, buffer: Uint8Array, bounds: any) => {
     const base64 = Buffer.from(buffer).toString("base64");
-    console.log("Base64 image captured with scale factor:", scaleFactor);
+    eventLogger.info("Screenshot captured successfully");
+    eventLogger.debug("Base64 image captured with scale factor:", scaleFactor);
     
     // Check app settings for auto-copy preference
     const isAutoCopyDisabled = getSettingValue('general.autoCopyToClipboard') === false;
@@ -195,46 +218,50 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
     if (isAutoCopyDisabled) {
       // Prevent default behavior (copying to clipboard)
       e.preventDefault();
-      console.log('Auto copy to clipboard is disabled');
+      eventLogger.info('Auto copy to clipboard is disabled');
       
       // Manually end capture since we prevented the default behavior
       screenshots.endCapture();
     } else {
       // Use library's default implementation (copies to clipboard and ends capture)
-      console.log('Auto copy to clipboard is enabled');
+      eventLogger.info('Auto copy to clipboard is enabled');
     }
 
     // Send screenshot data to renderer process
     if (!mainWindow?.isDestroyed()) {
       mainWindow.webContents.send("screenshot-result", base64);
+      eventLogger.info('Screenshot sent to main window');
       showMainWindow();
     } else {
-      console.log('Main window is not available, creating new window');
+      eventLogger.warn('Main window is not available, creating new window');
       mainWindow = createMainWindow();
       //wait for window to be ready
       mainWindow.once('ready-to-show', () => {
         mainWindow.webContents.send("screenshot-result", base64);
+        eventLogger.info('Screenshot sent to new main window');
       });
     }
   });
 
   // Handle screenshot cancellation
   screenshots.on("cancel", () => {
-    console.log("Screenshot capture cancelled");
+    eventLogger.info("Screenshot capture cancelled");
     showMainWindow();
     
-    // 尝试将焦点还给之前的应用程序
+    // Restore focus to previously active application
     restorePreviousFocus(previouslyFocusedApp);
   });
 
   // Handle screenshot save
   screenshots.on("save", (e: any, buffer: Uint8Array, bounds: any) => {
-    console.log("Screenshot saved", bounds);
+    eventLogger.info("Screenshot saved");
+    eventLogger.debug("Screenshot bounds:", bounds);
   });
 
   // Handle after-save event
   screenshots.on("afterSave", (e: any, buffer: Uint8Array, bounds: any, isSaved: any) => {
-    console.log("Screenshot afterSave event", isSaved);
+    eventLogger.info("Screenshot afterSave event");
+    eventLogger.debug("Save status:", isSaved);
   });
   
   screenshots.on('windowCreated', ($win: Electron.BrowserWindow) => {
@@ -244,9 +271,9 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
           // 记录当前活跃的应用程序，以便稍后恢复
           const { execSync } = require('child_process');
           previouslyFocusedApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
-          console.log('Previously focused app:', previouslyFocusedApp);
+          eventLogger.debug('Previously focused app:', previouslyFocusedApp);
         } catch (error) {
-          console.error('Failed to get frontmost app:', error);
+          eventLogger.error('Failed to get frontmost app:', error);
           previouslyFocusedApp = null;
         }
         app.focus({steal: true});
@@ -266,8 +293,8 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
 }
 
 /**
- * 尝试将焦点还给之前的应用程序
- * @param {string | null} appName - 之前活跃的应用程序名称
+ * Attempt to restore focus to the previously active application
+ * @param {string | null} appName - Name of the previously active application
  */
 function restorePreviousFocus(appName: string | null): void {
   if (!appName || process.platform !== 'darwin') return;
@@ -278,13 +305,13 @@ function restorePreviousFocus(appName: string | null): void {
 
       exec(`osascript -e 'tell application "${appName}" to activate'`, (error: any) => {
         if (error) {
-          console.error('Failed to restore focus:', error);
+          logger.error('Failed to restore focus:', error);
         } else {
-          console.log('Focus restored to:', appName);
+          logger.info('Focus restored to:', appName);
         }
       });
     } catch (error) {
-      console.error('Error restoring focus:', error);
+      logger.error('Error restoring focus:', error);
     }
   }, 10); 
 }
@@ -296,15 +323,15 @@ function restorePreviousFocus(appName: string | null): void {
  * @returns {BrowserWindow} The sticky note window
  */
 function createStickyNoteWindow(screenshot: string, result: string | null): BrowserWindow {
-  // 检查布局设置
+  // Check layout settings
   const isHorizontalLayout = getSettingValue('general.horizontalLayout', false);
   
-  // 创建一个新的浮动窗口
+  // Create a new floating window
   const stickyNote = new BrowserWindow({
     width: isHorizontalLayout ? 700 : 400,
     height: isHorizontalLayout ? 400 : 500,
     minWidth: isHorizontalLayout ? 600 : 300,
-    frame: false, // 无边框窗口
+    frame: false, // Frameless window
     backgroundColor: '#000000',
     resizable: true,
     alwaysOnTop: true,
@@ -313,26 +340,26 @@ function createStickyNoteWindow(screenshot: string, result: string | null): Brow
       contextIsolation: true,
       nodeIntegration: true,
     },
-    skipTaskbar: true, // 不在任务栏显示
-    titleBarStyle: 'hidden', // 隐藏标题栏
-    transparent: true, // 背景透明
+    skipTaskbar: true, // Don't show in taskbar
+    titleBarStyle: 'hidden', // Hide title bar
+    transparent: true, // Transparent background
   });
 
-  // 加载主界面并传递isSticky参数（不包含大型数据如截图和结果）
+  // Load main interface and pass isSticky parameter (without large data like screenshot and result)
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    // 开发模式：添加查询参数
+    // Development mode: add query parameter
     stickyNote.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}?isSticky=true`);
   } else {
-    // 生产模式：使用hash参数
+    // Production mode: use hash parameter
     const filePath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
     stickyNote.loadFile(filePath, {
       hash: `isSticky=true`
     }).catch(err => {
-      console.error('Failed to load sticky note file:', err);
+      logger.error('Failed to load sticky note file:', err);
     });
   }
 
-  // 等待窗口准备好后，通过IPC发送截图和结果数据
+  // Wait for the window to be ready, then send screenshot and result data via IPC
   stickyNote.webContents.on('did-finish-load', () => {
     stickyNote.webContents.send('sticky-note-data', {
       screenshot,
@@ -340,13 +367,15 @@ function createStickyNoteWindow(screenshot: string, result: string | null): Brow
     });
   });
 
-  // 添加窗口关闭事件
+  // Add window close event
   stickyNote.on('closed', () => {
-    // 从数组中移除窗口引用
+    // Remove window reference from array
     stickyNotes = stickyNotes.filter(note => note !== stickyNote);
+    logger.debug('Sticky note closed, remaining notes:', stickyNotes.length);
   });
 
-  // 保存窗口引用
+  // Save window reference
+  logger.debug('Created new sticky note window');
   stickyNotes.push(stickyNote);
 
   if (process.platform === 'darwin') {
@@ -485,9 +514,7 @@ function setAutoStart(enable: boolean): boolean {
     
     // 设置自启动
     app.setLoginItemSettings({
-      openAtLogin: enable,
-      // macOS特有设置
-      openAsHidden: false, // 不以隐藏方式启动
+      openAtLogin: enable
     });
     
     console.log(`Auto-start ${enable ? 'enabled' : 'disabled'} successfully`);
