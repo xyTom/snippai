@@ -6,10 +6,12 @@ import { useToast } from './ui/use-toast';
 
 // Import custom components
 import SettingsNavigation, { SettingsTab, SettingsNavItem } from './settings/SettingsNavigation';
-import ShortcutsTab from './settings/ShortcutsTab';
+import KeyboardShortcutsTab from './settings/KeyboardShortcutsTab';
 import AboutTab from './settings/AboutTab';
 import GeneralTab from './settings/GeneralTab';
-import { AppSettings, ShortcutSettings, GeneralSettings } from './settings/ShortcutRecorder';
+
+// Import types
+import { AppSettings, ShortcutSettings, GeneralSettings } from '../types/settings';
 
 // Default settings values
 const DEFAULT_SETTINGS: AppSettings = {
@@ -17,7 +19,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     screenshot: 'CommandOrControl+Shift+A'
   },
   general: {
-    autoCopyToClipboard: true
+    autoCopyToClipboard: true,
+    autoStart: false
   }
 };
 
@@ -102,7 +105,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose }) => {
    * Update specific settings category
    */
   const updateSettings = <T extends keyof AppSettings>(category: T, newSettings: AppSettings[T]): void => {
-    setAppSettings(prevSettings => ({
+    setAppSettings((prevSettings: AppSettings) => ({
       ...prevSettings,
       [category]: newSettings
     }));
@@ -163,7 +166,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose }) => {
             )}
 
             {activeTab === 'shortcuts' && (
-              <ShortcutsTab 
+              <KeyboardShortcutsTab 
                 settings={appSettings.shortcuts}
                 onSettingsChange={handleShortcutChange}
                 onSave={saveSettings}

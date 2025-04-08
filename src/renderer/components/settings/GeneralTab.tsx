@@ -1,8 +1,44 @@
 import * as React from 'react';
 import { Switch } from "../ui/switch";
-import { GeneralSettings } from './ShortcutRecorder';
 import { Button } from '../ui/button';
 import { Check } from "lucide-react";
+
+// Import types
+import { GeneralSettings } from '../../types/settings';
+
+// Reusable setting toggle component
+interface SettingToggleProps {
+  title: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  id: string;
+}
+
+/**
+ * Reusable setting toggle component with consistent styling
+ */
+const SettingToggle: React.FC<SettingToggleProps> = ({
+  title,
+  description,
+  checked,
+  onChange,
+  id
+}) => (
+  <div className="flex items-center justify-between p-4 rounded-md bg-muted/10">
+    <div className="space-y-0.5">
+      <h3 className="text-sm font-medium">{title}</h3>
+      <p className="text-xs text-muted-foreground">
+        {description}
+      </p>
+    </div>
+    <Switch 
+      id={id}
+      checked={checked}
+      onCheckedChange={onChange}
+    />
+  </div>
+);
 
 interface GeneralTabProps {
   settings: GeneralSettings;
@@ -31,21 +67,22 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
     <div className="space-y-6 mt-6">
       <div className="space-y-4">
         {/* Auto copy to clipboard setting */}
-        <div className="flex items-center justify-between p-4 rounded-md bg-muted/10">
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-medium">Auto Copy to Clipboard</h3>
-            <p className="text-xs text-muted-foreground">
-              Automatically copy screenshots to clipboard for easy pasting
-            </p>
-          </div>
-          <Switch 
-            id="auto-copy"
-            checked={settings.autoCopyToClipboard}
-            onCheckedChange={(checked: boolean) => {
-              handleSettingChange('autoCopyToClipboard', checked);
-            }}
-          />
-        </div>
+        <SettingToggle
+          id="auto-copy"
+          title="Auto Copy to Clipboard"
+          description="Automatically copy screenshots to clipboard for easy pasting"
+          checked={settings.autoCopyToClipboard}
+          onChange={(checked) => handleSettingChange('autoCopyToClipboard', checked)}
+        />
+        
+        {/* Auto start setting */}
+        <SettingToggle
+          id="auto-start"
+          title="Auto Start"
+          description="Set the application to start automatically when the system boots"
+          checked={settings.autoStart}
+          onChange={(checked) => handleSettingChange('autoStart', checked)}
+        />
       </div>
 
       <div className="pt-4 flex justify-end gap-2">

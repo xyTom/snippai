@@ -3,13 +3,13 @@ import { Check } from "lucide-react";
 import { Button } from '../ui/button';
 import { useToast } from '../ui/use-toast';
 
-// Import renamed component
-import KeyboardShortcutInput from './ShortcutRecorder';
+// Import keyboard shortcut input component
+import KeyboardShortcutInput from './KeyboardShortcutInput';
 
 // Import types
 import { ShortcutSettings } from '../../types/settings';
 
-interface ShortcutsTabProps {
+interface KeyboardShortcutsTabProps {
   settings: ShortcutSettings;
   onSettingsChange: (settings: ShortcutSettings) => void;
   onSave: () => Promise<void>;
@@ -20,7 +20,7 @@ interface ShortcutsTabProps {
 /**
  * Keyboard shortcuts configuration tab component
  */
-const KeyboardShortcutsTab: React.FC<ShortcutsTabProps> = ({
+const KeyboardShortcutsTab: React.FC<KeyboardShortcutsTabProps> = ({
   settings,
   onSettingsChange,
   onSave,
@@ -45,8 +45,6 @@ const KeyboardShortcutsTab: React.FC<ShortcutsTabProps> = ({
         onChange={handleShortcutChange}
         onReset={onReset}
       />
-
-
 
       <div className="pt-4 flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} size="sm">Cancel</Button>

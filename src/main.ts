@@ -460,6 +460,60 @@ function getSettingValue(path: string, defaultValue: any = null): any {
 }
 
 /**
+ * 设置应用程序自启动
+ * @param {boolean} enable - 是否启用自启动
+ * @returns {boolean} 操作是否成功
+ */
+function setAutoStart(enable: boolean): boolean {
+  // 开发环境下不实际设置自启动，但返回成功以便于测试
+  if (!app.isPackaged) {
+    console.log(`[DEV] Auto-start would be ${enable ? 'enabled' : 'disabled'} in packaged app`);
+    return true;
+  }
+
+  try {
+    // 获取当前自启动状态
+    const currentState = app.getLoginItemSettings();
+    
+    // 如果当前状态与目标状态相同，无需更改
+    if (currentState.openAtLogin === enable) {
+      return true;
+    }
+    
+    // 设置自启动
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      // macOS特有设置
+      openAsHidden: false, // 不以隐藏方式启动
+    });
+    
+    console.log(`Auto-start ${enable ? 'enabled' : 'disabled'} successfully`);
+    return true;
+  } catch (error) {
+    console.error('Error setting auto-start:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取应用程序自启动状态
+ * @returns {boolean} 是否启用了自启动
+ */
+function getAutoStartStatus(): boolean {
+  // 开发环境下始终返回关闭状态
+  if (!app.isPackaged) {
+    return false;
+  }
+  
+  try {
+    return app.getLoginItemSettings().openAtLogin;
+  } catch (error) {
+    console.error('Error getting auto-start status:', error);
+    return false;
+  }
+}
+
+/**
  * 设置所有IPC处理程序
  */
 function setupIpcHandlers(): void {
@@ -515,27 +569,64 @@ function setupIpcHandlers(): void {
   // 获取应用程序设置
   ipcMain.handle('get-app-settings', () => {
     try {
-      const settings = app.getPath('userData');
       const fs = require('fs');
       const path = require('path');
-      const settingsPath = path.join(settings, 'app-settings.json');
+      const userDataPath = app.getPath('userData');
+      const settingsPath = path.join(userDataPath, 'app-settings.json');
       
-      if (fs.existsSync(settingsPath)) {
-        const data = fs.readFileSync(settingsPath, 'utf8');
-        return JSON.parse(data);
-      }
-      
-      // 如果设置文件不存在，返回默认设置
+      // 默认设置
       const defaultSettings = {
         shortcuts: {
           screenshot: 'CommandOrControl+Shift+A'
         },
         general: {
-          autoCopyToClipboard: true
+          autoCopyToClipboard: true,
+          autoStart: false
         }
       };
       
-      return defaultSettings;
+      // 如果设置文件不存在，返回默认设置
+      if (!fs.existsSync(settingsPath)) {
+        // 获取实际的自启动状态并设置到默认设置中
+        defaultSettings.general.autoStart = getAutoStartStatus();
+        return defaultSettings;
+      }
+      
+      // 读取已存在的设置文件
+      const data = fs.readFileSync(settingsPath, 'utf8');
+      let savedSettings;
+      
+      try {
+        savedSettings = JSON.parse(data);
+      } catch (parseError) {
+        console.error('Error parsing settings file, using defaults:', parseError);
+        return defaultSettings;
+      }
+      
+      // 确保设置完整性
+      if (!savedSettings.general) {
+        savedSettings.general = defaultSettings.general;
+      }
+      
+      if (!savedSettings.shortcuts) {
+        savedSettings.shortcuts = defaultSettings.shortcuts;
+      }
+      
+      // 确保自启动状态存在
+      if (savedSettings.general.autoStart === undefined) {
+        savedSettings.general.autoStart = getAutoStartStatus();
+      } else {
+        // 获取实际的自启动状态
+        const actualAutoStartStatus = getAutoStartStatus();
+        
+        // 如果存储的状态与实际状态不一致，更新存储的状态
+        if (savedSettings.general.autoStart !== actualAutoStartStatus) {
+          savedSettings.general.autoStart = actualAutoStartStatus;
+          fs.writeFileSync(settingsPath, JSON.stringify(savedSettings, null, 2));
+        }
+      }
+      
+      return savedSettings;
     } catch (error) {
       console.error('Error reading app settings:', error);
       return null;
@@ -545,16 +636,39 @@ function setupIpcHandlers(): void {
   // 保存应用程序设置
   ipcMain.handle('save-app-settings', (_event, data) => {
     try {
-      const settings = app.getPath('userData');
+      // 验证数据完整性
+      if (!data || typeof data !== 'object') {
+        console.error('Invalid settings data received');
+        return false;
+      }
+
       const fs = require('fs');
       const path = require('path');
-      const settingsPath = path.join(settings, 'app-settings.json');
+      const userDataPath = app.getPath('userData');
+      const settingsPath = path.join(userDataPath, 'app-settings.json');
       
+      // 处理自启动设置
+      if (data.general && typeof data.general.autoStart === 'boolean') {
+        // 更新系统自启动设置
+        const success = setAutoStart(data.general.autoStart);
+        if (!success) {
+          console.warn('Failed to set auto-start, but will continue saving settings');
+        }
+      }
+      
+      // 确保设置目录存在
+      const settingsDir = path.dirname(settingsPath);
+      if (!fs.existsSync(settingsDir)) {
+        fs.mkdirSync(settingsDir, { recursive: true });
+      }
+      
+      // 写入设置文件
       fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2));
       
-      // Update shortcuts after saving settings
+      // 更新快捷键
       registerScreenshotShortcuts();
       
+      console.log('Settings saved successfully');
       return true;
     } catch (error) {
       console.error('Error saving app settings:', error);
