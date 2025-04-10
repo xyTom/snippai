@@ -59,7 +59,7 @@ export default function DisplayTextResult({
       return {
         height: '100%',
         minHeight: '300px',
-        maxHeight: '600px',
+        maxHeight: '100%',
         overflowY: 'auto' as const
       };
     }
