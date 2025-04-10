@@ -637,18 +637,20 @@ function App() {
           {screenShotResult && (
             <div className="mt-4 w-full flex-1 flex flex-col">
               {horizontalLayout ? (
-                <div className="flex gap-4 w-full flex-1 h-full mt-4">
+                <div className="flex gap-4 w-full flex-1 h-full mt-4 ">
                   {/* 左侧截图区域 */}
-                  <div className="flex-1 min-w-0">
-                    <ScreenshotDisplay
-                      screenShotResult={screenShotResult}
-                      showFloatingButton={showFloatingButton}
-                      copyImageToClipboard={copyImageToClipboard}
-                      imageCopied={imageCopied}
-                    />
+                  <div className="flex-1 min-w-0 flex items-center justify-center self-center">
+                    <div className="mb-6">
+                      <ScreenshotDisplay
+                        screenShotResult={screenShotResult}
+                        showFloatingButton={showFloatingButton}
+                        copyImageToClipboard={copyImageToClipboard}
+                        imageCopied={imageCopied}
+                      />
+                    </div>
                   </div>
                   {/* 右侧结果区域 */}
-                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden justify-center ">
                     <ResultDisplay
                       loading={loading}
                       result={result}
