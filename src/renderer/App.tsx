@@ -607,9 +607,9 @@ function App() {
             </div>
           )}
           {/* ActionButtons */}
-          {horizontalLayout ? (
+          {horizontalLayout && screenShotResult ? (
             <div
-              className="w-full z-30 sticky top-0 bg-black pt-2"
+              className="w-full z-30 sticky top-0 bg-black pt-2  top-[3.0rem]"
               style={{ zIndex: 30 }}
             >
               <ActionButtons
