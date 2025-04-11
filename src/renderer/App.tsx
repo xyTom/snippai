@@ -542,7 +542,7 @@ function App() {
     <div
       className={`App dark select-none ${isStickyMode ? "sticky-mode" : ""}`}
     >
-      <main className="App-header min-h-screen flex flex-col items-center justify-start relative overflow-y-auto">
+      <main className="App-header min-h-screen flex flex-col items-center  relative overflow-y-auto">
         {/* 便签模式标题栏 */}
         {isStickyMode && (
           <StickyNoteTitleBar
@@ -637,7 +637,13 @@ function App() {
           {screenShotResult && (
             <div className="mt-4 w-full flex-1 flex flex-col">
               {horizontalLayout ? (
-                <div className="flex gap-4 w-full flex-1 h-full mt-4 ">
+                <div
+                  className={`flex gap-4 w-full flex-1 ${
+                    isStickyMode
+                      ? "overflow-y-auto max-h-[calc(100vh-3rem)]"
+                      : "h-full mt-4"
+                  }`}
+                >
                   {/* 左侧截图区域 */}
                   <div className="flex-1 min-w-0 flex items-center justify-center self-center">
                     <div className="mb-6">
@@ -678,45 +684,52 @@ function App() {
                     </div>
                   )}
                   {/* 显示截图 */}
+                  <div
+                    className={`${
+                      isStickyMode
+                        ? "overflow-y-auto max-h-[calc(100vh-3rem)]"
+                        : "h-full"
+                    }`}
+                  >
+                    <ScreenshotDisplay
+                      screenShotResult={screenShotResult}
+                      showFloatingButton={showFloatingButton}
+                      copyImageToClipboard={copyImageToClipboard}
+                      imageCopied={imageCopied}
+                    />
+                    {/* ActionButtons */}
+                    {!horizontalLayout && (
+                      <div className="py-4">
+                        <ActionButtons
+                          isStickyMode={isStickyMode}
+                          loading={loading}
+                          model={model}
+                          result={result}
+                          onError={onError}
+                          screenShotResult={screenShotResult}
+                          handlePromptChange={handlePromptChange}
+                          recoginzeScreenshot={recoginzeScreenshot}
+                          copyImageToClipboard={copyImageToClipboard}
+                          imageCopied={imageCopied}
+                          pinToScreen={pinToScreen}
+                          clearScreenshot={clearScreenshot}
+                          openApiKeyDialog={openApiKeyDialog}
+                        />
+                      </div>
+                    )}
 
-                  <ScreenshotDisplay
-                    screenShotResult={screenShotResult}
-                    showFloatingButton={showFloatingButton}
-                    copyImageToClipboard={copyImageToClipboard}
-                    imageCopied={imageCopied}
-                  />
-                  {/* ActionButtons */}
-                  {!horizontalLayout && (
-                    <div className="py-4">
-                      <ActionButtons
-                        isStickyMode={isStickyMode}
+                    {/* 结果显示 */}
+
+                    <div className="flex-1 w-full flex flex-col">
+                      <ResultDisplay
                         loading={loading}
-                        model={model}
                         result={result}
-                        onError={onError}
-                        screenShotResult={screenShotResult}
-                        handlePromptChange={handlePromptChange}
-                        recoginzeScreenshot={recoginzeScreenshot}
-                        copyImageToClipboard={copyImageToClipboard}
-                        imageCopied={imageCopied}
-                        pinToScreen={pinToScreen}
-                        clearScreenshot={clearScreenshot}
-                        openApiKeyDialog={openApiKeyDialog}
+                        prompt={prompt}
+                        handleTextChange={handleTextChange}
+                        isStickyMode={isStickyMode}
+                        horizontalLayout={horizontalLayout}
                       />
                     </div>
-                  )}
-
-                  {/* 结果显示 */}
-
-                  <div className="flex-1 w-full flex flex-col">
-                    <ResultDisplay
-                      loading={loading}
-                      result={result}
-                      prompt={prompt}
-                      handleTextChange={handleTextChange}
-                      isStickyMode={isStickyMode}
-                      horizontalLayout={horizontalLayout}
-                    />
                   </div>
                 </>
               )}
