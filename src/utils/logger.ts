@@ -7,11 +7,11 @@ import debug from 'debug';
 
 // Define the Debugger interface for use in this file
 type DebuggerInstance = {
-  (message: string, ...args: any[]): void;
+  (message: string, ...args: unknown[]): void;
   enabled: boolean;
   namespace: string;
   extend: (namespace: string) => DebuggerInstance;
-  log: (...args: any[]) => void;
+  log: (...args: unknown[]) => void;
   color: string;
 };
 
@@ -34,7 +34,7 @@ export interface LoggerConfig {
   namespace?: string;
   // Custom formatters for different log levels
   formatters?: {
-    [key in 'debug' | 'info' | 'warn' | 'error']?: (message: string, ...args: any[]) => string;
+    [key in 'debug' | 'info' | 'warn' | 'error']?: (message: string, ...args: unknown[]) => string;
   };
 }
 
@@ -44,10 +44,10 @@ const DEFAULT_CONFIG: LoggerConfig = {
   consoleOutput: true,
   namespace: 'snippai',
   formatters: {
-    debug: (message: string, ...args: any[]) => `[DEBUG] ${message}`,
-    info: (message: string, ...args: any[]) => `[INFO] ${message}`,
-    warn: (message: string, ...args: any[]) => `[WARN] ${message}`,
-    error: (message: string, ...args: any[]) => `[ERROR] ${message}`,
+    debug: (message: string, ...args: unknown[]) => `[DEBUG] ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}`,
+    info: (message: string, ...args: unknown[]) => `[INFO] ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}`,
+    warn: (message: string, ...args: unknown[]) => `[WARN] ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}`,
+    error: (message: string, ...args: unknown[]) => `[ERROR] ${message} ${args.map(arg => JSON.stringify(arg)).join(' ')}`,
   }
 };
 
@@ -81,7 +81,7 @@ export class SnippaiLogger {
    * @param message Message to log
    * @param args Additional arguments
    */
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.config.level !== undefined && this.config.level <= LogLevel.DEBUG) {
       const formattedMessage = this.config.formatters?.debug 
         ? this.config.formatters.debug(message, ...args)
@@ -100,7 +100,7 @@ export class SnippaiLogger {
    * @param message Message to log
    * @param args Additional arguments
    */
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.config.level !== undefined && this.config.level <= LogLevel.INFO) {
       const formattedMessage = this.config.formatters?.info 
         ? this.config.formatters.info(message, ...args)
@@ -119,7 +119,7 @@ export class SnippaiLogger {
    * @param message Message to log
    * @param args Additional arguments
    */
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.config.level !== undefined && this.config.level <= LogLevel.WARN) {
       const formattedMessage = this.config.formatters?.warn 
         ? this.config.formatters.warn(message, ...args)
@@ -138,7 +138,7 @@ export class SnippaiLogger {
    * @param message Message to log
    * @param args Additional arguments
    */
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.config.level !== undefined && this.config.level <= LogLevel.ERROR) {
       const formattedMessage = this.config.formatters?.error 
         ? this.config.formatters.error(message, ...args)
@@ -178,7 +178,7 @@ export class SnippaiLogger {
    * @param level Log level to use
    * @returns A logger function
    */
-  createLoggerFn(level: LogLevel = LogLevel.INFO): (...args: any[]) => void {
+  createLoggerFn(level: LogLevel = LogLevel.INFO): (...args: unknown[]) => void {
     switch (level) {
       case LogLevel.DEBUG:
         return this.debug.bind(this);
@@ -189,7 +189,7 @@ export class SnippaiLogger {
       case LogLevel.ERROR:
         return this.error.bind(this);
       default:
-        return () => {}; // No-op logger
+        return (): void => { /* No operation */ };
     }
   }
 }

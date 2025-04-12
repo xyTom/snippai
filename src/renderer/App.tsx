@@ -74,7 +74,7 @@ function App() {
   const [prompt, setPrompt] = useState("Auto");
 
   // API密钥管理
-  let keyMap = useMemo(() => {
+  const keyMap = useMemo(() => {
     const map = new Map();
     models.forEach((model) => {
       if (model.requireApiKey) {
@@ -355,7 +355,7 @@ function App() {
         const settings = await window.electronAPI?.getAppSettings();
         if (settings?.shortcuts?.screenshot) {
           // 格式化快捷键显示
-          let formattedShortcut = settings.shortcuts.screenshot
+          const formattedShortcut = settings.shortcuts.screenshot
             .replace(
               "CommandOrControl",
               window.navigator.platform === "MacIntel" ? "Command" : "Ctrl"

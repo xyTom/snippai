@@ -19,15 +19,12 @@ import {
 } from "../components/ui/popover"
 import { models } from "../lib/models"
 
-export default function selectModel(props:{handleModelChange:Function}) {
+export default function selectModel(props:{handleModelChange:(model: string) => void}) {
   const [open, setOpen] = React.useState(false)
   //read the model from local storage
   let model = localStorage.getItem("model")
-  if (model && models.find((m) => m.value === model)) {
-    model = model
-  }else{
-    model = "gemini"
-  }
+  // 使用空值合并运算符和三元运算符优化代码逻辑
+  model = models.find((m) => m.value === model) ? model : "gemini";
   const [value, setValue] = React.useState(model)
   
   //when the model is updated, update the parent state

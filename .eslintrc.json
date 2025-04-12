@@ -17,7 +17,8 @@
     "import/resolver": {
       "typescript": {},
       "alias": [
-        ["@", "./src"]
+        ["@", "./src"],
+        ["@components", "./src/components"]
       ]
     }
   }

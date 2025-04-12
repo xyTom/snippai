@@ -26,7 +26,7 @@ export default function displayTextResult(props: { apikey: string, onKeySave: (a
     }
     //read the base URL from local storage
     React.useEffect(() => {
-        let baseURL = localStorage.getItem(`${props.model}_baseURL`);
+        const baseURL = localStorage.getItem(`${props.model}_baseURL`);
         console.log(`${props.model}_baseURL`,baseURL);
         if (baseURL) {
             setBaseURL(baseURL);

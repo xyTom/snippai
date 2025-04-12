@@ -1,19 +1,21 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, screen } from 'electron';
 import path from 'path';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import { DEFAULT_LANG, getLanguage } from './utils/i18n';
 import { ScreenshotsOpts } from './types/screenshots';
+import fs from 'fs';
+import { exec, execSync } from 'child_process';
+import Screenshots from 'electron-screenshots';
+import electronSquirrelStartup from 'electron-squirrel-startup';
 
 // Initialize Sentry for error tracking
 Sentry.init({
   dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
 });
 
-const Screenshots = require('electron-screenshots');
-
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (require('electron-squirrel-startup')) {
+if (electronSquirrelStartup) {
   app.quit();
 }
 
@@ -117,7 +119,6 @@ function showMainWindow(): void {
  * Sets up screenshot functionality
  */
 function setupScreenshots(): void {
-  const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const scaleFactor = primaryDisplay.scaleFactor;
   console.log('Primary Display Scale Factor:', scaleFactor);
@@ -269,7 +270,6 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
       if (process.platform === 'darwin') {
         try {
           // 记录当前活跃的应用程序，以便稍后恢复
-          const { execSync } = require('child_process');
           previouslyFocusedApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
           eventLogger.debug('Previously focused app:', previouslyFocusedApp);
         } catch (error) {
@@ -301,8 +301,6 @@ function restorePreviousFocus(appName: string | null): void {
   
   setTimeout(() => {
     try {
-      const { exec } = require('child_process');
-
       exec(`osascript -e 'tell application "${appName}" to activate'`, (error: any) => {
         if (error) {
           logger.error('Failed to restore focus:', error);
@@ -456,15 +454,13 @@ function setupAppEventHandlers(): void {
 
 /**
  * Gets a setting value from the app settings file
- * @param {string} path - The dot-notation path to the setting (e.g., 'general.autoCopyToClipboard')
+ * @param {string} settingPath - The dot-notation path to the setting (e.g., 'general.autoCopyToClipboard')
  * @param {any} defaultValue - The default value to return if the setting is not found
  * @returns {any} The setting value or the default value
  */
-function getSettingValue(path: string, defaultValue: any = null): any {
+function getSettingValue(settingPath: string, defaultValue: any = null): any {
   try {
-    const fs = require('fs');
-    const pathModule = require('path');
-    const settingsPath = pathModule.join(app.getPath('userData'), 'app-settings.json');
+    const settingsPath = path.join(app.getPath('userData'), 'app-settings.json');
     
     if (!fs.existsSync(settingsPath)) {
       return defaultValue;
@@ -474,7 +470,7 @@ function getSettingValue(path: string, defaultValue: any = null): any {
     const settings = JSON.parse(data);
     
     // Handle dot notation path (e.g., 'general.autoCopyToClipboard')
-    const parts = path.split('.');
+    const parts = settingPath.split('.');
     let current = settings;
     
     for (const part of parts) {
@@ -486,7 +482,7 @@ function getSettingValue(path: string, defaultValue: any = null): any {
     
     return current !== undefined ? current : defaultValue;
   } catch (error) {
-    console.error(`Error getting setting value for ${path}:`, error);
+    console.error(`Error getting setting value for ${settingPath}:`, error);
     return defaultValue;
   }
 }
@@ -604,13 +600,9 @@ function setupIpcHandlers(): void {
     return true;
   });
   
-  
-  
   // 获取应用程序设置
   ipcMain.handle('get-app-settings', () => {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const userDataPath = app.getPath('userData');
       const settingsPath = path.join(userDataPath, 'app-settings.json');
       
@@ -682,8 +674,6 @@ function setupIpcHandlers(): void {
         return false;
       }
 
-      const fs = require('fs');
-      const path = require('path');
       const userDataPath = app.getPath('userData');
       const settingsPath = path.join(userDataPath, 'app-settings.json');
       

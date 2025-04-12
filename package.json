@@ -38,6 +38,7 @@
     "autoprefixer": "^10.4.19",
     "electron": "^34.2.0",
     "eslint": "^8.0.1",
+    "eslint-import-resolver-alias": "^1.1.2",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
     "husky": "^9.0.11",
