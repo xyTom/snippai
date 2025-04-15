@@ -41,7 +41,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   if (isStickyMode) return null;
   
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-2 mb-2 justify-center items-center">
+<div className="flex flex-nowrap gap-x-4 gap-y-2 mb-2 justify-center items-center overflow-x-auto">
       <div>
         <PromptSelect handlePromptChange={handlePromptChange} model={model} disabled={loading}/>
       </div>

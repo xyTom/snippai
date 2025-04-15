@@ -573,7 +573,7 @@ function App() {
         )}
 
         {/* 显示logo或引导文本 */}
-        <div className="flex-1 flex flex-col items-center justify-center w-full max-w-[90%] mx-auto pt-6 h-full">
+        <div className="flex-1 flex flex-col items-center justify-center w-full mx-auto pt-6 h-full">
           {!isStickyMode && !screenShotResult && (
             <>
               <img src={logo} className="App-logo select-none" alt="logo" />
