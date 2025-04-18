@@ -1,6 +1,6 @@
-import { Textarea } from "./ui/textarea"
-import { Button } from "./ui/button"
-import React, { useEffect, useRef, useState, ChangeEvent } from "react"
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
+import React, { useEffect, useRef, useState, ChangeEvent } from "react";
 
 interface DisplayTextResultProps {
   text: string;
@@ -9,100 +9,107 @@ interface DisplayTextResultProps {
   horizontalLayout?: boolean;
 }
 
-export default function DisplayTextResult({ 
-  text, 
-  onTextChange, 
-  isStickyMode = false, 
-  horizontalLayout = false 
+export default function DisplayTextResult({
+  text,
+  onTextChange,
+  isStickyMode = false,
+  horizontalLayout = false,
 }: DisplayTextResultProps) {
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onTextChange(event.target.value);
   };
-  
+
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1000);
   };
-  
+
   // 自动调整文本框高度的函数
   const adjustTextareaHeight = () => {
     // 在钉图模式或水平布局模式下不自动调整高度
     if (isStickyMode || horizontalLayout) return;
-    
+
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   };
-  
+
   // 当文本内容变化时调整高度
   useEffect(() => {
     adjustTextareaHeight();
   }, [text, isStickyMode, horizontalLayout]);
-  
+
   // 计算特定模式下的样式和属性
   const getTextareaStyles = () => {
     if (isStickyMode) {
       return {
-        height: 'auto',
-        overflowY: 'auto' as const,
-        fontSize: '0.9rem'
+        height: "auto",
+        overflowY: "auto" as const,
+        fontSize: "0.9rem",
       };
     }
-    
+
     if (horizontalLayout) {
       return {
-        height: '100%',
-        minHeight: '300px',
-        maxHeight: '100%',
-        overflowY: 'auto' as const
+        maxHeight: "100%",
+        overflowY: "auto" as const,
       };
     }
-    
+
     return undefined;
   };
-  
+
   // Compute class names based on props
   const containerClasses = [
-    'flex w-full min-w-60 flex-col mb-3 pb-3',
-    isStickyMode ? 'gap-1' : 'gap-2',
-  !horizontalLayout && !isStickyMode ? 'min-h-70' : '',
-    horizontalLayout ? 'h-full' : ''
-  ].filter(Boolean).join(' ');
-  
+    "flex w-full min-w-60 flex-col mb-3 pb-3",
+    isStickyMode ? "gap-1" : "gap-2",
+    !horizontalLayout && !isStickyMode ? "min-h-70" : "",
+    horizontalLayout ? "h-full" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const textareaClasses = [
-    'w-full antialiased font-medium',
-    isStickyMode ? 'text-sm' : 'text-lg',
-    isStickyMode || horizontalLayout ? '' : 'overflow-hidden',
-    horizontalLayout ? '!h-full' : ''
-  ].filter(Boolean).join(' ');
-  
-  const iconSize = isStickyMode ? 'w-4 h-4' : 'w-5 h-5';
-  
+    "w-full antialiased font-medium",
+    isStickyMode ? "text-sm" : "text-lg",
+    isStickyMode || horizontalLayout ? "" : "overflow-hidden",
+    horizontalLayout ? "!h-full" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const iconSize = isStickyMode ? "w-4 h-4" : "w-5 h-5";
+
   return (
     <div className={containerClasses}>
-      <Textarea 
+      <Textarea
         ref={textareaRef}
-        value={text} 
+        value={text}
         className={textareaClasses}
-        onChange={handleTextChange} 
+        onChange={handleTextChange}
         style={getTextareaStyles()}
       />
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         size={isStickyMode ? "sm" : "default"}
         className={isStickyMode ? "h-8 py-0" : ""}
-        onClick={handleCopy}>
-        {copied ? <ClipboardCheckIcon className={iconSize} /> : <ClipboardIcon className={iconSize} />}
+        onClick={handleCopy}
+      >
+        {copied ? (
+          <ClipboardCheckIcon className={iconSize} />
+        ) : (
+          <ClipboardIcon className={iconSize} />
+        )}
         <span>Copy</span>
       </Button>
     </div>
-  )
+  );
 }
 
 // Icon components

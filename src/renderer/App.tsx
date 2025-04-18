@@ -542,7 +542,14 @@ function App() {
     <div
       className={`App dark select-none ${isStickyMode ? "sticky-mode" : ""}`}
     >
-      <main className="App-header min-h-screen flex flex-col items-center  relative overflow-y-auto">
+      <main
+        className={`App-header ${
+          horizontalLayout
+            ? "h-screen overflow-hidden"
+            : "min-h-screen overflow-y-auto"
+        } flex flex-col items-center relative`}
+      >
+        {" "}
         {/* 便签模式标题栏 */}
         {isStickyMode && (
           <StickyNoteTitleBar
@@ -550,7 +557,6 @@ function App() {
             toggleStickyNotePin={toggleStickyNotePin}
           />
         )}
-
         {/* 普通模式头部UI */}
         {!isStickyMode && (
           <div
@@ -571,7 +577,6 @@ function App() {
             </div>
           </div>
         )}
-
         {/* 显示logo或引导文本 */}
         <div className="flex-1 flex flex-col items-center justify-center w-full mx-auto pt-6 h-full">
           {!isStickyMode && !screenShotResult && (
@@ -609,7 +614,7 @@ function App() {
           {/* ActionButtons */}
           {horizontalLayout && screenShotResult ? (
             <div
-              className="w-full z-30 sticky top-0 bg-black pt-2  top-[3.0rem]"
+              className="w-full z-30 sticky bg-black  top-[4.0rem]"
               style={{ zIndex: 30 }}
             >
               <ActionButtons
@@ -638,25 +643,37 @@ function App() {
             <div className="mt-4 w-full flex-1 flex flex-col">
               {horizontalLayout ? (
                 <div
-                  className={`flex gap-4 w-full flex-1 ${
+                  className={`flex gap-4 w-full flex-1 mt-4  px-4 pb-4${
                     isStickyMode
-                      ? "overflow-y-auto max-h-[calc(100vh-3rem)]"
-                      : "h-full mt-4"
+                      ? "min-h-[400px] max-h-[calc(100vh-3rem)] overflow-y-auto"
+                      : "max-h-[calc(100vh-4.5rem)] overflow-hidden"
                   }`}
                 >
                   {/* 左侧截图区域 */}
-                  <div className="flex-1 min-w-0 flex items-center justify-center self-center">
-                    <div className="mb-6">
+                  <div
+                    className={`flex-1 min-w-0 flex pb-10 items-center justify-center ${
+                      isStickyMode ? "" : "max-h-[calc(100vh-4.5rem)] h-full"
+                    }`}
+                  >
+                    <div className="w-full h-full">
                       <ScreenshotDisplay
                         screenShotResult={screenShotResult}
                         showFloatingButton={showFloatingButton}
                         copyImageToClipboard={copyImageToClipboard}
                         imageCopied={imageCopied}
+                        isStickyMode={isStickyMode}
                       />
                     </div>
                   </div>
+
                   {/* 右侧结果区域 */}
-                  <div className="flex-1 flex flex-col min-h-0 overflow-hidden justify-center ">
+                  <div
+                    className={`flex-1 flex flex-col min-h-0  ${
+                      isStickyMode
+                        ? ""
+                        : "max-h-[calc(100vh-4.5rem)] overflow-auto "
+                    }`}
+                  >
                     <ResultDisplay
                       loading={loading}
                       result={result}
@@ -673,7 +690,7 @@ function App() {
 
                   {/* 显示截图标题 */}
                   {!isStickyMode && (
-                    <div className="pt-[2.5rem]">
+                    <div className="pt-[2.5rem] ">
                       <Badge
                         variant="secondary"
                         className="mb-2 antialiased font-medium"
@@ -685,10 +702,10 @@ function App() {
                   )}
                   {/* 显示截图 */}
                   <div
-                    className={`${
+                    className={` ${
                       isStickyMode
-                        ? "overflow-y-auto max-h-[calc(100vh-3rem)]"
-                        : "h-full"
+                        ? "overflow-y-auto max-h-[calc(100vh-4rem)] px-4"
+                        : "h-full px-4"
                     }`}
                   >
                     <ScreenshotDisplay
@@ -696,6 +713,7 @@ function App() {
                       showFloatingButton={showFloatingButton}
                       copyImageToClipboard={copyImageToClipboard}
                       imageCopied={imageCopied}
+                      isStickyMode={isStickyMode}
                     />
                     {/* ActionButtons */}
                     {!horizontalLayout && (
