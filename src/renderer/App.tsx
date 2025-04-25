@@ -614,7 +614,7 @@ function App() {
           {/* ActionButtons */}
           {horizontalLayout && screenShotResult ? (
             <div
-              className="w-full z-30 sticky bg-black  top-[4.0rem]"
+              className="w-full z-30 sticky bg-black  top-[4.0rem] overflow-visible"
               style={{ zIndex: 30 }}
             >
               <ActionButtons
@@ -671,7 +671,7 @@ function App() {
                     className={`flex-1 flex flex-col min-h-0  ${
                       isStickyMode
                         ? ""
-                        : "max-h-[calc(100vh-4.5rem)] overflow-auto "
+                        : "max-h-[calc(100vh-6rem)] overflow-auto "
                     }`}
                   >
                     <ResultDisplay
@@ -717,7 +717,7 @@ function App() {
                     />
                     {/* ActionButtons */}
                     {!horizontalLayout && (
-                      <div className="py-4">
+                      <div className="py-4 -mx-4">
                         <ActionButtons
                           isStickyMode={isStickyMode}
                           loading={loading}

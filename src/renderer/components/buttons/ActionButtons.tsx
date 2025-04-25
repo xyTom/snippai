@@ -1,11 +1,11 @@
-import React from 'react';
-import PromptSelect from '../promptSelect';
-import { models } from '../../lib/models';
-import { ApiKeyButton } from './ApiKeyButton';
-import { RetryButton } from './RetryButton';
-import { CopyImageButton } from './CopyImageButton';
-import { PinButton } from './PinButton';
-import { TrashButton } from './TrashButton';
+import React from "react";
+import PromptSelect from "../promptSelect";
+import { models } from "../../lib/models";
+import { ApiKeyButton } from "./ApiKeyButton";
+import { RetryButton } from "./RetryButton";
+import { CopyImageButton } from "./CopyImageButton";
+import { PinButton } from "./PinButton";
+import { TrashButton } from "./TrashButton";
 
 interface ActionButtonsProps {
   isStickyMode: boolean;
@@ -23,7 +23,7 @@ interface ActionButtonsProps {
   openApiKeyDialog: () => void;
 }
 
-const ActionButtons: React.FC<ActionButtonsProps> = ({ 
+const ActionButtons: React.FC<ActionButtonsProps> = ({
   isStickyMode,
   loading,
   model,
@@ -39,22 +39,38 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   openApiKeyDialog,
 }) => {
   if (isStickyMode) return null;
-  
+
   return (
-<div className="flex flex-nowrap gap-x-4 gap-y-2 mb-2 justify-center items-center overflow-x-auto">
+    <div className="flex flex-wrap gap-x-4 gap-y-2 mb-2 justify-center items-center overflow-x-hidden">
       <div>
-        <PromptSelect handlePromptChange={handlePromptChange} model={model} disabled={loading}/>
+        <PromptSelect
+          handlePromptChange={handlePromptChange}
+          model={model}
+          disabled={loading}
+        />
       </div>
       <div className="flex flex-nowrap gap-2">
-        {(result) && <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />}
-        {(onError) && <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />}
-        {screenShotResult && <CopyImageButton onClick={copyImageToClipboard} copied={imageCopied} variant="secondary" />}
+        {result && (
+          <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />
+        )}
+        {onError && (
+          <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />
+        )}
+        {screenShotResult && (
+          <CopyImageButton
+            onClick={copyImageToClipboard}
+            copied={imageCopied}
+            variant="secondary"
+          />
+        )}
         {screenShotResult && <PinButton onClick={pinToScreen} />}
         {result && <TrashButton onClick={clearScreenshot} />}
-        {models.find((m) => m.value === model)?.requireApiKey && <ApiKeyButton onClick={openApiKeyDialog} />}
+        {models.find((m) => m.value === model)?.requireApiKey && (
+          <ApiKeyButton onClick={openApiKeyDialog} />
+        )}
       </div>
     </div>
   );
 };
 
-export default ActionButtons; 
+export default ActionButtons;
