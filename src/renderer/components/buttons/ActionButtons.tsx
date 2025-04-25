@@ -21,6 +21,7 @@ interface ActionButtonsProps {
   pinToScreen: () => void;
   clearScreenshot: () => void;
   openApiKeyDialog: () => void;
+  responsivePromptSelect?: boolean;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -37,6 +38,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   pinToScreen,
   clearScreenshot,
   openApiKeyDialog,
+  responsivePromptSelect,
 }) => {
   if (isStickyMode) return null;
 
@@ -47,6 +49,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           handlePromptChange={handlePromptChange}
           model={model}
           disabled={loading}
+          responsiveMode={responsivePromptSelect ?? false}
         />
       </div>
       <div className="flex flex-nowrap gap-2">

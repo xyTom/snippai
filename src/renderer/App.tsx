@@ -631,6 +631,7 @@ function App() {
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
+                responsivePromptSelect={true}
               />
             </div>
           ) : null}
