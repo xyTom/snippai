@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '../ui/use-toast';
-import { ShortcutSettings } from '../../types/settings';
+import { ShortcutAction } from '../../../shared/shortcuts';
 
 // Utility function for debouncing
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
@@ -20,10 +20,10 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
  * Props for the KeyboardShortcutInput component
  */
 interface KeyboardShortcutInputProps {
-  shortcutKey: keyof ShortcutSettings;
+  shortcutKey: ShortcutAction;
   label: string;
   value: string;
-  onChange: (key: keyof ShortcutSettings, value: string) => void;
+  onChange: (key: ShortcutAction, value: string) => void;
   onReset?: () => void; // 可选的重置功能
 }
 
@@ -41,52 +41,52 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
   const [isRecording, setIsRecording] = React.useState<boolean>(false);
   const { toast } = useToast();
 
+  // Store special key mappings outside of the effect to avoid recreating on each render
+  const specialKeyMap = React.useMemo<Record<string, string>>(() => ({
+    'ArrowUp': 'Up',
+    'ArrowDown': 'Down',
+    'ArrowLeft': 'Left',
+    'ArrowRight': 'Right',
+    'Escape': 'Esc',
+    ' ': 'Space',
+    'Backspace': 'Backspace',
+    'Tab': 'Tab',
+    'Delete': 'Del',
+    'Home': 'Home',
+    'End': 'End',
+    'PageUp': 'PgUp',
+    'PageDown': 'PgDn',
+    'Insert': 'Ins',
+    'Enter': 'Enter',
+    'CapsLock': 'CapsLock',
+    'ContextMenu': 'Menu'
+  }), []);
+  
+  // List of system shortcuts to warn about - also memoized
+  const systemShortcuts = React.useMemo(() => [
+    'Control+C',
+    'Control+V',
+    'Control+X',
+    'Control+A',
+    'Control+Z',
+    'Command+C',
+    'Command+V',
+    'Command+X',
+    'Command+A',
+    'Command+Z',
+    'Command+Q',
+    'Command+W',
+    'Command+Space'
+  ], []);
+
   /**
    * Set up key event listener for shortcut recording
    */
   React.useEffect(() => {
-    // Map of special keys to their display names
-    const specialKeyMap: Record<string, string> = {
-      'ArrowUp': 'Up',
-      'ArrowDown': 'Down',
-      'ArrowLeft': 'Left',
-      'ArrowRight': 'Right',
-      'Escape': 'Esc',
-      ' ': 'Space',
-      'Backspace': 'Backspace',
-      'Tab': 'Tab',
-      'Delete': 'Del',
-      'Home': 'Home',
-      'End': 'End',
-      'PageUp': 'PgUp',
-      'PageDown': 'PgDn',
-      'Insert': 'Ins',
-      'Enter': 'Enter',
-      'CapsLock': 'CapsLock',
-      'ContextMenu': 'Menu'
-    };
+    if (!isRecording) return;
     
-    // List of system shortcuts to warn about
-    const systemShortcuts = [
-      'Control+C',
-      'Control+V',
-      'Control+X',
-      'Control+A',
-      'Control+Z',
-      'Command+C',
-      'Command+V',
-      'Command+X',
-      'Command+A',
-      'Command+Z',
-      'Command+Q',
-      'Command+W',
-      'Command+Space'
-    ];
-
     // Debounced version of the key handler to prevent multiple rapid recordings
     const debouncedKeyHandler = debounce((e: KeyboardEvent): void => {
-      if (!isRecording) return;
-
       e.preventDefault();
 
       // Build shortcut string
@@ -138,19 +138,18 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
     
     // The actual event handler that calls the debounced function
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (!isRecording) return;
       e.preventDefault();
       debouncedKeyHandler(e);
     };
 
-    if (isRecording) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown);
 
+    // Cleanup function
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isRecording, shortcutKey, onChange, toast]);
+  }, [isRecording, shortcutKey, onChange, toast, specialKeyMap, systemShortcuts]);
 
   /**
    * Start or stop recording a new shortcut

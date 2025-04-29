@@ -2,19 +2,22 @@
  * Types for application settings
  */
 
+import { ShortcutAction, DEFAULT_SHORTCUTS } from '../../shared/shortcuts';
+
+/**
+ * All shortcuts are stored in Record<ShortcutAction,string> for scalability.
+ */
+export type ShortcutsRecord = Record<ShortcutAction, string>;
+
+// Backward compatibility alias
+export type ShortcutSettings = ShortcutsRecord;
+
 /**
  * Base interface for all application settings
  */
 export interface AppSettings {
-  shortcuts: ShortcutSettings;
+  shortcuts: ShortcutsRecord;
   general: GeneralSettings;
-}
-
-/**
- * Interface for keyboard shortcut settings
- */
-export interface ShortcutSettings {
-  screenshot: string;
 }
 
 /**
@@ -25,3 +28,5 @@ export interface GeneralSettings {
   autoStart: boolean;
   horizontalLayout: boolean;
 }
+
+export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = { ...DEFAULT_SHORTCUTS };

@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '../ui/use-toast';
+import { ShortcutAction } from '../../../shared/shortcuts';
 import { ShortcutSettings } from '../../types/settings';
 
 // Utility function for debouncing
@@ -20,10 +21,10 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
  * Props for the KeyboardShortcutInput component
  */
 interface KeyboardShortcutInputProps {
-  shortcutKey: keyof ShortcutSettings;
+  shortcutKey: ShortcutAction;
   label: string;
   value: string;
-  onChange: (key: keyof ShortcutSettings, value: string) => void;
+  onChange: (key: ShortcutAction, value: string) => void;
   onReset?: () => void; // 可选的重置功能
 }
 

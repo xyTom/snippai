@@ -11,13 +11,11 @@ import AboutTab from './settings/AboutTab';
 import GeneralTab from './settings/GeneralTab';
 
 // Import types
-import { AppSettings, ShortcutSettings, GeneralSettings } from '../types/settings';
+import { AppSettings, ShortcutsRecord, GeneralSettings, DEFAULT_SHORTCUT_SETTINGS } from '../types/settings';
 
 // Default settings values
 const DEFAULT_SETTINGS: AppSettings = {
-  shortcuts: {
-    screenshot: 'CommandOrControl+Shift+A'
-  },
+  shortcuts: { ...DEFAULT_SHORTCUT_SETTINGS },
   general: {
     autoCopyToClipboard: true,
     autoStart: false,
@@ -124,10 +122,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
   
   // Handler functions
   const handleTabChange = (tab: SettingsTab): void => setActiveTab(tab);
-  const handleShortcutChange = (newSettings: ShortcutSettings): void => updateSettings('shortcuts', newSettings);
+  const handleShortcutChange = (newSettings: ShortcutsRecord): void => updateSettings('shortcuts', newSettings);
   const handleGeneralChange = (newSettings: GeneralSettings): void => updateSettings('general', newSettings);
   const handleResetShortcuts = (): void => {
-    updateSettings('shortcuts', DEFAULT_SETTINGS.shortcuts);
+    updateSettings('shortcuts', { ...DEFAULT_SHORTCUT_SETTINGS });
     toast({
       title: "Default settings restored",
       description: "Shortcut settings have been reset to default values.",

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, dialog } from 'electron';
 import path from 'path';
+import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import { DEFAULT_LANG, getLanguage } from './utils/i18n';
@@ -160,35 +161,91 @@ function setupScreenshots(): void {
 function registerScreenshotShortcuts(): void {
   // Unregister any existing shortcuts first
   globalShortcut.unregisterAll();
-  
+
   // Get the shortcut from settings with fallback to default
-  const shortcutKey = getSettingValue('shortcuts.screenshot', "CommandOrControl+Shift+A");
-  
+  const shortcutKey = getSettingValue('shortcuts.screenshot', DEFAULT_SHORTCUTS.screenshot);
+  const fullscreenShortcutKey = getSettingValue('shortcuts.fullscreenScreenshot', DEFAULT_SHORTCUTS.fullscreenScreenshot);
+
   console.log('Registering screenshot shortcut:', shortcutKey);
-  
-  // Register the shortcut with the current key from settings
-  globalShortcut.register(shortcutKey, () => {
+  // Register screenshot and check result
+  const registeredScreenshot = globalShortcut.register(shortcutKey, () => {
     // Skip if screenshot window is already focused
     if (screenshots.$win?.isFocused()) {
       return;
     }
 
     let screenshotDelay = 0;
-    // Reduce delay if main window is already minimized
     if (!mainWindow?.isDestroyed()) {
       if (!mainWindow.isMinimized()) {
         screenshotDelay = 500;
       }
-      // Minimize main window before taking screenshot
       mainWindow.minimize();
     }
-
-    // Start capture after delay
     setTimeout(() => {
       screenshots.startCapture();
     }, screenshotDelay);
   });
+  if (!registeredScreenshot) {
+    console.error(`Failed to register screenshot shortcut: ${shortcutKey}`);
+    dialog.showErrorBox(
+      'Shortcut Registration Failed',
+      `Cannot register ${getShortcutLabel('screenshot')} shortcut (${shortcutKey}). It may be in use by another application.`
+    );
+  }
+
+  // 全屏截图快捷键注册
+  console.log('Registering fullscreen screenshot shortcut:', fullscreenShortcutKey);
+  const registeredFullscreen = globalShortcut.register(fullscreenShortcutKey, async () => {
+    try {
+      // 最小化主窗口以避免它出现在截图中
+      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
+        mainWindow.minimize();
+      }
+      
+      // 短暂延迟确保窗口最小化完成
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const { desktopCapturer, nativeImage } = require('electron');
+      
+      // 使用 desktopCapturer 获取全屏截图
+      const sources = await desktopCapturer.getSources({ 
+        types: ['screen'],
+        thumbnailSize: { width: 1920, height: 1080 },
+        fetchWindowIcons: false
+      });
+      
+      if (sources.length > 0) {
+        // 获取主屏幕的源
+        const primarySource = sources[0]; // 通常第一个是主屏幕
+        console.log('screen source:', sources);
+        
+        // 获取完整尺寸的截图
+        const image = primarySource.thumbnail;
+        
+        // 转换为 base64 - 使用 toDataURL 方法
+        const pngBuffer = await image.toPNG();
+        // 转换为 base64
+        const base64 = Buffer.from(pngBuffer).toString('base64');
+        console.log('Base64 image:', base64);
+        
+        // 发送截图结果到主窗口
+        mainWindow.webContents.send('screenshot-result', base64);
+      } else {
+        console.error('No screen sources found');
+      }
+    } catch (err) {
+      console.error('Failed to capture fullscreen screenshot:', err);
+    }
+  });
+  if (!registeredFullscreen) {
+    console.error(`Failed to register fullscreen screenshot shortcut: ${fullscreenShortcutKey}`);
+    dialog.showErrorBox(
+      'Shortcut Registration Failed',
+      `Cannot register ${getShortcutLabel('fullscreenScreenshot')} shortcut (${fullscreenShortcutKey}). It may be in use by another application.`
+    );
+  }
 }
+
 
 /**
  * Sets up event handlers for screenshot operations
@@ -617,7 +674,8 @@ function setupIpcHandlers(): void {
       // 默认设置
       const defaultSettings = {
         shortcuts: {
-          screenshot: 'CommandOrControl+Shift+A'
+          screenshot: 'CommandOrControl+Shift+A',
+          fullscreenScreenshot: 'CommandOrControl+Shift+F'
         },
         general: {
           autoCopyToClipboard: true,
