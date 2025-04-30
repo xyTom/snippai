@@ -26,7 +26,7 @@ export default function selectModel(props:{handleModelChange:Function}) {
   if (model && models.find((m) => m.value === model)) {
     model = model
   }else{
-    model = "gemini"
+    model = "auto"
   }
   const [value, setValue] = React.useState(model)
   
