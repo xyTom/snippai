@@ -61,7 +61,7 @@ function App() {
   const { toast } = useToast();
 
   // AI模型选择
-  const [model, setModel] = useState('gemini');
+  const [model, setModel] = useState('auto');
   const [language, setLanguage] = useState('english');
   const [openLanguageDialog, setOpenLanguageDialog] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
