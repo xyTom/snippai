@@ -7,12 +7,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { useTranslation } from 'react-i18next';
 
 interface RetryButtonProps {
   onClick: () => void;
 }
 
 export function RetryButton({ onClick }: RetryButtonProps) {
+  const {t} = useTranslation()
   return (
     <TooltipProvider>
       <Tooltip>
@@ -22,7 +24,7 @@ export function RetryButton({ onClick }: RetryButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Retry</p>
+          <p>{t("screenshot.retry")}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

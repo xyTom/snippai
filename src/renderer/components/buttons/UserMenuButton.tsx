@@ -10,6 +10,7 @@ import {
 } from "@/renderer/components/ui/dropdown-menu";
 import { useAuth } from "@/renderer/context/AuthContext";
 import { UserIcon, LogOut } from "lucide-react";
+import { t } from "i18next";
 
 export function UserMenuButton() {
   const { user, signOut } = useAuth();
@@ -44,7 +45,7 @@ export function UserMenuButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-red-500 focus:text-red-500 cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t('logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { useTranslation } from 'react-i18next';
 
 interface CopyImageButtonProps {
   onClick: () => void;
@@ -18,6 +19,7 @@ interface CopyImageButtonProps {
 export function CopyImageButton({ onClick, copied, variant, className }: CopyImageButtonProps) {
   // 判断是否使用小尺寸图标
   const isSmall = className?.includes('h-8') || className?.includes('w-8');
+  const {t} = useTranslation()
   
   return (
     <TooltipProvider>
@@ -36,7 +38,7 @@ export function CopyImageButton({ onClick, copied, variant, className }: CopyIma
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Copy Screenshot</p>
+          <p>{t('screenshot.copy_screenshot')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

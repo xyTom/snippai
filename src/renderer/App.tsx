@@ -297,8 +297,8 @@ function App() {
           setLoading(false);
           setOnError(true);
           toast({
-            title: `${t('error')}`,
-            description: `Please try again later. Error message: ${error.message}`,
+            title: t('error'),
+            description: t('error_description', { error: error.message }),
           });
         });
     },
@@ -490,8 +490,8 @@ function App() {
 
         setImageCopied(true);
         toast({
-          title: "Copied",
-          description: "Screenshot copied to clipboard",
+          title: t("screenshot.copied"),
+          description: t("screenshot.copied_description"),
         });
 
         setTimeout(() => {
@@ -500,8 +500,8 @@ function App() {
       } catch (error) {
         console.error("Failed to copy image:", error);
         toast({
-          title: "Copy Failed",
-          description: "Unable to copy screenshot to clipboard",
+          title: t("screenshot.copy_failed"),
+          description: t("screenshot.copy_failed_description"),
           variant: "destructive",
         });
       }
@@ -527,15 +527,15 @@ function App() {
         });
 
         toast({
-          title: "Pinned",
+          title: t('screenshot.pinned'),
           description:
-            "Screenshot has been pinned to the screen as a sticky note",
+            t('screenshot.pinned_description'),
         });
       } catch (error) {
         console.error("Failed to pin to screen:", error);
         toast({
-          title: "Pin Failed",
-          description: "Unable to pin screenshot to screen",
+          title: t("screenshot.pin_failed"),
+          description: t("screenshot.pin_failed_description"),
           variant: "destructive",
         });
       }
@@ -764,7 +764,7 @@ function App() {
                         className="mb-2 antialiased font-medium"
                       >
                         <ImageIcon className="w-5 h-5 mr-1" />
-                        Screenshot
+                        {t('screenshot.screenshot')}
                       </Badge>
                     </div>
                   )}

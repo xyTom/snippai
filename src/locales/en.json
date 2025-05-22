@@ -1,17 +1,4 @@
 {
-  "magnifier_position_label": "X, Y",
-  "operation_ok_title": "Confirm",
-  "operation_cancel_title": "Cancel",
-  "operation_save_title": "Save",
-  "operation_redo_title": "Redo",
-  "operation_undo_title": "Undo",
-  "operation_mosaic_title": "Mosaic",
-  "operation_text_title": "Text",
-  "operation_brush_title": "Brush",
-  "operation_arrow_title": "Arrow",
-  "operation_ellipse_title": "Ellipse",
-  "operation_rectangle_title": "Rectangle",
-
   "main_instructions": "Press {{shortcut}} to take a screenshot.",
   "auto": "Auto",
   "formula": "Formula",
@@ -22,6 +9,32 @@
   "image": "Image",
   "color": "Color",
   "translate": "Translate",
+  "login": "Login",
+  "logout": "Logout",
+
+  "login_form": {
+    "welcome": "Welcome to Snippai",
+    "have_account": "Already have an account?",
+    "no_account": "Don't have an account?",
+    "log_in": "Log in",
+    "sign_up": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "registering": "Registering...",
+    "logging_in": "Logging in...",
+    "register": "Register",
+    "login": "Login",
+    "registration_success": "Registration successful! Please check your email for verification and then log in.",
+    "registration_failed": "Registration failed, please try again.",
+    "login_failed": "Login failed, please try again.",
+    "or": "Or",
+    "continue_microsoft": "Continue with Microsoft",
+    "continue_google": "Continue with Google",
+    "social_not_supported": "Social login is not yet supported",
+    "terms_of_service": "Terms of Service",
+    "privacy_policy": "Privacy Policy",
+    "agree": "By clicking continue, you agree to our <0>{{terms_of_service}}</0> and <1>{{privacy_policy}}</1>."
+  },
 
   "settings": {
     "title": "Settings",
@@ -88,8 +101,25 @@
     "language_invalid": "Please enter a valid language"
   },
 
+  "screenshot": {
+    "screenshot": "Screenshot",
+    "pin_to_screen": "Pin to screen",
+    "pinned": "Pinned",
+    "pinned_description": "Screenshot has been pinned to the screen as a sticky note.",
+    "pin_failed": "Failed to pin screenshot",
+    "pin_failed_description": "Unable to pin screenshot to the screen.",
+    "copy": "Copy",
+    "copy_screenshot": "Copy screenshot",
+    "copied": "Copied",
+    "copied_description": "Screenshot has been copied to clipboard.",
+    "copy_failed": "Failed to copy screenshot",
+    "copy_failed_description": "Unable to copy screenshot to clipboard.",
+    "retry": "Retry",
+    "clear_screenshot": "Clear screenshot"
+  },
+
   "error": "Error!",
-  "error_description": "Please try again later. Error message:",
+  "error_description": "Please try again later. Error message: {{error}}",
   "search_model": "Search model...",
   "no_model_found": "No model found"
 }

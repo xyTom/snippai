@@ -7,12 +7,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { useTranslation } from 'react-i18next';
 
 interface PinButtonProps {
   onClick: () => void;
 }
 
 export function PinButton({ onClick }: PinButtonProps) {
+  const {t} = useTranslation()
   return (
     <TooltipProvider>
       <Tooltip>
@@ -22,7 +24,7 @@ export function PinButton({ onClick }: PinButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Pin to screen</p>
+          <p>{t('screenshot.pin_to_screen')}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

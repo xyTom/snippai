@@ -1,6 +1,7 @@
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import React, { useEffect, useRef, useState, ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 interface DisplayTextResultProps {
   text: string;
@@ -17,6 +18,7 @@ export default function DisplayTextResult({
 }: DisplayTextResultProps) {
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useTranslation();
 
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onTextChange(event.target.value);
@@ -107,7 +109,7 @@ export default function DisplayTextResult({
           ) : (
             <ClipboardIcon className={iconSize} />
           )}
-          <span>Copy</span>
+          <span>{t("screenshot.copy")}</span>
         </Button>
       </div>
     </div>

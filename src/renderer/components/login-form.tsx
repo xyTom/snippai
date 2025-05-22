@@ -1,11 +1,12 @@
-import { GalleryVerticalEnd, AlertCircle, Info } from "lucide-react"
+import { GalleryVerticalEnd, AlertCircle, Info } from "lucide-react";
 
-import { cn } from "@/renderer/lib/utils"
-import { Button } from "@/renderer/components/ui/button"
-import { Input } from "@/renderer/components/ui/input"
-import { Label } from "@/renderer/components/ui/label"
-import React, { useState } from "react"
-import { useAuth } from "@/renderer/context/AuthContext"
+import { cn } from "@/renderer/lib/utils";
+import { Button } from "@/renderer/components/ui/button";
+import { Input } from "@/renderer/components/ui/input";
+import { Label } from "@/renderer/components/ui/label";
+import React, { useState } from "react";
+import { useAuth } from "@/renderer/context/AuthContext";
+import { useTranslation, Trans } from "react-i18next";
 
 interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
   onLoginSuccess?: () => void;
@@ -23,13 +24,14 @@ export function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
-    
+
     try {
       if (isRegistering) {
         // Handle registration
@@ -37,7 +39,9 @@ export function LoginForm({
         if (errorMessage) {
           setError(errorMessage);
         } else {
-          setSuccessMessage("Registration successful! Please check your email for verification and then log in.");
+          setSuccessMessage(
+            `${t("login_form.registration_successful")}`
+          );
           // Reset to login view
           setIsRegistering(false);
         }
@@ -54,7 +58,13 @@ export function LoginForm({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : isRegistering ? "Registration failed, please try again." : "Login failed, please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : isRegistering
+          ? `${t("login_form.registration_failed")}`
+          : `${t("login_form.login_failed")}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -80,20 +90,23 @@ export function LoginForm({
               </div>
               <span className="sr-only">Snippai</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome to Snippai</h1>
+            <h1 className="text-xl font-bold">{t("login_form.welcome")}</h1>
             <div className="text-center text-sm">
-              {isRegistering ? "Already have an account? " : "Don't have an account? "}
-              <button 
-                type="button" 
-                onClick={toggleMode} 
-                className="underline underline-offset-4 text-primary">
-                {isRegistering ? "Log in" : "Sign up"}
+              {isRegistering
+                ? `${t("login_form.have_account")} `
+                : `${t("login_form.no_account")} `}
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="underline underline-offset-4 text-primary"
+              >
+                {isRegistering ? `${t("login_form.login")}` : `${t("login_form.sign_up")}`}
               </button>
             </div>
           </div>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("login_form.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -104,7 +117,7 @@ export function LoginForm({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("login_form.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -115,7 +128,13 @@ export function LoginForm({
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (isRegistering ? "Registering..." : "Logging in...") : (isRegistering ? "Register" : "Login")}
+              {isLoading
+                ? isRegistering
+                  ? `${t("login_form.registering")}`
+                  : `${t("login_form.logging_in")}`
+                : isRegistering
+                ? `${t("login_form.register")}`
+                : `${t("login_form.login")}`}
             </Button>
             {error && (
               <div className="flex items-start gap-2 text-red-500 text-sm mt-2 p-2 bg-red-50 border border-red-200 rounded">
@@ -132,27 +151,36 @@ export function LoginForm({
           </div>
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
             <span className="relative z-10 bg-background px-2 text-muted-foreground">
-              Or
+              {t("login_form.or")}
             </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Button variant="outline" className="w-full" disabled>
-              Continue with Microsoft
+              {t("login_form.continue_microsoft")}
             </Button>
             <Button variant="outline" className="w-full" disabled>
-              Continue with Google
+            {t("login_form.continue_google")}
             </Button>
             <div className="col-span-2 text-center text-xs text-amber-600 flex items-center justify-center gap-1">
               <AlertCircle className="h-3 w-3" />
-              <span>Social login is not yet supported</span>
+              <span>{t("login_form.social_not_supported")}</span>
             </div>
           </div>
         </div>
       </form>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  ">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        <Trans
+          i18nKey="login_form.agree"
+          components={[
+            <a key="t" href="/terms"/>,
+            <a key="p" href="/privacy"/>
+          ]}
+          values={{
+            terms_of_service: t("login_form.terms_of_service"),
+            privacy_policy: t("login_form.privacy_policy")
+          }}
+        />
       </div>
     </div>
-  )
+  );
 }
