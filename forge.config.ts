@@ -10,16 +10,41 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    name: 'Snippai',
+    executableName: 'Snippai',
+    appBundleId: 'com.snapbit.snippai',
+    ignore: (path) => {
+      if (!path) return false;
+      if (path.startsWith("/package.json")) return false;
+      // add only the /.vite folder from the project root, ignoring the one in node_modules.
+      if (path.startsWith("/.vite")) return false; 
+      if (path.startsWith("/node_modules")) return false;
+      // if (path.includes('node_modules/electron-screenshots')) return false;
+      return true;
+    },
   },
   rebuildConfig: {},
-  makers: [new MakerSquirrel({}), new MakerZIP({}, ['win32','darwin']), new MakerRpm({}), new MakerDeb({})],
+  makers: [
+    new MakerSquirrel({}),
+    new MakerZIP({}, ['win32', 'darwin', 'linux']),
+    new MakerRpm({
+      options: {
+        bin: 'Snippai',
+        name: 'Snippai'
+      }
+    }),
+    new MakerDeb({
+      options: {
+        bin: 'Snippai',
+        name: 'Snippai'
+      }
+    })
+  ],
+
   plugins: [
     new VitePlugin({
-      // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
-      // If you are familiar with Vite configuration, it will look really familiar.
       build: [
         {
-          // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
           entry: 'src/main.ts',
           config: 'vite.main.config.ts',
         },
@@ -35,8 +60,6 @@ const config: ForgeConfig = {
         },
       ],
     }),
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,

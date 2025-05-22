@@ -31,6 +31,8 @@ import App from './App'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import * as Sentry from "@sentry/electron/renderer";
+import { AuthProvider } from './context/AuthContext';
+import '../utils/i18next'
 
 Sentry.init({
   dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
@@ -47,7 +49,9 @@ Sentry.init({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </React.StrictMode>,
   )
   

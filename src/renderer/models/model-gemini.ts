@@ -52,9 +52,8 @@ const requestOptions: RequestInit = {
     redirect: "follow" as RequestRedirect // Fix the type mismatch error by explicitly casting the value to RequestRedirect type
 };
 
-const response = await fetch("https://s.global.ssl.fastly.net/v1beta/models/gemini-1.5-pro:generateContent", requestOptions);
+const response = await fetch("https://s.global.ssl.fastly.net/v1beta/models/gemini-2.0-flash-lite:generateContent", requestOptions);
 const result = await response.json();
 return result["candidates"][0]["content"]["parts"][0]["text"];
 }
-
 export default gemini;

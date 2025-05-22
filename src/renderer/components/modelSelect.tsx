@@ -18,15 +18,17 @@ import {
   PopoverTrigger,
 } from "../components/ui/popover"
 import { models } from "../lib/models"
+import { useTranslation } from "react-i18next"
 
 export default function selectModel(props:{handleModelChange:Function}) {
   const [open, setOpen] = React.useState(false)
+  const {t} = useTranslation();
   //read the model from local storage
   let model = localStorage.getItem("model")
   if (model && models.find((m) => m.value === model)) {
     model = model
   }else{
-    model = "gemini"
+    model = "auto"
   }
   const [value, setValue] = React.useState(model)
   
@@ -58,8 +60,8 @@ export default function selectModel(props:{handleModelChange:Function}) {
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0 dark">
         <Command>
-          <CommandInput placeholder="Search model..." />
-          <CommandEmpty>No model found.</CommandEmpty>
+          <CommandInput placeholder={`${t("search_model")}`} />
+          <CommandEmpty>{t("no_model_found")}</CommandEmpty>
           <CommandGroup>
             {models.map((model) => (
               <CommandItem
