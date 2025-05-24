@@ -1,6 +1,7 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, dialog } from "electron";
 import path from "path";
-import { execFile } from "child_process";
+import { exec, execFile } from "child_process";
+import { clipboard, nativeImage } from "electron";
 import { readFileSync, unlinkSync } from "fs";
 import os from "os";
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from "./shared/shortcuts";
@@ -121,7 +122,7 @@ function showMainWindow(): void {
   mainWindow.focus();
 }
 
-async function captureWithNativeMac(): Promise<string | null> {
+const captureWithNativeMac = async (): Promise<string | null> => {
   const tmpPath = `${os.tmpdir()}/snippai_capture_${Date.now()}.png`;
 
   return new Promise((resolve, reject) => {
@@ -142,6 +143,40 @@ async function captureWithNativeMac(): Promise<string | null> {
         console.error("Failed to read screencapture output:", readErr);
         resolve(null);
       }
+    });
+  });
+};
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function captureWithNativeWindows(): Promise<string | null> {
+  return new Promise((resolve, reject) => {
+    exec('start "" "ms-screenclip:?clippingMode=Rectangle"', async (error) => {
+      if (error) {
+        console.warn("Failed to launch ms-screenclip:", error);
+        return resolve(null);
+      }
+
+      // Poll clipboard for image data
+      const timeout = Date.now() + 5000;
+
+      async function pollClipboard() {
+        const img = clipboard.readImage();
+        if (!img.isEmpty()) {
+          const base64 = img.toDataURL().split(",")[1];
+          return resolve(base64);
+        }
+
+        if (Date.now() > timeout) {
+          return resolve(null);
+        }
+
+        await delay(300);
+        pollClipboard();
+      }
+
+      pollClipboard();
     });
   });
 }
@@ -217,11 +252,16 @@ function registerScreenshotShortcuts(): void {
     }
     setTimeout(async () => {
       const isMac = process.platform === "darwin";
+      const isWindows = process.platform === "win32";
+
       let base64: string | null = null;
 
       if (isMac) {
         base64 = await captureWithNativeMac();
+      } else if (isWindows) {
+        base64 = await captureWithNativeWindows();
       }
+
       if (base64 && mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send("screenshot-result", base64);
         showMainWindow();
