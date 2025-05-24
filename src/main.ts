@@ -215,8 +215,20 @@ function registerScreenshotShortcuts(): void {
       }
       mainWindow.minimize();
     }
-    setTimeout(() => {
-      screenshots.startCapture();
+    setTimeout(async () => {
+      const isMac = process.platform === "darwin";
+      let base64: string | null = null;
+
+      if (isMac) {
+        base64 = await captureWithNativeMac();
+      }
+      if (base64 && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("screenshot-result", base64);
+        showMainWindow();
+      } else {
+        console.log("Fall back to electron-screenshots");
+        screenshots.startCapture();
+      }
     }, screenshotDelay);
   });
   if (!registeredScreenshot) {
