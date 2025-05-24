@@ -373,7 +373,11 @@ function App() {
 
     // 注册截图结果处理程序
     const handleScreenShotRes = (value: string) => {
-      setscreenShotResult(value);
+      const rawValue = value.startsWith("data:image")
+        ? value.split(",")[1]
+        : value;
+
+      setscreenShotResult(rawValue);
     };
 
     // Register screenshot result handler
