@@ -2,8 +2,8 @@
  * Types for application settings
  */
 
-import { LanguageCode } from '@/utils/i18next';
-import { ShortcutAction, DEFAULT_SHORTCUTS } from '../../shared/shortcuts';
+import { LanguageCode } from "@/utils/i18next";
+import { ShortcutAction, DEFAULT_SHORTCUTS } from "../../shared/shortcuts";
 
 /**
  * All shortcuts are stored in Record<ShortcutAction,string> for scalability.
@@ -29,6 +29,9 @@ export interface GeneralSettings {
   autoStart: boolean;
   horizontalLayout: boolean;
   uiLanguage: LanguageCode;
+  useSystemScreenshot: boolean;
 }
 
-export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = { ...DEFAULT_SHORTCUTS };
+export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = {
+  ...DEFAULT_SHORTCUTS,
+};

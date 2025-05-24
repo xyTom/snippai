@@ -3,9 +3,11 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import "@sentry/electron/preload";
+import { platform } from 'os';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     isDevelopment: !!process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,
+    platform: process.platform,
     onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value) => callback(value)),
     onStickyNoteData: (callback: any) => ipcRenderer.on('sticky-note-data', (_event, data) => callback(data)),
     removeListener(channel: string, func: (...args: unknown[]) => void) {

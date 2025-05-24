@@ -1,6 +1,8 @@
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -21,6 +23,24 @@ interface SettingToggleProps {
   description: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  id: string;
+}
+
+interface SettingSelectProps {
+  title: string;
+  description: string;
+  options: { value: string; label: string }[];
+  value: LanguageCode;
+  onChange: (value: LanguageCode) => void;
+  id: string;
+}
+
+interface SettingCheckboxProps {
+  title: string;
+  description: string;
+  value: boolean;
+  allowed: boolean;
+  onChange: (value: boolean) => void;
   id: string;
 }
 
@@ -53,15 +73,6 @@ const languageOptions = [
   { value: "zh-TW", label: "中文（繁體）" },
 ];
 
-interface SettingSelectProps {
-  title: string;
-  description: string;
-  options: { value: string; label: string }[];
-  value: LanguageCode;
-  onChange: (value: LanguageCode) => void;
-  id: string;
-}
-
 /**
  * Reusable setting select component
  */
@@ -93,6 +104,28 @@ const SettingSelect: React.FC<SettingSelectProps> = ({
   </div>
 );
 
+const SettingsCheckbox: React.FC<SettingCheckboxProps> = ({
+  title,
+  description,
+  value,
+  allowed,
+  onChange,
+  id,
+}) => (
+  <div className="flex items-center justify-between p-4 rounded-md bg-muted/10">
+    <div className="space-y-0.5">
+      <h3 className="text-sm font-medium">{title}</h3>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+    <Checkbox
+      id={id}
+      checked={value}
+      disabled={!allowed}
+      onCheckedChange={onChange}
+    />
+  </div>
+);
+
 interface GeneralTabProps {
   settings: GeneralSettings;
   onSettingsChange: (settings: GeneralSettings) => void;
@@ -109,7 +142,12 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onSave,
   onCancel,
 }) => {
+  const [systemSupported, setSystemSupported] = useState(true);
   const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    setSystemSupported(window.electronAPI.platform === "darwin" || window.electronAPI.platform === "win32");
+  })
 
   const handleSettingChange = (key: keyof GeneralSettings, value: boolean) => {
     onSettingsChange({
@@ -176,6 +214,18 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           onChange={(value: LanguageCode) => {
             handleLanguageChange(value);
           }}
+        />
+
+        {/* Use system screenshot setting */}
+        <SettingsCheckbox
+          id="use-system-screenshot"
+          title={t("settings.use_system_screenshot")}
+          description={t("settings.use_system_screenshot_description")}
+          value={settings.useSystemScreenshot}
+          allowed={systemSupported}
+          onChange={(value: boolean) =>
+            handleSettingChange("useSystemScreenshot", value)
+          }
         />
       </div>
 

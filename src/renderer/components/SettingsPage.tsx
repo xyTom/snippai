@@ -1,19 +1,27 @@
 "use client";
 
-import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { useToast } from './ui/use-toast';
+import * as React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { useToast } from "./ui/use-toast";
 
 // Import custom components
-import SettingsNavigation, { SettingsTab, SettingsNavItem } from './settings/SettingsNavigation';
-import KeyboardShortcutsTab from './settings/KeyboardShortcutsTab';
-import AboutTab from './settings/AboutTab';
-import GeneralTab from './settings/GeneralTab';
+import SettingsNavigation, {
+  SettingsTab,
+  SettingsNavItem,
+} from "./settings/SettingsNavigation";
+import KeyboardShortcutsTab from "./settings/KeyboardShortcutsTab";
+import AboutTab from "./settings/AboutTab";
+import GeneralTab from "./settings/GeneralTab";
 
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 // Import types
-import { AppSettings, ShortcutsRecord, GeneralSettings, DEFAULT_SHORTCUT_SETTINGS } from '../types/settings';
+import {
+  AppSettings,
+  ShortcutsRecord,
+  GeneralSettings,
+  DEFAULT_SHORTCUT_SETTINGS,
+} from "../types/settings";
 
 // Default settings values
 const DEFAULT_SETTINGS: AppSettings = {
@@ -22,8 +30,9 @@ const DEFAULT_SETTINGS: AppSettings = {
     autoCopyToClipboard: true,
     autoStart: false,
     horizontalLayout: false,
-    uiLanguage: 'default'
-  }
+    uiLanguage: "default",
+    useSystemScreenshot: true,
+  },
 };
 
 interface SettingsPageProps {
@@ -36,20 +45,26 @@ interface SettingsPageProps {
 /**
  * Settings page component that provides a UI for customizing application settings
  */
-const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave, onSettingsUpdate }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({
+  open,
+  onClose,
+  onCloseSave,
+  onSettingsUpdate,
+}) => {
   // State management
-  const [appSettings, setAppSettings] = React.useState<AppSettings>(DEFAULT_SETTINGS);
-  const [activeTab, setActiveTab] = React.useState<SettingsTab>('general');
-  const [appVersion, setAppVersion] = React.useState<string>('1.0.0');
+  const [appSettings, setAppSettings] =
+    React.useState<AppSettings>(DEFAULT_SETTINGS);
+  const [activeTab, setActiveTab] = React.useState<SettingsTab>("general");
+  const [appVersion, setAppVersion] = React.useState<string>("1.0.0");
   const { t } = useTranslation();
-  
+
   const { toast } = useToast();
-  
+
   // Navigation items configuration
   const navItems: SettingsNavItem[] = [
-    { id: 'general', label: t('settings.general') },
-    { id: 'shortcuts', label:  t('settings.shortcuts') },
-    { id: 'about', label:  t('settings.about') }
+    { id: "general", label: t("settings.general") },
+    { id: "shortcuts", label: t("settings.shortcuts") },
+    { id: "about", label: t("settings.about") },
   ];
 
   /**
@@ -63,18 +78,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
         if (savedSettings) {
           setAppSettings(savedSettings);
         }
-        
+
         // Load app version
         const version = await window.electronAPI?.getAppVersion();
         if (version) {
           setAppVersion(version);
         }
       } catch (error) {
-        console.error('Failed to load settings:', error);
+        console.error("Failed to load settings:", error);
         toast({
-          title: t('settings.loading_failed'),
-          description: t('settings.loading_failed_description'),
-          variant: "destructive"
+          title: t("settings.loading_failed"),
+          description: t("settings.loading_failed_description"),
+          variant: "destructive",
         });
       }
     };
@@ -90,47 +105,52 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
   const saveSettings = async (): Promise<void> => {
     try {
       await window.electronAPI?.saveAppSettings(appSettings);
-      
+
       toast({
-        title: t('settings.saved'),
-        description: t('settings.saved_description'),
+        title: t("settings.saved"),
+        description: t("settings.saved_description"),
       });
       onCloseSave();
     } catch (error) {
-      console.error('Failed to save application settings:', error);
+      console.error("Failed to save application settings:", error);
       toast({
-        title: t('settings.save_failed'),
-        description: t('settings.save_failed_description'),
+        title: t("settings.save_failed"),
+        description: t("settings.save_failed_description"),
         variant: "destructive",
       });
     }
   };
-  
+
   /**
    * Update specific settings category
    */
-  const updateSettings = <T extends keyof AppSettings>(category: T, newSettings: AppSettings[T]): void => {
+  const updateSettings = <T extends keyof AppSettings>(
+    category: T,
+    newSettings: AppSettings[T]
+  ): void => {
     setAppSettings((prevSettings: AppSettings) => {
       const updatedSettings = {
         ...prevSettings,
-        [category]: newSettings
+        [category]: newSettings,
       };
-      
+
       // Notify parent component about settings changes
       if (onSettingsUpdate) {
         onSettingsUpdate(updatedSettings);
       }
-      
+
       return updatedSettings;
     });
   };
-  
+
   // Handler functions
   const handleTabChange = (tab: SettingsTab): void => setActiveTab(tab);
-  const handleShortcutChange = (newSettings: ShortcutsRecord): void => updateSettings('shortcuts', newSettings);
-  const handleGeneralChange = (newSettings: GeneralSettings): void => updateSettings('general', newSettings);
+  const handleShortcutChange = (newSettings: ShortcutsRecord): void =>
+    updateSettings("shortcuts", newSettings);
+  const handleGeneralChange = (newSettings: GeneralSettings): void =>
+    updateSettings("general", newSettings);
   const handleResetShortcuts = (): void => {
-    updateSettings('shortcuts', { ...DEFAULT_SHORTCUT_SETTINGS });
+    updateSettings("shortcuts", { ...DEFAULT_SHORTCUT_SETTINGS });
     toast({
       title: t("settings.defaults_restored"),
       description: t("settings.defaults_shortcut_restored_description"),
@@ -143,9 +163,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
   // Map tab ID to title
   const getTabTitle = (tab: SettingsTab): string => {
     const titles: Record<SettingsTab, string> = {
-      general: t('settings.general_settings'),
-      shortcuts: t('settings.shortcuts'),
-      about: t('settings.about')
+      general: t("settings.general_settings"),
+      shortcuts: t("settings.shortcuts"),
+      about: t("settings.about"),
     };
     return titles[tab];
   };
@@ -155,10 +175,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
         <div className="flex h-[80vh] max-h-[600px]">
           {/* Left navigation sidebar */}
-          <SettingsNavigation 
-            activeTab={activeTab} 
-            navItems={navItems} 
-            onTabChange={handleTabChange} 
+          <SettingsNavigation
+            activeTab={activeTab}
+            navItems={navItems}
+            onTabChange={handleTabChange}
           />
 
           {/* Right content area */}
@@ -170,7 +190,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
             </DialogHeader>
 
             {/* Tab content */}
-            {activeTab === 'general' && (
+            {activeTab === "general" && (
               <GeneralTab
                 settings={appSettings.general}
                 onSettingsChange={handleGeneralChange}
@@ -179,8 +199,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
               />
             )}
 
-            {activeTab === 'shortcuts' && (
-              <KeyboardShortcutsTab 
+            {activeTab === "shortcuts" && (
+              <KeyboardShortcutsTab
                 settings={appSettings.shortcuts}
                 onSettingsChange={handleShortcutChange}
                 onSave={saveSettings}
@@ -189,9 +209,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
               />
             )}
 
-            {activeTab === 'about' && (
-              <AboutTab appVersion={appVersion} />
-            )}
+            {activeTab === "about" && <AboutTab appVersion={appVersion} />}
           </div>
         </div>
       </DialogContent>

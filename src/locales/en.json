@@ -54,6 +54,8 @@
     "ui_language": "UI Language",
     "ui_language_description": "Change the interface language",
     "ui_language_selector_label": "Language",
+    "use_system_screenshot": "Use System Screenshot Tool",
+    "use_system_screenshot_description": "Use the system's built-in screenshot tool instead of Snippai's screenshot feature.",
     "loading_failed": "Failed to load settings",
     "loading_failed_description": "Unable to load application settings. Please try again later",
     "save_failed": "Failed to save settings",

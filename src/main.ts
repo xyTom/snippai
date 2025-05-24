@@ -1,7 +1,14 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, dialog } from "electron";
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  dialog,
+  contextBridge,
+  clipboard,
+} from "electron";
 import path from "path";
 import { exec, execFile } from "child_process";
-import { clipboard, nativeImage } from "electron";
 import { readFileSync, unlinkSync } from "fs";
 import os from "os";
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from "./shared/shortcuts";
@@ -150,18 +157,17 @@ const captureWithNativeMac = async (): Promise<string | null> => {
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function captureWithNativeWindows(): Promise<string | null> {
-  return new Promise((resolve, reject) => {
+export const captureWithNativeWindows = async (): Promise<string | null> => {
+  return new Promise((resolve) => {
     exec('start "" "ms-screenclip:?clippingMode=Rectangle"', async (error) => {
       if (error) {
         console.warn("Failed to launch ms-screenclip:", error);
         return resolve(null);
       }
 
-      // Poll clipboard for image data
       const timeout = Date.now() + 5000;
 
-      async function pollClipboard() {
+      const pollClipboard = async (): Promise<void> => {
         const img = clipboard.readImage();
         if (!img.isEmpty()) {
           const base64 = img.toDataURL().split(",")[1];
@@ -173,13 +179,13 @@ export async function captureWithNativeWindows(): Promise<string | null> {
         }
 
         await delay(300);
-        pollClipboard();
-      }
+        await pollClipboard();
+      };
 
-      pollClipboard();
+      await pollClipboard();
     });
   });
-}
+};
 
 /**
  * Sets up screenshot functionality
