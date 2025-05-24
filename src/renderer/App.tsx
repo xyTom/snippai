@@ -1,7 +1,13 @@
-import './App.css';
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { checkForUpdates, showUpdateNotification } from '../utils/versionCheck';
-import aiModels from './models';
+import "./App.css";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import { checkForUpdates, showUpdateNotification } from "../utils/versionCheck";
+import aiModels from "./models";
 //disable the eslint warning for the import of the logo
 // eslint-disable-next-line
 import logo from "./assets/logo.png";
@@ -13,10 +19,10 @@ import { LanguageButton } from "./components/buttons/languageButton";
 import { useToast } from "./components/ui/use-toast";
 import { Toaster } from "./components/ui/toaster";
 import SettingsPage from "./components/SettingsPage";
-import { LoginButton } from './components/buttons/LoginButton';
-import { UserMenuButton } from './components/buttons/UserMenuButton';
-import { useAuth } from './context/AuthContext';
-import { LoginDialog } from './components/LoginDialog';
+import { LoginButton } from "./components/buttons/LoginButton";
+import { UserMenuButton } from "./components/buttons/UserMenuButton";
+import { useAuth } from "./context/AuthContext";
+import { LoginDialog } from "./components/LoginDialog";
 
 // 导入提取的组件
 import StickyNoteTitleBar from "./components/StickyNoteTitleBar";
@@ -35,8 +41,8 @@ import { SettingsButton } from "./components/buttons/SettingsButton";
 
 import { promptOptions, models } from "./lib/models";
 
-import { useTranslation } from 'react-i18next';
-import i18n from '@/utils/i18next';
+import { useTranslation } from "react-i18next";
+import i18n from "@/utils/i18next";
 
 declare global {
   interface Window {
@@ -47,7 +53,7 @@ declare global {
 function App() {
   // 获取认证状态
   const { user } = useAuth();
-  
+
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -74,11 +80,11 @@ function App() {
   // Translations
   const { t } = useTranslation();
   // To revert the language back to the previous one, in case the user presses the X button
-  const previousLanguage = React.useRef(i18n.language)
+  const previousLanguage = React.useRef(i18n.language);
 
   // AI模型选择
-  const [model, setModel] = useState('auto');
-  const [language, setLanguage] = useState('English');
+  const [model, setModel] = useState("auto");
+  const [language, setLanguage] = useState("English");
   const [openLanguageDialog, setOpenLanguageDialog] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [prompt, setPrompt] = useState("Auto");
@@ -98,10 +104,10 @@ function App() {
 
   // 设置页面状态
   const [openSettings, setOpenSettings] = useState(false);
-  
+
   // 登录对话框状态
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
-  
+
   // 布局设置
   const [horizontalLayout, setHorizontalLayout] = useState(false);
 
@@ -186,20 +192,20 @@ function App() {
   // Close the settings and revert the language back (when pressing the X or the Cancel button)
   // This is done so the user will see the UI update when selecting a different UI language, but the selection will revert if the user doesn't press Save.
   const handleCloseSettingsRevertLanguage = () => {
-    i18n.changeLanguage(previousLanguage.current)
-    setOpenSettings(false)
+    i18n.changeLanguage(previousLanguage.current);
+    setOpenSettings(false);
     toast({
-      title: t('settings.canceled'),
-      description: t('settings.canceled_description'),
-      variant: "default"
-    })
-  }
+      title: t("settings.canceled"),
+      description: t("settings.canceled_description"),
+      variant: "default",
+    });
+  };
 
   // Close the settings for the Save function (update language ref)
   const handleCloseSettings = () => {
-    setOpenSettings(false)
-    previousLanguage.current = i18n.language
-  }
+    setOpenSettings(false);
+    previousLanguage.current = i18n.language;
+  };
 
   // 处理语言对话框打开/关闭
   const handleLanguageOpenChange = useCallback((value: boolean) => {
@@ -272,6 +278,10 @@ function App() {
       setOnError(false);
       setLoading(true);
 
+      const rawBase64 = value.startsWith("data:image")
+        ? value.split(",")[1]
+        : value;
+
       aiModels
         .create(model)
         .then((modelInstance: any) => {
@@ -284,9 +294,9 @@ function App() {
           fullPrompt += ` Please answer in ${language}.`;
 
           if (models.find((m) => m.value === model)?.requireApiKey) {
-            return modelInstance.run(value, fullPrompt, apiKey);
+            return modelInstance.run(rawBase64, fullPrompt, apiKey);
           }
-          return modelInstance.run(value, fullPrompt);
+          return modelInstance.run(rawBase64, fullPrompt);
         })
         .then((res: string) => {
           setLoading(false);
@@ -297,8 +307,8 @@ function App() {
           setLoading(false);
           setOnError(true);
           toast({
-            title: t('error'),
-            description: t('error_description', { error: error.message }),
+            title: t("error"),
+            description: t("error_description", { error: error.message }),
           });
         });
     },
@@ -376,8 +386,8 @@ function App() {
   }, []);
 
   // 存储当前配置的快捷键
-  const [shortcut, setShortcut] = useState('');
-  
+  const [shortcut, setShortcut] = useState("");
+
   // 软件更新检查
   useEffect(() => {
     const checkSoftwareUpdates = async () => {
@@ -387,16 +397,19 @@ function App() {
           showUpdateNotification(update);
         }
       } catch (error) {
-        console.error('Failed to check for software updates:', error);
+        console.error("Failed to check for software updates:", error);
       }
     };
-    
+
     // 立即检查更新
     checkSoftwareUpdates();
-    
+
     // 设置每24小时检查一次更新（如用户长时间保持应用打开）
-    const updateCheckInterval = setInterval(checkSoftwareUpdates, 24 * 60 * 60 * 1000);
-    
+    const updateCheckInterval = setInterval(
+      checkSoftwareUpdates,
+      24 * 60 * 60 * 1000
+    );
+
     return () => {
       clearInterval(updateCheckInterval);
     };
@@ -527,9 +540,8 @@ function App() {
         });
 
         toast({
-          title: t('screenshot.pinned'),
-          description:
-            t('screenshot.pinned_description'),
+          title: t("screenshot.pinned"),
+          description: t("screenshot.pinned_description"),
         });
       } catch (error) {
         console.error("Failed to pin to screen:", error);
@@ -646,7 +658,7 @@ function App() {
             <>
               <img src={logo} className="App-logo select-none" alt="logo" />
               <p className="mb-2 select-none">
-                {t('main_instructions', { shortcut: shortcut})}
+                {t("main_instructions", { shortcut: shortcut })}
               </p>
             </>
           )}
@@ -702,7 +714,9 @@ function App() {
           {screenShotResult && (
             <div
               className={`w-full flex-1 flex flex-col h-full${
-                !isStickyMode && horizontalLayout ? "mt-[0.3rem]" : "mt-[0.3rem]"
+                !isStickyMode && horizontalLayout
+                  ? "mt-[0.3rem]"
+                  : "mt-[0.3rem]"
               }`}
             >
               {horizontalLayout ? (
@@ -764,7 +778,7 @@ function App() {
                         className="mb-2 antialiased font-medium"
                       >
                         <ImageIcon className="w-5 h-5 mr-1" />
-                        {t('screenshot.screenshot')}
+                        {t("screenshot.screenshot")}
                       </Badge>
                     </div>
                   )}
