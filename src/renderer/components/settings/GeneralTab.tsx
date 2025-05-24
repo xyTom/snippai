@@ -116,6 +116,7 @@ const SettingsCheckbox: React.FC<SettingCheckboxProps> = ({
     <div className="space-y-0.5">
       <h3 className="text-sm font-medium">{title}</h3>
       <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-xs text-red-400">{!allowed && "Not available on your OS version."}</p>
     </div>
     <Checkbox
       id={id}
