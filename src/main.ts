@@ -259,13 +259,16 @@ function registerScreenshotShortcuts(): void {
     setTimeout(async () => {
       const isMac = process.platform === "darwin";
       const isWindows = process.platform === "win32";
+      const useNative = getSettingValue("general.useSystemScreenshot", true);
 
       let base64: string | null = null;
-
-      if (isMac) {
-        base64 = await captureWithNativeMac();
-      } else if (isWindows) {
-        base64 = await captureWithNativeWindows();
+      
+      if (useNative) {
+        if (isMac) {
+          base64 = await captureWithNativeMac();
+        } else if (isWindows) {
+          base64 = await captureWithNativeWindows();
+        }
       }
 
       if (base64 && mainWindow && !mainWindow.isDestroyed()) {
