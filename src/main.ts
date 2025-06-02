@@ -158,6 +158,7 @@ const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const captureWithNativeWindows = async (): Promise<string | null> => {
+  clipboard.clear()
   return new Promise((resolve) => {
     exec('start "" "ms-screenclip:?clippingMode=Rectangle"', async (error) => {
       if (error) {
