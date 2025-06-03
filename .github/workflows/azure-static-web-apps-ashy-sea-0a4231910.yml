@@ -4,14 +4,18 @@ on:
   push:
     branches:
       - develop
+    paths:
+      - 'docs/**'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - develop
+    paths:
+      - 'docs/**'
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')) && secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 != ''
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
