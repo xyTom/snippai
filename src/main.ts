@@ -270,15 +270,22 @@ function registerScreenshotShortcuts(): void {
         } else if (isWindows) {
           base64 = await captureWithNativeWindows();
         }
+
+        // If we got a valid screenshot, send it. Otherwise, assume cancellation (don't fallback to the other tool)
+        if (base64 && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("screenshot-result", base64);
+          showMainWindow();
+        } else {
+          console.log("Assuming screenshot capture was canceled or failed");
+          showMainWindow();
+        }
+
+        // The user explicitly disabled native tool:
+      } else {
+        console.log("useNative is false, capturing with snipping tool");
+        screenshots.startCapture()
       }
 
-      if (base64 && mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send("screenshot-result", base64);
-        showMainWindow();
-      } else {
-        console.log("Fall back to electron-screenshots");
-        screenshots.startCapture();
-      }
     }, screenshotDelay);
   });
   if (!registeredScreenshot) {
