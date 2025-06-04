@@ -3,7 +3,6 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import "@sentry/electron/preload";
-import { platform } from 'os';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     isDevelopment: !!process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,

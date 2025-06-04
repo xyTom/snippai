@@ -148,7 +148,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
 
   useEffect(() => {
     setSystemSupported(window.electronAPI.platform === "darwin" || window.electronAPI.platform === "win32");
-  })
+  }, [])
 
   const handleSettingChange = (key: keyof GeneralSettings, value: boolean) => {
     onSettingsChange({
