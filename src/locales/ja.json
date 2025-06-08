@@ -115,5 +115,13 @@
   "error": "エラー！",
   "error_description": "後でもう一度お試しください。エラー: {{error}}",
   "search_model": "モデルを検索...",
-  "no_model_found": "モデルが見つかりません"
+  "no_model_found": "モデルが見つかりません",
+  "export": {
+    "no_tables_found": "テーブルが見つかりません",
+    "no_tables_found_description": "テキスト内に有効なテーブルが見つかりませんでした。Markdown形式のテーブルが正しく含まれていることを確認してください。",
+    "success": "エクスポート成功",
+    "success_description": "{{count}}個のテーブルをExcelファイルにエクスポートしました：{{fileName}}",
+    "failed": "エクスポート失敗",
+    "failed_description": "テーブルのExcelへのエクスポートに失敗しました。もう一度お試しいただくか、テーブルの形式が正しいかご確認ください。"
+  }
 }

@@ -1,7 +1,10 @@
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import React, { useEffect, useRef, useState, ChangeEvent } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useEffect, useRef, useState, ChangeEvent, useMemo } from "react";
+import { useToast } from "./ui/use-toast";
+import { MarkdownTableParser } from "../../services/parser/markdownParser";
+import { ExcelExportServiceFactory } from "../../services/excel/factory";
+import { useTranslation } from 'react-i18next';
 
 interface DisplayTextResultProps {
   text: string;
@@ -16,9 +19,21 @@ export default function DisplayTextResult({
   isStickyMode = false,
   horizontalLayout = false,
 }: DisplayTextResultProps) {
-  const [copied, setCopied] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
   const { t } = useTranslation();
+
+  const [copied, setCopied] = useState(false);
+  const [exported, setExported] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const parseMarkdownTables = useMemo(() => {
+    return MarkdownTableParser.parseTables(text);
+  }, [text]);
+
+  const containsTable = useMemo(() => {
+    return parseMarkdownTables.length > 0;
+  }, [parseMarkdownTables]);
 
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onTextChange(event.target.value);
@@ -30,6 +45,52 @@ export default function DisplayTextResult({
     setTimeout(() => setCopied(false), 1000);
   };
 
+  const handleExport = async () => {
+    const tables = parseMarkdownTables;
+
+    // Should not show export button, but keep the toast in case errors occur
+    if (tables.length === 0) {
+      toast({
+        title: t('export.no_tables_found'),
+        description: t('export.no_tables_found_description'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const timeStr = now.getTime().toString();
+      const fileName = `snippai-table-${dateStr}-${timeStr}.xlsx`;
+
+      const exportService = ExcelExportServiceFactory.getService();
+      await exportService.exportTables(tables, fileName);
+
+      setExported(true);
+      toast({
+        title: t('export.success'),
+        description: t('export.success_description', { 
+          count: tables.length,
+          fileName: fileName,
+          postProcess: 'interval'
+        }),
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: t('export.failed'),
+        description: t('export.failed_description'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExported(false), 1000);
+    }
+  };
+
   // 自动调整文本框高度的函数
   const adjustTextareaHeight = () => {
     // 在钉图模式或水平布局模式下不自动调整高度
@@ -37,7 +98,7 @@ export default function DisplayTextResult({
 
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = "auto";
+      textarea.style.height = 'auto';
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   };
@@ -59,8 +120,10 @@ export default function DisplayTextResult({
 
     if (horizontalLayout) {
       return {
-        maxHeight: "100%",
-        overflowY: "auto" as const,
+        height: '100%',
+        minHeight: '300px',
+        maxHeight: '600px',
+        overflowY: 'auto' as const
       };
     }
 
@@ -77,14 +140,25 @@ export default function DisplayTextResult({
     .filter(Boolean)
     .join(" ");
 
-  const textareaClasses = [
-    "w-full antialiased font-medium",
-    isStickyMode ? "text-sm" : "text-lg",
-    isStickyMode || horizontalLayout ? "" : "overflow-hidden",
-    horizontalLayout ? "!h-full " : "",
+    const textareaClasses = [
+      "w-full antialiased font-medium",
+      isStickyMode ? "text-sm" : "text-lg",
+      isStickyMode || horizontalLayout ? "" : "overflow-hidden",
+      horizontalLayout ? "!h-full " : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  const buttonContainerClasses = [
+    "flex",
+    "w-full",
+    "gap-2",
+  ].join(" ");
+
+  const buttonClasses = [
+    "flex-1",
+    isStickyMode ? "h-8 py-0" : "",
+  ].filter(Boolean).join(" ");
 
   const iconSize = isStickyMode ? "w-4 h-4" : "w-5 h-5";
 
@@ -97,20 +171,37 @@ export default function DisplayTextResult({
         onChange={handleTextChange}
         style={getTextareaStyles()}
       />
-      <div className="sticky bottom-0 bg-black mt-2 pb-2">
+      <div className={buttonContainerClasses}>
         <Button
           variant="outline"
           size={isStickyMode ? "sm" : "default"}
-          className="w-full"
+          className={buttonClasses}
           onClick={handleCopy}
+          disabled={isExporting}
         >
           {copied ? (
             <ClipboardCheckIcon className={iconSize} />
           ) : (
             <ClipboardIcon className={iconSize} />
           )}
-          <span>{t("screenshot.copy")}</span>
+          <span>{t('copy')}</span>
         </Button>
+        {containsTable && (
+          <Button
+            variant="outline"
+            size={isStickyMode ? "sm" : "default"}
+            className={buttonClasses}
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {exported ? (
+              <ExportToExcelCheckIcon className={iconSize} />
+            ) : (
+              <ExportToExcelIcon className={iconSize} />
+            )}
+            <span>{isExporting ? "Exporting..." : "Export as Excel"}</span>
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -164,5 +255,44 @@ const ClipboardIcon = (props: IconProps) => (
   >
     <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  </svg>
+);
+
+const ExportToExcelIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M12 2v6" />
+    <path d="M8 6l4 4 4-4" />
+    <rect x="4" y="12" width="16" height="8" rx="1" />
+    <path d="M8 12v8" />
+    <path d="M16 12v8" />
+    <path d="M4 16h16" />
+  </svg>
+);
+
+
+const ExportToExcelCheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="green"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M12 2v6" />
+    <path d="M8 6l4 4 4-4" />
+    <rect x="4" y="10" width="16" height="10" rx="2" />
+    <path d="m9 14 2 2 4-4" />
   </svg>
 );

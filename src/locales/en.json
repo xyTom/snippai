@@ -121,5 +121,14 @@
   "error": "Error!",
   "error_description": "Please try again later. Error message: {{error}}",
   "search_model": "Search model...",
-  "no_model_found": "No model found"
+  "no_model_found": "No model found",
+
+  "export": {
+    "no_tables_found": "No Tables Found",
+    "no_tables_found_description": "No valid tables were found in the text. Please ensure your text contains properly formatted markdown tables.",
+    "success": "Export Successful",
+    "success_description": "Successfully exported {{count}} table{{count, plural, one='' other='s'}} to Excel file: {{fileName}}",
+    "failed": "Export Failed",
+    "failed_description": "Failed to export tables to Excel. Please try again or check if tables are properly formatted."
+  }
 }

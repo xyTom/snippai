@@ -115,5 +115,13 @@
   "error": "오류!",
   "error_description": "나중에 다시 시도해주세요. 오류 메시지: {{error}}",
   "search_model": "모델 검색...",
-  "no_model_found": "모델을 찾을 수 없음"
+  "no_model_found": "모델을 찾을 수 없음",
+  "export": {
+    "no_tables_found": "테이블을 찾을 수 없음",
+    "no_tables_found_description": "텍스트에서 유효한 테이블을 찾을 수 없습니다. 텍스트에 올바른 형식의 마크다운 테이블이 포함되어 있는지 확인하세요.",
+    "success": "내보내기 성공",
+    "success_description": "{{count}}개의 테이블을 Excel 파일로 내보냈습니다: {{fileName}}",
+    "failed": "내보내기 실패",
+    "failed_description": "테이블을 Excel로 내보내는 데 실패했습니다. 다시 시도하거나 테이블 형식이 올바른지 확인해 주세요."
+  }
 }

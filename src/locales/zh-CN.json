@@ -115,5 +115,13 @@
   "error": "错误！",
   "error_description": "请稍后再试。错误信息：{{error}}",
   "search_model": "搜索模型...",
-  "no_model_found": "未找到模型"
+  "no_model_found": "未找到模型",
+  "export": {
+    "no_tables_found": "未找到表格",
+    "no_tables_found_description": "文本中未找到有效的表格。请确保您的文本包含正确格式的 Markdown 表格。",
+    "success": "导出成功",
+    "success_description": "成功导出 {{count}} 个表格到 Excel 文件：{{fileName}}",
+    "failed": "导出失败",
+    "failed_description": "导出表格到 Excel 失败。请重试或检查表格格式是否正确。"
+  }
 }

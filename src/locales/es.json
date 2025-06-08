@@ -115,5 +115,13 @@
   "error": "¡Error!",
   "error_description": "Por favor intenta de nuevo más tarde. Mensaje de error: {{error}}",
   "search_model": "Buscar modelo...",
-  "no_model_found": "No se encontró ningún modelo"
+  "no_model_found": "No se encontró ningún modelo",
+  "export": {
+    "no_tables_found": "No se encontraron tablas",
+    "no_tables_found_description": "No se encontraron tablas válidas en el texto. Asegúrese de que su texto contenga tablas en formato markdown correctamente formateadas.",
+    "success": "Exportación exitosa",
+    "success_description": "Se exportaron exitosamente {{count}} tabla{{count, plural, one='' other='s'}} al archivo Excel: {{fileName}}",
+    "failed": "Error de exportación",
+    "failed_description": "Error al exportar las tablas a Excel. Por favor inténtelo de nuevo o verifique si las tablas están correctamente formateadas."
+  }
 }

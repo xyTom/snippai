@@ -85,6 +85,7 @@
     "react-dom": "^18.2.0",
     "react-i18next": "^15.5.1",
     "tailwind-merge": "^2.2.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5"
   }
 }
