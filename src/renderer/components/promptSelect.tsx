@@ -23,9 +23,32 @@ export default function PromptSelect(props: {
   };
 
   const [useDropdown, setUseDropdown] = useState(false);
-  const [selectedPrompt, setSelectedPrompt] = useState(
-    options[props.model][0]?.value || ""
-  );
+  const [selectedPrompt, setSelectedPrompt] = useState(() => {
+    const saved = localStorage.getItem("lastPrompt");
+    const validPrompts = options[props.model]?.map((p) => p.value) || [];
+    return saved && validPrompts.includes(saved)
+      ? saved
+      : options[props.model][0]?.value || "";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("lastPrompt", selectedPrompt);
+  }, [selectedPrompt]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("lastPrompt");
+    const validPrompts = options[props.model]?.map((p) => p.value) || [];
+    if (!validPrompts.includes(saved || "")) {
+      const fallback = options[props.model][0]?.value || "";
+      setSelectedPrompt(fallback);
+      localStorage.setItem("lastPrompt", fallback);
+      props.handlePromptChange(fallback);
+    }
+  }, [props.model]);
+
+  useEffect(() => {
+    props.handlePromptChange(selectedPrompt);
+  }, []);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -43,12 +66,13 @@ export default function PromptSelect(props: {
     return () => window.removeEventListener("resize", updateWidth);
   }, [props.responsiveMode]);
 
-  const handleChange = useCallback((value: string) => {
-    setSelectedPrompt(value);
-    props.handlePromptChange(value);
-  }, [props.handlePromptChange]);
-
-
+  const handleChange = useCallback(
+    (value: string) => {
+      setSelectedPrompt(value);
+      props.handlePromptChange(value);
+    },
+    [props.handlePromptChange]
+  );
 
   return (
     <div className="w-full">

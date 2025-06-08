@@ -81,7 +81,11 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SelectScrollUpButton />
+      {/* 
+        <SelectScrollUpButton />
+        Scroll buttons are currently disabled because the scrolling functionality is not required in the current design.
+        Uncomment this line if scroll functionality is needed in the future.
+      */}
       <SelectPrimitive.Viewport
         className={cn(
           "p-1",
@@ -91,7 +95,7 @@ const SelectContent = React.forwardRef<
       >
         {children}
       </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
+      {/* <SelectScrollDownButton /> */}
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))
