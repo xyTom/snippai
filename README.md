@@ -36,6 +36,10 @@ Understand and explain the functionality of code snippets found in images, helpi
 Identify and extract the predominant colors in an image, useful for tasks such as design analysis and image processing.
 ![Snippai Color](https://im.gurl.eu.org/file/3ff5f3143bff27fdd3a8d.png)
 
+### Language Translation
+Effortlessly translate and understand text in any language directly from an image. Snippai intelligently detects the language and provides accurate translations in real time—ideal for documents, signage, interfaces, and more.
+![Snippai Tranlate](https://github.com/user-attachments/assets/791068fe-4b29-4ad5-877f-80645d636e83)
+
 ### And More...
 Stay tuned for more powerful AI capabilities coming soon! Snippai is continuously evolving to offer new features and enhancements to improve your snipping workflow.
 
