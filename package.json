@@ -1,7 +1,7 @@
 {
   "name": "snippai",
   "productName": "Snippai",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Snip Anything Solve Everything​",
   "main": ".vite/build/main.js",
   "scripts": {
