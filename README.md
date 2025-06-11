@@ -1,7 +1,7 @@
 ![Snippai Banner](https://im.gurl.eu.org/file/ed3d8ebfbe90720074b92.png)
 ### 🌐 语言切换 | Language
 
-[English 🇺🇸](./README.md) | [简体中文 🇨🇳](./README.zh-CN.md)
+[English 🇺🇸](./README.md) | [简体中文 🇨🇳](./README-ZH.md)
 
 # Snippai: AI-Powered Snipping Tool
 
