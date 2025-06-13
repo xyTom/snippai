@@ -9,11 +9,12 @@ interface LoginButtonProps {
 
 export function LoginButton({ onClick }: LoginButtonProps) {
   const {t} = useTranslation()
+
   return (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="flex items-center gap-1 text-sm hover:bg-gray-700/50" 
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex items-center gap-1 text-sm hover:bg-gray-700/50"
       onClick={onClick}
     >
       <UserIcon className="h-4 w-4" />

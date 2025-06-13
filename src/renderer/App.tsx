@@ -52,8 +52,7 @@ declare global {
 
 function App() {
   // 获取认证状态
-  const { user } = useAuth();
-
+  const { user, setOnAuthSuccess } = useAuth();
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -614,6 +613,29 @@ function App() {
     setPrompt(value);
   }, []);
 
+  // 处理登录对话框打开
+  const handleOpenLoginDialog = useCallback(() => {
+    setOpenLoginDialog(true);
+    // 设置认证成功回调以自动关闭对话框
+    setOnAuthSuccess(() => () => {
+      console.log('Auth success - closing login dialog');
+      setOpenLoginDialog(false);
+    });
+  }, [setOnAuthSuccess]);
+
+  // 设置全局认证成功回调，用于处理深度链接认证
+  useEffect(() => {
+    // 总是设置一个回调来处理认证成功
+    setOnAuthSuccess(() => () => {
+      console.log('Global auth success callback triggered, dialog open:', openLoginDialog);
+      // 如果登录对话框是打开的，关闭它
+      if (openLoginDialog) {
+        console.log('Closing login dialog from global callback');
+        setOpenLoginDialog(false);
+      }
+    });
+  }, [openLoginDialog, setOnAuthSuccess]);
+
   // 渲染组件
   return (
     <div
@@ -646,7 +668,7 @@ function App() {
               {user ? (
                 <UserMenuButton />
               ) : (
-                <LoginButton onClick={() => setOpenLoginDialog(true)} />
+                <LoginButton onClick={handleOpenLoginDialog} />
               )}
             </div>
             <div className="ml-auto space-x-4 flex text-white select-none">

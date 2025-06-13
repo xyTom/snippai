@@ -14,26 +14,15 @@
 
   "login_form": {
     "welcome": "Welcome to Snippai",
-    "have_account": "Already have an account?",
-    "no_account": "Don't have an account?",
-    "log_in": "Log in",
-    "sign_up": "Sign up",
-    "email": "Email",
-    "password": "Password",
-    "registering": "Registering...",
-    "logging_in": "Logging in...",
-    "register": "Register",
-    "login": "Login",
-    "registration_success": "Registration successful! Please check your email for verification and then log in.",
-    "registration_failed": "Registration failed, please try again.",
-    "login_failed": "Login failed, please try again.",
-    "or": "Or",
-    "continue_microsoft": "Continue with Microsoft",
-    "continue_google": "Continue with Google",
-    "social_not_supported": "Social login is not yet supported",
+    "magic_link_description": "Enter your email to receive a secure login link. No password required!",
+    "email": "Email Address",
+    "send_magic_link": "Send Login Link",
+    "sending_magic_link": "Sending Login Link...",
+    "magic_link_sent": "Login link sent! Please check your email and click the link to access your account.",
+    "magic_link_failed": "Failed to send login link. Please try again.",
     "terms_of_service": "Terms of Service",
     "privacy_policy": "Privacy Policy",
-    "agree": "By clicking continue, you agree to our <0>{{terms_of_service}}</0> and <1>{{privacy_policy}}</1>."
+    "agree": "By continuing, you agree to our <0>{{terms_of_service}}</0> and <1>{{privacy_policy}}</1>."
   },
 
   "settings": {

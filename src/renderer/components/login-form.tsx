@@ -17,12 +17,10 @@ export function LoginForm({
   onLoginSuccess,
   ...props
 }: LoginFormProps) {
-  const { signIn, signUp } = useAuth();
+  const { signInWithMagicLink } = useAuth();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { t } = useTranslation();
 
@@ -33,47 +31,24 @@ export function LoginForm({
     setSuccessMessage(null);
 
     try {
-      if (isRegistering) {
-        // Handle registration
-        const errorMessage = await signUp(email, password);
-        if (errorMessage) {
-          setError(errorMessage);
-        } else {
-          setSuccessMessage(
-            `${t("login_form.registration_successful")}`
-          );
-          // Reset to login view
-          setIsRegistering(false);
-        }
+      // Send Magic Link for both new and existing users
+      const errorMessage = await signInWithMagicLink(email);
+      if (errorMessage) {
+        setError(errorMessage);
       } else {
-        // Handle login
-        const errorMessage = await signIn(email, password);
-        if (errorMessage) {
-          setError(errorMessage);
-        } else {
-          // Login successful, invoke success callback
-          if (onLoginSuccess) {
-            onLoginSuccess();
-          }
-        }
+        setSuccessMessage(
+          `${t("login_form.magic_link_sent")}`
+        );
       }
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : isRegistering
-          ? `${t("login_form.registration_failed")}`
-          : `${t("login_form.login_failed")}`
+          : `${t("login_form.magic_link_failed")}`
       );
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const toggleMode = () => {
-    setIsRegistering(!isRegistering);
-    setError(null);
-    setSuccessMessage(null);
   };
 
   return (
@@ -91,17 +66,8 @@ export function LoginForm({
               <span className="sr-only">Snippai</span>
             </a>
             <h1 className="text-xl font-bold">{t("login_form.welcome")}</h1>
-            <div className="text-center text-sm">
-              {isRegistering
-                ? `${t("login_form.have_account")} `
-                : `${t("login_form.no_account")} `}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="underline underline-offset-4 text-primary"
-              >
-                {isRegistering ? `${t("login_form.login")}` : `${t("login_form.sign_up")}`}
-              </button>
+            <div className="text-center text-sm text-muted-foreground">
+              {t("login_form.magic_link_description")}
             </div>
           </div>
           <div className="flex flex-col gap-6">
@@ -116,25 +82,11 @@ export function LoginForm({
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">{t("login_form.password")}</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading
-                ? isRegistering
-                  ? `${t("login_form.registering")}`
-                  : `${t("login_form.logging_in")}`
-                : isRegistering
-                ? `${t("login_form.register")}`
-                : `${t("login_form.login")}`}
+                ? `${t("login_form.sending_magic_link")}`
+                : `${t("login_form.send_magic_link")}`}
             </Button>
             {error && (
               <div className="flex items-start gap-2 text-red-500 text-sm mt-2 p-2 bg-red-50 border border-red-200 rounded">
@@ -149,23 +101,7 @@ export function LoginForm({
               </div>
             )}
           </div>
-          <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-            <span className="relative z-10 bg-background px-2 text-muted-foreground">
-              {t("login_form.or")}
-            </span>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Button variant="outline" className="w-full" disabled>
-              {t("login_form.continue_microsoft")}
-            </Button>
-            <Button variant="outline" className="w-full" disabled>
-            {t("login_form.continue_google")}
-            </Button>
-            <div className="col-span-2 text-center text-xs text-amber-600 flex items-center justify-center gap-1">
-              <AlertCircle className="h-3 w-3" />
-              <span>{t("login_form.social_not_supported")}</span>
-            </div>
-          </div>
+
         </div>
       </form>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  ">

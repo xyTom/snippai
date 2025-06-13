@@ -13,11 +13,17 @@ const config: ForgeConfig = {
     name: 'Snippai',
     executableName: 'Snippai',
     appBundleId: 'com.snapbit.snippai',
+    protocols: [
+      {
+        name: 'Snippai Protocol',
+        schemes: ['snippai']
+      }
+    ],
     ignore: (path) => {
       if (!path) return false;
       if (path.startsWith("/package.json")) return false;
       // add only the /.vite folder from the project root, ignoring the one in node_modules.
-      if (path.startsWith("/.vite")) return false; 
+      if (path.startsWith("/.vite")) return false;
       if (path.startsWith("/node_modules")) return false;
       // if (path.includes('node_modules/electron-screenshots')) return false;
       return true;

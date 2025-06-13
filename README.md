@@ -47,6 +47,21 @@ You can download Snippai from [here](https://github.com/xyTom/snippai/releases),
 
 To use Snippai, simply open the application and capture the desired region of your screen using the snipping tool. Snippai will automatically analyze the captured image and provide relevant insights and conversions based on the detected elements.
 
+## Documentation
+
+Comprehensive documentation for Snippai's passwordless authentication system and technical implementation is available in the [`docs/`](./docs/) directory:
+
+- **[📚 Complete Documentation](./docs/README.md)** - Main documentation index
+- **[🔧 Implementation Guides](./docs/implementation/)** - Technical implementation details
+- **[📖 User Guides](./docs/guides/)** - Setup and usage instructions
+- **[🧪 Testing Procedures](./docs/testing/)** - Validation and testing guides
+- **[⚙️ Technical Specifications](./docs/technical/)** - Configuration and technical details
+
+### Quick Links
+- **[Magic Link Setup Guide](./docs/guides/LOGIN_UPGRADE_GUIDE.md)** - Complete setup instructions
+- **[Testing Guide](./docs/testing/FINAL_TESTING_GUIDE.md)** - Validation procedures
+- **[Implementation Summary](./docs/implementation/FINAL_SOLUTION_SUMMARY.md)** - Technical overview
+
 ## Contributing
 
 Contributions to Snippai are welcome! Whether you're interested in adding new features, improving existing functionalities, or fixing bugs, your contributions are valuable in making Snippai even better. Please refer to the contribution guidelines in the repository for more information.

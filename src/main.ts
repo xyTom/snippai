@@ -16,9 +16,72 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+// URL scheme for deep linking
+const PROTOCOL_NAME = 'snippai';
+
+// Register protocol for deep linking
+if (!app.isDefaultProtocolClient(PROTOCOL_NAME)) {
+  app.setAsDefaultProtocolClient(PROTOCOL_NAME);
+}
+
 // Global reference to the main window to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
 let screenshots: any = null;
+
+/**
+ * Handle deep link URL
+ * @param {string} url - The deep link URL to handle
+ */
+function handleDeepLink(url: string): void {
+  console.log('Handling deep link:', url);
+
+  // Parse the URL to extract authentication data
+  if (url.startsWith(`${PROTOCOL_NAME}://`)) {
+    const urlObj = new URL(url);
+
+    // Handle authentication callback - check multiple conditions
+    // Note: urlObj.pathname might be '/callback' instead of '/auth/callback' depending on URL format
+    const isAuthCallback = urlObj.pathname === '/auth/callback' ||
+                          urlObj.pathname === '/callback' ||
+                          urlObj.searchParams.has('access_token') ||
+                          urlObj.searchParams.has('type') ||
+                          urlObj.hash.includes('access_token');
+
+    if (isAuthCallback) {
+      console.log('Authentication callback received');
+      console.log('URL pathname:', urlObj.pathname);
+      console.log('URL search params:', Object.fromEntries(urlObj.searchParams));
+      console.log('URL hash:', urlObj.hash);
+
+      // Show and focus the main window
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+        }
+        mainWindow.show();
+        mainWindow.focus();
+
+        // Send the auth data to the renderer process
+        const authData = {
+          url: url,
+          hash: urlObj.hash,
+          searchParams: Object.fromEntries(urlObj.searchParams)
+        };
+
+        console.log('Sending auth data to renderer:', authData);
+        mainWindow.webContents.send('auth-callback', authData);
+      } else {
+        console.error('Main window is not available');
+      }
+    } else {
+      console.log('Deep link received but not an auth callback:', urlObj.pathname);
+      console.log('URL hash:', urlObj.hash);
+      console.log('URL search params:', Object.fromEntries(urlObj.searchParams));
+    }
+  } else {
+    console.log('URL does not start with expected protocol:', url);
+  }
+}
 // 保存所有便签窗口的引用
 let stickyNotes: BrowserWindow[] = [];
 
@@ -466,6 +529,46 @@ function initializeApp(): void {
   
   // 设置IPC处理程序
   setupIpcHandlers();
+
+  // Setup deep link handling
+  setupDeepLinkHandling();
+}
+
+/**
+ * Setup deep link handling for authentication
+ */
+function setupDeepLinkHandling(): void {
+  // Handle protocol on macOS
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+  });
+
+  // Handle protocol on Windows/Linux
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, focus our window instead
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+
+    // Handle deep link from command line
+    const url = commandLine.find(arg => arg.startsWith(`${PROTOCOL_NAME}://`));
+    if (url) {
+      handleDeepLink(url);
+    }
+  });
+
+  // Handle deep link on app startup (Windows/Linux)
+  if (process.platform !== 'darwin') {
+    const url = process.argv.find(arg => arg.startsWith(`${PROTOCOL_NAME}://`));
+    if (url) {
+      // Delay handling to ensure window is ready
+      setTimeout(() => handleDeepLink(url), 1000);
+    }
+  }
 }
 
 /**
