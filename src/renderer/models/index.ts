@@ -15,8 +15,7 @@ export default class aiModel {
         } else {
             importPath = "gemini";
         }
-        // Use extensionless path so the correct compiled file is loaded
-        const module = await import(`./model-${importPath}`);
+        const module = await import(`./model-${importPath}.ts`);
         return new aiModel(module.default);
     }
 
