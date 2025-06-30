@@ -38,6 +38,8 @@
     "auto_start_description": "系統啟動時自動運行應用程式",
     "horizontal_layout": "水平佈局",
     "horizontal_layout_description": "以左右並排而非上下顯示截圖和結果。",
+    "hidden_from_screen_capture": "截圖時隱藏視窗",
+    "hidden_from_screen_capture_description": "在其他應用程式進行螢幕錄製或截圖時隱藏 Snippai 視窗",
     "ui_language": "介面語言",
     "ui_language_description": "更改介面顯示語言",
     "ui_language_selector_label": "語言",
@@ -47,6 +49,7 @@
     "save_failed_description": "無法儲存應用設定。請稍後再試。",
     "saved": "設定已儲存",
     "saved_description": "應用設定已成功儲存。請重新啟動應用以讓變更生效。",
+    "saved_successfully": "設定儲存成功",
     "defaults_restored": "回復預設值",
     "defaults_shortcut_restored_description": "快捷鍵已重置為預設值",
     "shortcut": "快捷鍵",
@@ -55,6 +58,7 @@
     "shortcut_press_combination": "請按下快捷鍵組合",
     "shortcut_press_combination_description": "請按下欲使用的按鍵組合。須包含 Ctrl、Alt、Shift 或 Command 之一。",
     "shortcut_fullscreen_screenshot": "全螢幕截圖快捷鍵",
+    "shortcut_hide_all_sticky_notes": "隱藏/顯示所有便利貼捷徑",
     "shortcut_recorded": "快捷鍵已錄製",
     "shortcut_recorded_description": "新快捷鍵：{{shortcut}}",
     "shortcut_recording_cancelled": "快捷鍵錄製已取消",
@@ -75,8 +79,9 @@
     "about_version": "版本",
     "about_snippai": "關於 Snippai",
     "about_snippai_description": "Snippai 是一款智慧截圖辨識工具，可幫助您迅速分析並理解截圖內容。藉由強大 AI 模型，Snippai 能識別文字、程式碼及圖表，並提供相關分析與說明。",
-    "aboutopyright": "版權所有",
-    "aboutopyright_all_rights_reserved": "保留所有權利。"
+    "about_copyright": "版權所有",
+    "about_copyright_all_rights_reserved": "保留所有權利。",
+    "processing_screenshot": "正在處理截圖..."
   },
   "language_input": {
     "set_language": "請設定您的語言",

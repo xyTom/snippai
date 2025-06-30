@@ -38,6 +38,8 @@
     "auto_start_description": "系统启动时自动运行应用",
     "horizontal_layout": "水平布局",
     "horizontal_layout_description": "以左右并排而不是上下方式显示截图和结果。",
+    "hidden_from_screen_capture": "截图时隐藏窗口",
+    "hidden_from_screen_capture_description": "在其他应用进行屏幕录制或截图时隐藏 Snippai 窗口",
     "ui_language": "界面语言",
     "ui_language_description": "更改界面语言",
     "ui_language_selector_label": "语言",
@@ -47,6 +49,7 @@
     "save_failed_description": "无法保存应用设置。请稍后重试。",
     "saved": "设置已保存",
     "saved_description": "应用设置已成功保存。请重启应用以使更改生效。",
+    "saved_successfully": "设置保存成功",
     "defaults_restored": "恢复默认设置",
     "defaults_shortcut_restored_description": "快捷键已重置为默认值",
     "shortcut": "快捷键",
@@ -55,6 +58,7 @@
     "shortcut_press_combination": "按下快捷键组合",
     "shortcut_press_combination_description": "按下您要使用的组合键。必须包含至少一个修饰键。",
     "shortcut_fullscreen_screenshot": "全屏截图快捷键",
+    "shortcut_hide_all_sticky_notes": "隐藏/显示所有便签窗口快捷键",
     "shortcut_recorded": "快捷键已记录",
     "shortcut_recorded_description": "新快捷键已记录：{{shortcut}}",
     "shortcut_recording_cancelled": "快捷键记录已取消",
@@ -76,7 +80,8 @@
     "about_snippai": "关于 Snippai",
     "about_snippai_description": "Snippai 是一款智能截图识别工具，可帮助您快速分析并理解截图内容。借助强大的 AI 模型，Snippai 可以识别截图中的文本、代码和图表，并提供相关的分析和解释。",
     "about_copyright": "版权所有",
-    "aboutopyright_all_rights_reserved": "保留所有权利。"
+    "about_copyright_all_rights_reserved": "保留所有权利。",
+    "processing_screenshot": "正在处理截图..."
   },
   "language_input": {
     "set_language": "请选择您的语言",

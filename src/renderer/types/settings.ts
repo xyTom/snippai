@@ -6,6 +6,16 @@ import { LanguageCode } from '@/utils/i18next';
 import { ShortcutAction, DEFAULT_SHORTCUTS } from '../../shared/shortcuts';
 
 /**
+ * Window position and size information
+ */
+export interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
  * All shortcuts are stored in Record<ShortcutAction,string> for scalability.
  */
 export type ShortcutsRecord = Record<ShortcutAction, string>;
@@ -19,6 +29,7 @@ export type ShortcutSettings = ShortcutsRecord;
 export interface AppSettings {
   shortcuts: ShortcutsRecord;
   general: GeneralSettings;
+  stickyNotePosition?: WindowBounds;
 }
 
 /**
@@ -29,6 +40,7 @@ export interface GeneralSettings {
   autoStart: boolean;
   horizontalLayout: boolean;
   uiLanguage: LanguageCode;
+  hiddenFromScreenCapture: boolean;
 }
 
 export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = { ...DEFAULT_SHORTCUTS };

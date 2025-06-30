@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading</title>
+  <style>
+    :root {
+      --bg-dark: rgba(28, 28, 30, 0.75);
+      --bg-light: rgba(242, 242, 247, 0.8);
+      --border-dark: rgba(255, 255, 255, 0.1);
+      --border-light: rgba(0, 0, 0, 0.1);
+      --shadow-dark: rgba(0, 0, 0, 0.25);
+      --shadow-light: rgba(0, 0, 0, 0.08);
+      --text-dark: rgba(255, 255, 255, 0.9);
+      --text-light: rgba(0, 0, 0, 0.85);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+    }
+    
+    .container {
+      width: 300px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-dark);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 12px;
+      border: 1px solid var(--border-dark);
+      box-shadow: 0 8px 32px 0 var(--shadow-dark);
+      transition: background 0.3s ease, border 0.3s ease;
+    }
+    
+    .content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .spinner {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .spinner .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--text-dark);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite both;
+      transition: background 0.3s ease;
+    }
+    
+    .spinner .dot:nth-child(1) { animation-delay: -0.32s; }
+    .spinner .dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.6; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    
+    .message {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.1px;
+      color: var(--text-dark);
+      transition: color 0.3s ease;
+    }
+    
+    body {
+      animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Light mode support */
+    /* @media (prefers-color-scheme: light) {
+      .container {
+        background: var(--bg-light);
+        border-color: var(--border-light);
+        box-shadow: 0 8px 32px 0 var(--shadow-light);
+      }
+      .spinner .dot { background: var(--text-light); }
+      .message { color: var(--text-light); }
+    } */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content">
+      <div class="spinner">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <div class="message" id="message">Processing screenshot...</div>
+    </div>
+  </div>
+  
+  <script>
+    const translations = {
+      'en': 'Processing screenshot...',
+      'zh-CN': '正在处理截图...',
+      'zh-TW': '正在處理截圖...',
+      'ja': 'スクリーンショットを処理中...',
+      'ko': '스크린샷 처리 중...',
+      'es': 'Procesando captura de pantalla...'
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const lang = urlParams.get('lang') || 'en';
+    
+    const messageEl = document.getElementById('message');
+    if (messageEl) {
+      messageEl.textContent = translations[lang] || translations['en'];
+    }
+  </script>
+</body>
+</html> 

@@ -40,6 +40,8 @@
     "auto_start_description": "Set the application to start automatically when the system boots",
     "horizontal_layout": "Horizontal Layout",
     "horizontal_layout_description": "Display screenshot and results side by side instead of top to bottom.",
+    "hidden_from_screen_capture": "Hidden from Screen Capture",
+    "hidden_from_screen_capture_description": "Hide Snippai windows from screen recordings and screenshots taken by other applications",
     "ui_language": "UI Language",
     "ui_language_description": "Change the interface language",
     "ui_language_selector_label": "Language",
@@ -49,6 +51,7 @@
     "save_failed_description": "Unable to save application settings. Please try again later.",
     "saved": "Settings saved",
     "saved_description": "Application settings have been saved successfully. Restart the application for changes to take effect.",
+    "saved_successfully": "Settings saved successfully",
     "defaults_restored": "Default settings restored",
     "defaults_shortcut_restored_description": "Shortcut settings have been reset to default values",
     "shortcut": "Shortcut",
@@ -57,6 +60,7 @@
     "shortcut_press_combination": "Press shortcut combination",
     "shortcut_press_combination_description": "Press the key combination you want to use. Must include at least one modifier key.",
     "shortcut_fullscreen_screenshot": "Fullscreen Screenshot Shortcut",
+    "shortcut_hide_all_sticky_notes": "Hide/Show All Sticky Notes Shortcut",
     "shortcut_recorded": "Shortcut recorded",
     "shortcut_recorded_description": "New shortcut recorded: {{shortcut}}",
     "shortcut_recording_cancelled": "Shortcut recording cancelled",
@@ -79,7 +83,8 @@
     "reset": "Reset",
     "record": "Record",
     "recording": "Recording...",
-    "stop": "Stop"
+    "stop": "Stop",
+    "processing_screenshot": "Processing screenshot..."
   },
 
   "language_input": {

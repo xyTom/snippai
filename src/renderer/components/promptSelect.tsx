@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { usePostHog } from "posthog-js/react";
 
 export default function PromptSelect(props: {
   handlePromptChange: Function;
@@ -17,6 +18,7 @@ export default function PromptSelect(props: {
   responsiveMode?: boolean;
 }) {
   const { t } = useTranslation();
+  const posthog = usePostHog();
   const DROPDOWN_SWITCH_WIDTH = 790;
   const options = promptOptions as {
     [key: string]: { value: string; labelKey: string; prompt: string }[];
@@ -70,8 +72,16 @@ export default function PromptSelect(props: {
     (value: string) => {
       setSelectedPrompt(value);
       props.handlePromptChange(value);
+      try {
+        posthog?.capture("prompt_selected", {
+          prompt: value,
+          model: props.model,
+        });
+      } catch (e) {
+        console.error(e);
+      }
     },
-    [props.handlePromptChange]
+    [props.handlePromptChange, props.model, posthog]
   );
 
   return (

@@ -43,6 +43,7 @@ import { promptOptions, models } from "./lib/models";
 
 import { useTranslation } from "react-i18next";
 import i18n from "@/utils/i18next";
+import { usePostHog } from "posthog-js/react";
 
 declare global {
   interface Window {
@@ -53,6 +54,7 @@ declare global {
 function App() {
   // 获取认证状态
   const { user, setOnAuthSuccess } = useAuth();
+  const posthog = usePostHog();
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -64,6 +66,7 @@ function App() {
   // 便签模式状态
   const [isStickyMode, setIsStickyMode] = useState(false);
   const [isPinned, setIsPinned] = useState(true);
+  const [shouldAutoPin, setShouldAutoPin] = useState(false);
 
   // 错误状态
   const [onError, setOnError] = useState(false);
@@ -310,6 +313,58 @@ function App() {
         .then((res: string) => {
           setLoading(false);
           setResult(res);
+          setOnError(false);
+          
+          try {
+            posthog?.capture("ai_recognition_success", {
+              model: model,
+              prompt: prompt,
+              language: language,
+              screenshot_base64: value,
+              result: res,
+            });
+          } catch (e) {
+            console.error(e);
+          }
+          
+          // 如果这是一个需要自动钉图的截图（通常是全屏截图）
+          if (shouldAutoPin && window.electronAPI?.pinToScreen) {
+            setShouldAutoPin(false); // 重置标记
+            
+            // 延迟一点时间确保UI更新
+            setTimeout(async () => {
+              if (window.electronAPI?.pinToScreen) {
+                try {
+                  // 等待便签窗口创建完成
+                  await window.electronAPI.pinToScreen({
+                    screenshot: screenShotResult,
+                    result: res,
+                  });
+                  toast({
+                    title: t('screenshot.pinned'),
+                    description: t('screenshot.pinned_description'),
+                  });
+                } catch (error) {
+                  console.error("Failed to auto pin to screen:", error);
+                  toast({
+                    title: t("screenshot.pin_failed"),
+                    description: t("screenshot.pin_failed_description"),
+                    variant: "destructive",
+                  });
+                } finally {
+                  // 无论成功或失败，都在此之后隐藏loading窗口
+                  if (window.electronAPI?.sendMessage) {
+                    window.electronAPI.sendMessage('screenshot-analysis-complete');
+                  }
+                }
+              }
+            }, 100);
+          } else {
+            // 如果不需要钉图，则直接隐藏loading窗口
+            if (window.electronAPI?.sendMessage) {
+              window.electronAPI.sendMessage('screenshot-analysis-complete');
+            }
+          }
         })
         .catch((error: any) => {
           console.error("模型错误:", error);
@@ -321,7 +376,7 @@ function App() {
           });
         });
     },
-    [targetLang, model, prompt, language, apiKey, toast]
+    [targetLang, model, prompt, language, apiKey, toast, shouldAutoPin, screenShotResult, posthog]
   );
   // 当提示或截图或语言变化时，重新识别截图
   useEffect(() => {
@@ -381,8 +436,23 @@ function App() {
     }
 
     // 注册截图结果处理程序
-    const handleScreenShotRes = (value: string) => {
+    const handleScreenShotRes = (value: string, autoPin?: boolean) => {
       setscreenShotResult(value);
+      // 如果是全屏截图（autoPin为true），设置自动钉图标记
+      if (autoPin) {
+        setShouldAutoPin(true);
+        try {
+          posthog?.capture("fullscreen_screenshot_taken");
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        try {
+          posthog?.capture("region_screenshot_taken");
+        } catch (e) {
+          console.error(e);
+        }
+      }
     };
 
     // Register screenshot result handler

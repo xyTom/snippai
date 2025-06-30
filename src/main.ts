@@ -3,6 +3,9 @@ import path from 'path';
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
+import { settingsService } from './services/settingsService';
+import fs from 'fs';
+import { spawn } from 'child_process';
 
 // Initialize Sentry for error tracking
 Sentry.init({
@@ -27,6 +30,8 @@ if (!app.isDefaultProtocolClient(PROTOCOL_NAME)) {
 // Global reference to the main window to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
 let screenshots: any = null;
+let stickyNotes: BrowserWindow[] = [];
+let loadingWindow: BrowserWindow | null = null;
 
 /**
  * Handle deep link URL
@@ -82,14 +87,12 @@ function handleDeepLink(url: string): void {
     console.log('URL does not start with expected protocol:', url);
   }
 }
-// 保存所有便签窗口的引用
-let stickyNotes: BrowserWindow[] = [];
 
 /**
  * Creates and configures the main application window
  * @returns {BrowserWindow} The configured browser window instance
  */
-function createMainWindow(): BrowserWindow {
+function createMainWindow(showOnReady = true): BrowserWindow {
   console.log('Creating main window');
   
   // Configure the browser window
@@ -112,11 +115,13 @@ function createMainWindow(): BrowserWindow {
   });
 
   // Show window when ready
-  window.once('ready-to-show', () => {
-    console.log('Window ready to show');
-    window.show();
-    window.focus();
-  });
+  if (showOnReady) {
+    window.once('ready-to-show', () => {
+      console.log('Window ready to show');
+      window.show();
+      window.focus();
+    });
+  }
 
   // Set zoom factor when DOM is ready
   window.webContents.on('dom-ready', () => {
@@ -134,6 +139,14 @@ function createMainWindow(): BrowserWindow {
 
   // Load the application content
   loadApplicationContent(window);
+
+  // Apply content protection setting to the main window
+  try {
+    const hiddenFromScreenCapture = settingsService.getSettingValue('general.hiddenFromScreenCapture', false);
+    window.setContentProtection(hiddenFromScreenCapture);
+  } catch (error) {
+    console.error('Error applying content protection to main window:', error);
+  }
 
   return window;
 }
@@ -163,7 +176,7 @@ function loadApplicationContent(window: BrowserWindow): void {
 function showMainWindow(): void {
   if (!mainWindow || mainWindow.isDestroyed()) {
     console.log('Main window is not available, creating new window');
-    mainWindow = createMainWindow();
+    mainWindow = createMainWindow(true);
     return;
   }
   
@@ -220,8 +233,9 @@ function registerScreenshotShortcuts(): void {
   globalShortcut.unregisterAll();
 
   // Get the shortcut from settings with fallback to default
-  const shortcutKey = getSettingValue('shortcuts.screenshot', DEFAULT_SHORTCUTS.screenshot);
-  const fullscreenShortcutKey = getSettingValue('shortcuts.fullscreenScreenshot', DEFAULT_SHORTCUTS.fullscreenScreenshot);
+  const shortcutKey = settingsService.getSettingValue('shortcuts.screenshot', DEFAULT_SHORTCUTS.screenshot);
+  const fullscreenShortcutKey = settingsService.getSettingValue('shortcuts.fullscreenScreenshot', DEFAULT_SHORTCUTS.fullscreenScreenshot);
+  const hideAllStickyNotesKey = settingsService.getSettingValue('shortcuts.hideAllStickyNotes', DEFAULT_SHORTCUTS.hideAllStickyNotes);
 
   console.log('Registering screenshot shortcut:', shortcutKey);
   // Register screenshot and check result
@@ -233,7 +247,7 @@ function registerScreenshotShortcuts(): void {
 
     let screenshotDelay = 0;
     if (!mainWindow?.isDestroyed()) {
-      if (!mainWindow.isMinimized()) {
+      if (!mainWindow.isMinimized() && !settingsService.getSettingValue('general.hiddenFromScreenCapture', false)) {
         screenshotDelay = 500;
       }
       mainWindow.minimize();
@@ -254,6 +268,15 @@ function registerScreenshotShortcuts(): void {
   console.log('Registering fullscreen screenshot shortcut:', fullscreenShortcutKey);
   const registeredFullscreen = globalShortcut.register(fullscreenShortcutKey, async () => {
     try {
+      const { desktopCapturer, screen } = require('electron');
+
+      // 获取鼠标指针所在的屏幕，以实现对当前活动屏幕的精确截图。
+      const point = screen.getCursorScreenPoint();
+      const activeDisplay = screen.getDisplayNearestPoint(point);
+
+      // 显示 loading 窗口
+      showLoadingWindow(activeDisplay);
+      
       // 最小化主窗口以避免它出现在截图中
       if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
         mainWindow.minimize();
@@ -262,22 +285,26 @@ function registerScreenshotShortcuts(): void {
       // 短暂延迟确保窗口最小化完成
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const { desktopCapturer, nativeImage } = require('electron');
-      
-      // 使用 desktopCapturer 获取全屏截图
+      // 使用 desktopCapturer 获取所有屏幕的源。
       const sources = await desktopCapturer.getSources({ 
         types: ['screen'],
-        thumbnailSize: { width: 1920, height: 1080 },
+        // 设置缩略图尺寸为活动屏幕的实际尺寸，以确保截图质量。
+        thumbnailSize: { width: activeDisplay.size.width, height: activeDisplay.size.height },
         fetchWindowIcons: false
       });
       
       if (sources.length > 0) {
-        // 获取主屏幕的源
-        const primarySource = sources[0]; // 通常第一个是主屏幕
-        console.log('screen source:', sources);
+        // 查找与活动屏幕ID完全匹配的源，这是最可靠的方式。
+        let activeSource = sources.find((source: Electron.DesktopCapturerSource) => source.display_id === activeDisplay.id.toString());
+
+        // 如果因未知原因找不到匹配，则回退到第一个源作为保险。
+        if (!activeSource) {
+          console.warn('Could not find screen source for the active display. Falling back to the first source.');
+          activeSource = sources[0];
+        }
         
         // 获取完整尺寸的截图
-        const image = primarySource.thumbnail;
+        const image = activeSource.thumbnail;
         
         // 转换为 base64 - 使用 toDataURL 方法
         const pngBuffer = await image.toPNG();
@@ -285,13 +312,30 @@ function registerScreenshotShortcuts(): void {
         const base64 = Buffer.from(pngBuffer).toString('base64');
         console.log('Base64 image:', base64);
         
-        // 发送截图结果到主窗口
-        mainWindow.webContents.send('screenshot-result', base64);
+        const sendToMain = (win: BrowserWindow) => {
+          win.webContents.send('screenshot-result', base64, true);
+        };
+
+        // 确保主窗口始终存在，即使它被关闭了
+        if (!mainWindow || mainWindow.isDestroyed()) {
+          // 如果主窗口不存在，就在后台创建一个新的，但不显示它
+          mainWindow = createMainWindow(false);
+          mainWindow.webContents.once('dom-ready', () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              sendToMain(mainWindow);
+            }
+          });
+        } else {
+          // 如果主窗口存在，就直接使用它
+          sendToMain(mainWindow);
+        }
       } else {
         console.error('No screen sources found');
+        hideLoadingWindow();
       }
     } catch (err) {
       console.error('Failed to capture fullscreen screenshot:', err);
+      hideLoadingWindow();
     }
   });
   if (!registeredFullscreen) {
@@ -299,6 +343,38 @@ function registerScreenshotShortcuts(): void {
     dialog.showErrorBox(
       'Shortcut Registration Failed',
       `Cannot register ${getShortcutLabel('fullscreenScreenshot')} shortcut (${fullscreenShortcutKey}). It may be in use by another application.`
+    );
+  }
+
+  // 隐藏所有便签窗口快捷键注册
+  console.log('Registering hide all sticky notes shortcut:', hideAllStickyNotesKey);
+  const registeredHideAllStickyNotes = globalShortcut.register(hideAllStickyNotesKey, () => {
+    try {
+      // 隐藏所有便签窗口
+      stickyNotes.forEach(stickyNote => {
+        if (!stickyNote.isDestroyed()) {
+          if (stickyNote.isVisible()) {
+            stickyNote.hide();
+          } else {
+            // 显示窗口但不抢夺焦点
+            stickyNote.showInactive();
+          }
+        }
+      });
+      
+      // 过滤掉已销毁的窗口
+      stickyNotes = stickyNotes.filter(note => !note.isDestroyed());
+      
+      console.log(`Toggled visibility for ${stickyNotes.length} sticky notes`);
+    } catch (error) {
+      console.error('Error toggling sticky notes visibility:', error);
+    }
+  });
+  if (!registeredHideAllStickyNotes) {
+    console.error(`Failed to register hide all sticky notes shortcut: ${hideAllStickyNotesKey}`);
+    dialog.showErrorBox(
+      'Shortcut Registration Failed',
+      `Cannot register ${getShortcutLabel('hideAllStickyNotes')} shortcut (${hideAllStickyNotesKey}). It may be in use by another application.`
     );
   }
 }
@@ -326,7 +402,7 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
     eventLogger.debug("Base64 image captured with scale factor:", scaleFactor);
     
     // Check app settings for auto-copy preference
-    const isAutoCopyDisabled = getSettingValue('general.autoCopyToClipboard') === false;
+    const isAutoCopyDisabled = settingsService.getSettingValue('general.autoCopyToClipboard') === false;
     
     // Handle auto-copy based on settings
     if (isAutoCopyDisabled) {
@@ -431,21 +507,239 @@ function restorePreviousFocus(appName: string | null): void {
 }
 
 /**
+ * Validates if a window position is within screen bounds
+ */
+function isValidWindowPosition(position: { x: number; y: number; width?: number; height?: number }): boolean {
+  try {
+    const { screen } = require('electron');
+    const displays = screen.getAllDisplays();
+    
+    // Check if position is within any display's work area
+    const isWithinDisplay = displays.some((display: any) => {
+      const { x, y, width, height } = display.workArea;
+      return position.x >= x && position.y >= y && 
+             position.x < x + width && position.y < y + height;
+    });
+    
+    // Also validate window size if provided
+    if (position.width !== undefined && position.height !== undefined) {
+      return isWithinDisplay && position.width > MIN_WINDOW_WIDTH && position.height > MIN_WINDOW_HEIGHT;
+    }
+    
+    return isWithinDisplay;
+  } catch (error) {
+    console.error('Error validating window position:', error);
+    return false;
+  }
+}
+
+/**
+ * Gets saved window position from settings
+ */
+function getSavedStickyNotePosition(): Electron.Rectangle | null {
+  try {
+    const position = settingsService.getSettingValue('stickyNotePosition', null);
+    if (position && position.x !== undefined && position.y !== undefined) {
+      if (isValidWindowPosition(position)) {
+        return position;
+      }
+    }
+  } catch (error) {
+    console.error('Error getting saved window position:', error);
+  }
+  return null;
+}
+
+// Constants for window position management
+const POSITION_SAVE_DEBOUNCE_MS = 500;
+const MIN_WINDOW_WIDTH = 200;
+const MIN_WINDOW_HEIGHT = 150;
+
+// Debounce timer for saving window position
+let savePositionTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Saves window position to settings with debouncing
+ */
+function saveStickyNotePosition(bounds: Electron.Rectangle): void {
+  // Clear existing timer
+  if (savePositionTimer) {
+    clearTimeout(savePositionTimer);
+  }
+  
+  // Debounce the save operation
+  savePositionTimer = setTimeout(() => {
+    try {
+      settingsService.updateSettingValue('stickyNotePosition', {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height
+      });
+    } catch (error) {
+      console.error('Error saving window position:', error);
+    }
+    savePositionTimer = null;
+  }, POSITION_SAVE_DEBOUNCE_MS); // Configurable debounce delay
+}
+
+/**
+ * Creates a loading window to show screenshot processing status
+ * @returns {BrowserWindow | null} The loading window
+ */
+function createLoadingWindow(display: Electron.Display): BrowserWindow | null {
+  try {
+    const { width, height } = display.workArea;
+    
+    const windowWidth = 300;
+    const windowHeight = 60;
+    const padding = 20;
+    
+    const loadingWin = new BrowserWindow({
+      width: windowWidth,
+      height: windowHeight,
+      x: Math.round(display.workArea.x + (width - windowWidth) / 2),
+      y: display.workArea.y + padding,
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      resizable: false,
+      skipTaskbar: true,
+      focusable: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false, // 允许使用 require
+      },
+      show: false,
+    });
+    
+    // 设置窗口不可点击，避免打扰用户
+    loadingWin.setIgnoreMouseEvents(true);
+    //不显示在截图中
+    loadingWin.setContentProtection(true);
+    
+    const currentLang = settingsService.getSettingValue('general.language', 'en');
+
+    // 加载 loading 页面
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      // 开发环境，直接访问 public 目录的文件
+      const devUrl = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+      devUrl.pathname = '/loading.html';
+      devUrl.searchParams.set('lang', currentLang);
+      loadingWin.loadURL(devUrl.toString());
+    } else {
+      // 生产环境，从打包后的目录加载
+      const filePath = path.join(
+        __dirname,
+        `../renderer/${MAIN_WINDOW_VITE_NAME}/loading.html`,
+      );
+      loadingWin.loadFile(filePath, { query: { lang: currentLang } });
+    }
+    
+    loadingWin.once('ready-to-show', () => {
+      loadingWin.show();
+    });
+    
+    return loadingWin;
+  } catch (error) {
+    console.error('Failed to create loading window:', error);
+    return null;
+  }
+}
+
+/**
+ * Shows the loading window with a message
+ * @param {string} message - The message to display
+ */
+function showLoadingWindow(display: Electron.Display): void {
+  if (!loadingWindow || loadingWindow.isDestroyed()) {
+    loadingWindow = createLoadingWindow(display);
+  }
+  
+  if (loadingWindow && !loadingWindow.isDestroyed()) {
+    // 显示窗口
+    if (!loadingWindow.isVisible()) {
+      loadingWindow.show();
+      // 确保窗口在最顶层
+      loadingWindow.setAlwaysOnTop(true, 'floating');
+    }
+  } else {
+    console.error('Failed to create or access loading window');
+  }
+}
+
+/**
+ * Hides the loading window
+ */
+function hideLoadingWindow(): void {
+  if (loadingWindow && !loadingWindow.isDestroyed()) {
+    loadingWindow.hide();
+    loadingWindow.destroy();
+  }
+}
+
+/**
  * Creates a sticky note window with the screenshot and result
  * @param {string} screenshot - Base64 encoded screenshot
  * @param {string} result - Analysis result
  * @returns {BrowserWindow} The sticky note window
  */
 function createStickyNoteWindow(screenshot: string, result: string | null): BrowserWindow {
-  // Check layout settings
-  const isHorizontalLayout = getSettingValue('general.horizontalLayout', false);
+  const { screen } = require('electron');
+
+  // 1. 确定用户当前鼠标所在的"活动屏幕"。
+  const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+
+  // 获取应用设置和之前保存的窗口位置。
+  const isHorizontalLayout = settingsService.getSettingValue('general.horizontalLayout', false);
+  const savedPosition = getSavedStickyNotePosition();
   
-  // Create a new floating window
-  const stickyNote = new BrowserWindow({
-    width: isHorizontalLayout ? 700 : 400,
-    height: isHorizontalLayout ? 400 : 500,
-    minWidth: isHorizontalLayout ? 600 : 300,
-    frame: false, // Frameless window
+  // 确定窗口的尺寸。
+  const windowWidth = savedPosition?.width || (isHorizontalLayout ? 700 : 400);
+  const windowHeight = savedPosition?.height || (isHorizontalLayout ? 400 : 500);
+  const minWidth = isHorizontalLayout ? 600 : 300;
+  
+  let windowX: number;
+  let windowY: number;
+
+  if (savedPosition) {
+    // 2. 如果有保存的位置，就进行智能适配。
+    // 首先，找到这个已保存位置属于哪个屏幕。
+    const savedDisplay = screen.getDisplayMatching(savedPosition);
+    
+    // 计算窗口左上角相对于其所在屏幕工作区左上角的偏移量。
+    const offsetX = savedPosition.x - savedDisplay.workArea.x;
+    const offsetY = savedPosition.y - savedDisplay.workArea.y;
+    
+    // 将这个偏移量应用到当前的"活动屏幕"上，得到目标坐标。
+    const targetX = activeDisplay.workArea.x + offsetX;
+    const targetY = activeDisplay.workArea.y + offsetY;
+    
+    // 3. 为防止窗口在新屏幕上溢出，对坐标进行"钳制"，确保它完全可见。
+    windowX = Math.max(
+      activeDisplay.workArea.x,
+      Math.min(targetX, activeDisplay.workArea.x + activeDisplay.workArea.width - windowWidth)
+    );
+    windowY = Math.max(
+      activeDisplay.workArea.y,
+      Math.min(targetY, activeDisplay.workArea.y + activeDisplay.workArea.height - windowHeight)
+    );
+
+  } else {
+    // 4. 如果没有任何保存记录，就在当前活动屏幕上居中显示。
+    windowX = Math.round(activeDisplay.workArea.x + (activeDisplay.workArea.width - windowWidth) / 2);
+    windowY = Math.round(activeDisplay.workArea.y + (activeDisplay.workArea.height - windowHeight) / 2);
+  }
+
+  const windowOptions: Electron.BrowserWindowConstructorOptions = {
+    width: windowWidth,
+    height: windowHeight,
+    minWidth: minWidth,
+    x: windowX,
+    y: windowY,
+    frame: false,
     backgroundColor: '#000000',
     resizable: true,
     alwaysOnTop: true,
@@ -454,17 +748,30 @@ function createStickyNoteWindow(screenshot: string, result: string | null): Brow
       contextIsolation: true,
       nodeIntegration: true,
     },
-    skipTaskbar: true, // Don't show in taskbar
-    titleBarStyle: 'hidden', // Hide title bar
-    transparent: true, // Transparent background
-  });
+    skipTaskbar: true,
+    titleBarStyle: 'hidden',
+    transparent: true,
+    show: false, // 创建时不显示，避免抢夺焦点
+  };
+  
+  // 创建新的便签窗口
+  const stickyNote = new BrowserWindow(windowOptions);
 
-  // Load main interface and pass isSticky parameter (without large data like screenshot and result)
+  // 设置窗口在所有工作区和全屏应用上都可见
+  if (process.platform === 'darwin') {
+    // macOS 上设置窗口在所有 Space 和全屏应用上都可见
+    stickyNote.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  } else if (process.platform === 'win32') {
+    // Windows 上确保窗口保持在最顶层，即使有全屏应用
+    stickyNote.setAlwaysOnTop(true, 'screen-saver');
+    // 设置窗口级别为最高
+    stickyNote.setVisibleOnAllWorkspaces(true);
+  }
+
+  // ...existing code for loading content...
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    // Development mode: add query parameter
     stickyNote.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}?isSticky=true`);
   } else {
-    // Production mode: use hash parameter
     const filePath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
     stickyNote.loadFile(filePath, {
       hash: `isSticky=true`
@@ -473,13 +780,30 @@ function createStickyNoteWindow(screenshot: string, result: string | null): Brow
     });
   }
 
-  // Wait for the window to be ready, then send screenshot and result data via IPC
   stickyNote.webContents.on('did-finish-load', () => {
     stickyNote.webContents.send('sticky-note-data', {
       screenshot,
       result: result || ''
     });
+    
+    // 显示窗口但不抢夺焦点
+    stickyNote.showInactive();
+
+    // 在macOS上，当主窗口隐藏时，停靠栏图标可能会消失。
+    // 这行代码可以显式地再次显示它，以确保应用程序保持可访问性。
+    if (process.platform === 'darwin') {
+      app.dock.show();
+    }
   });
+
+  // Save window position when moved or resized
+  const saveCurrentPosition = () => {
+    const bounds = stickyNote.getBounds();
+    saveStickyNotePosition(bounds);
+  };
+
+  stickyNote.on('moved', saveCurrentPosition);
+  stickyNote.on('resized', saveCurrentPosition);
 
   // Add window close event
   stickyNote.on('closed', () => {
@@ -488,12 +812,44 @@ function createStickyNoteWindow(screenshot: string, result: string | null): Brow
     logger.debug('Sticky note closed, remaining notes:', stickyNotes.length);
   });
 
+  // Save position before window closes
+  stickyNote.on('close', () => {
+    try {
+      if (!stickyNote.isDestroyed()) {
+        const bounds = stickyNote.getBounds();
+        // Force immediate save on window close
+        if (savePositionTimer) {
+          clearTimeout(savePositionTimer);
+          savePositionTimer = null;
+        }
+        
+        settingsService.updateSettingValue('stickyNotePosition', {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height
+        });
+      }
+    } catch (error) {
+      // Window might be destroyed, ignore error
+      console.debug('Window close position save error (expected):', error.message);
+    }
+  });
+
   // Save window reference
   logger.debug('Created new sticky note window');
   stickyNotes.push(stickyNote);
 
   if (process.platform === 'darwin') {
     stickyNote.setWindowButtonVisibility(false);
+  }
+
+  // Apply content protection setting to the new sticky note window
+  try {
+    const hiddenFromScreenCapture = settingsService.getSettingValue('general.hiddenFromScreenCapture', false);
+    stickyNote.setContentProtection(hiddenFromScreenCapture);
+  } catch (error) {
+    console.error('Error applying content protection to sticky note:', error);
   }
 
   return stickyNote;
@@ -507,7 +863,7 @@ function initializeApp(): void {
 
   // Create window if needed
   if (!mainWindow || BrowserWindow.getAllWindows().length === 0) {
-    mainWindow = createMainWindow();
+    mainWindow = createMainWindow(true);
   }
 
   // Set up global error handler
@@ -529,6 +885,14 @@ function initializeApp(): void {
   
   // 设置IPC处理程序
   setupIpcHandlers();
+  
+  // 应用初始内容保护设置
+  try {
+    const hiddenFromScreenCapture = settingsService.getSettingValue('general.hiddenFromScreenCapture', false);
+    applyContentProtectionSettings(hiddenFromScreenCapture);
+  } catch (error) {
+    console.error('Error applying initial content protection settings:', error);
+  }
 
   // Setup deep link handling
   setupDeepLinkHandling();
@@ -584,7 +948,7 @@ function setupAppEventHandlers(): void {
   // Application ready event
   app.on('ready', () => {
     console.log('App ready event fired');
-    mainWindow = createMainWindow();
+    mainWindow = createMainWindow(true);
   });
 
   // Window closed event
@@ -601,7 +965,7 @@ function setupAppEventHandlers(): void {
     console.log('App activated, window count:', BrowserWindow.getAllWindows().length);
     if (BrowserWindow.getAllWindows().length === 0) {
       console.log('Creating new window on activate');
-      mainWindow = createMainWindow();
+      mainWindow = createMainWindow(true);
     } else {
       showMainWindow();
     }
@@ -609,91 +973,31 @@ function setupAppEventHandlers(): void {
 }
 
 /**
- * Gets a setting value from the app settings file
- * @param {string} path - The dot-notation path to the setting (e.g., 'general.autoCopyToClipboard')
- * @param {any} defaultValue - The default value to return if the setting is not found
- * @returns {any} The setting value or the default value
+ * 应用内容保护设置到所有窗口
+ * @param {boolean} enable - 是否启用内容保护（隐藏窗口不被截屏）
  */
-function getSettingValue(path: string, defaultValue: any = null): any {
+function applyContentProtectionSettings(enable: boolean): void {
   try {
-    const fs = require('fs');
-    const pathModule = require('path');
-    const settingsPath = pathModule.join(app.getPath('userData'), 'app-settings.json');
-    
-    if (!fs.existsSync(settingsPath)) {
-      return defaultValue;
+    // 应用到主窗口
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setContentProtection(enable);
     }
     
-    const data = fs.readFileSync(settingsPath, 'utf8');
-    const settings = JSON.parse(data);
-    
-    // Handle dot notation path (e.g., 'general.autoCopyToClipboard')
-    const parts = path.split('.');
-    let current = settings;
-    
-    for (const part of parts) {
-      if (current === undefined || current === null) {
-        return defaultValue;
+    // 应用到所有便签窗口
+    stickyNotes.forEach(window => {
+      if (!window.isDestroyed()) {
+        window.setContentProtection(enable);
       }
-      current = current[part];
-    }
-    
-    return current !== undefined ? current : defaultValue;
-  } catch (error) {
-    console.error(`Error getting setting value for ${path}:`, error);
-    return defaultValue;
-  }
-}
-
-/**
- * 设置应用程序自启动
- * @param {boolean} enable - 是否启用自启动
- * @returns {boolean} 操作是否成功
- */
-function setAutoStart(enable: boolean): boolean {
-  // 开发环境下不实际设置自启动，但返回成功以便于测试
-  if (!app.isPackaged) {
-    console.log(`[DEV] Auto-start would be ${enable ? 'enabled' : 'disabled'} in packaged app`);
-    return true;
-  }
-
-  try {
-    // 获取当前自启动状态
-    const currentState = app.getLoginItemSettings();
-    
-    // 如果当前状态与目标状态相同，无需更改
-    if (currentState.openAtLogin === enable) {
-      return true;
-    }
-    
-    // 设置自启动
-    app.setLoginItemSettings({
-      openAtLogin: enable
     });
     
-    console.log(`Auto-start ${enable ? 'enabled' : 'disabled'} successfully`);
-    return true;
+    // 应用到截图窗口（如果存在）
+    if (screenshots && screenshots.win && !screenshots.win.isDestroyed()) {
+      screenshots.win.setContentProtection(enable);
+    }
+    
+    console.log(`Content protection ${enable ? 'enabled' : 'disabled'} for all windows`);
   } catch (error) {
-    console.error('Error setting auto-start:', error);
-    return false;
-  }
-}
-
-/**
- * 获取应用程序自启动状态
- * @returns {boolean} 是否启用了自启动
- */
-function getAutoStartStatus(): boolean {
-  // 开发环境下始终返回关闭状态
-  if (!app.isPackaged) {
-    return false;
-  }
-  
-  try {
-    return app.getLoginItemSettings().openAtLogin;
-  } catch (error) {
-    console.error('Error getting auto-start status:', error);
-    return false;
+    console.error('Error applying content protection settings:', error);
   }
 }
 
@@ -723,7 +1027,7 @@ function setupIpcHandlers(): void {
     const win = BrowserWindow.fromWebContents(_event.sender);
     if (win) {
       // 检查布局设置
-      const isHorizontalLayout = getSettingValue('general.horizontalLayout', false);
+      const isHorizontalLayout = settingsService.getSettingValue('general.horizontalLayout', false);
       
       // 根据布局设置调整大小
       if (isHorizontalLayout) {
@@ -758,195 +1062,33 @@ function setupIpcHandlers(): void {
     return true;
   });
   
-  
-  
   /**
    * Get application settings from storage or create default settings if not found
    * Implements robust error handling and auto-recovery for corrupted config files
    */
   ipcMain.handle('get-app-settings', () => {
-    // Define standard default settings object
-    const createDefaultSettings = () => ({
-      shortcuts: {
-        screenshot: 'CommandOrControl+Shift+A',
-        fullscreenScreenshot: 'CommandOrControl+Shift+F'
-      },
-      general: {
-        autoCopyToClipboard: true,
-        autoStart: getAutoStartStatus(), // Always use actual system state
-        uiLanguage: 'default',
-        horizontalLayout: false
-      }
-    });
-
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const userDataPath = app.getPath('userData');
-      const settingsPath = path.join(userDataPath, 'app-settings.json');
-      
-      // Create settings directory if it doesn't exist
-      const settingsDir = path.dirname(settingsPath);
-      if (!fs.existsSync(settingsDir)) {
-        fs.mkdirSync(settingsDir, { recursive: true });
-      }
-      
-      // Get default settings with current system state
-      const defaultSettings = createDefaultSettings();
-      
-      // If settings file does not exist, create it with defaults
-      if (!fs.existsSync(settingsPath)) {
-        logger.info('Settings file not found, creating default settings');
-        try {
-          fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
-          logger.info('Default settings file created successfully');
-        } catch (writeError) {
-          logger.error('Failed to create default settings file:', writeError);
-          // Continue with in-memory defaults even if write fails
-        }
-        return defaultSettings;
-      }
-      
-      // Read and parse existing settings file
-      let data;
-      try {
-        data = fs.readFileSync(settingsPath, 'utf8');
-      } catch (readError) {
-        logger.error('Error reading settings file:', readError);
-        // Attempt to recreate the settings file
-        try {
-          fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
-          logger.info('Recreated settings file after read error');
-        } catch (writeError) {
-          logger.error('Failed to recreate settings file after read error:', writeError);
-        }
-        return defaultSettings;
-      }
-      
-      // Parse JSON and handle syntax errors
-      let savedSettings;
-      try {
-        savedSettings = JSON.parse(data);
-        
-        // Validate parsed data has expected structure
-        if (typeof savedSettings !== 'object' || savedSettings === null) {
-          throw new Error('Settings file does not contain a valid object');
-        }
-      } catch (parseError) {
-        logger.error('Error parsing settings file, using defaults:', parseError);
-        // Backup corrupted file for potential recovery/debugging
-        try {
-          const backupPath = `${settingsPath}.backup.${Date.now()}`;
-          fs.writeFileSync(backupPath, data);
-          logger.info(`Backed up corrupted settings file to: ${backupPath}`);
-          
-          // Recreate with defaults
-          fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
-          logger.info('Recreated settings file with defaults after parse error');
-        } catch (backupError) {
-          logger.error('Failed to backup/recreate corrupted settings file:', backupError);
-        }
-        return defaultSettings;
-      }
-      
-      // Track if settings were updated and need to be saved
-      let settingsChanged = false;
-      
-      // Deep merge strategy to handle nested properties
-      const mergeDefaultsRecursive = (target: Record<string, any>, defaults: Record<string, any>) => {
-        Object.keys(defaults).forEach(key => {
-          // If property doesn't exist in target, add it
-          if (target[key] === undefined) {
-            target[key] = defaults[key];
-            settingsChanged = true;
-            logger.info(`Added missing setting: ${key}`);
-            return;
-          }
-          
-          // If both are objects, recurse
-          if (
-            typeof defaults[key] === 'object' && 
-            defaults[key] !== null &&
-            typeof target[key] === 'object' && 
-            target[key] !== null &&
-            !Array.isArray(defaults[key]) && 
-            !Array.isArray(target[key])
-          ) {
-            mergeDefaultsRecursive(target[key], defaults[key]);
-          }
-        });
-      };
-      
-      // Apply deep merge of defaults
-      mergeDefaultsRecursive(savedSettings, defaultSettings);
-      
-      // Special handling for autoStart property - sync with actual system state
-      const actualAutoStartStatus = getAutoStartStatus();
-      if (savedSettings.general.autoStart !== actualAutoStartStatus) {
-        savedSettings.general.autoStart = actualAutoStartStatus;
-        settingsChanged = true;
-        logger.info(`Updated autoStart setting to match system state: ${actualAutoStartStatus}`);
-      }
-      
-      // Save settings if they were changed or additions were made
-      if (settingsChanged) {
-        try {
-          fs.writeFileSync(settingsPath, JSON.stringify(savedSettings, null, 2));
-          logger.info('Settings automatically updated with missing default values');
-        } catch (writeError) {
-          logger.error('Failed to save updated settings:', writeError);
-          // Continue with in-memory updated settings even if write fails
-        }
-      }
-      
-      return savedSettings;
-      
-    } catch (error) {
-      // Handle any unexpected errors
-      logger.error('Unexpected error in settings handling:', error);
-      
-      // Always return valid settings even in case of error
-      return createDefaultSettings();
-    }
+    return settingsService.getSettings();
   });
   
   // 保存应用程序设置
   ipcMain.handle('save-app-settings', (_event, data) => {
     try {
-      // 验证数据完整性
-      if (!data || typeof data !== 'object') {
-        console.error('Invalid settings data received');
-        return false;
-      }
-
-      const fs = require('fs');
-      const path = require('path');
-      const userDataPath = app.getPath('userData');
-      const settingsPath = path.join(userDataPath, 'app-settings.json');
+      // Save settings using the centralized service
+      const success = settingsService.saveSettings(data);
       
-      // 处理自启动设置
-      if (data.general && typeof data.general.autoStart === 'boolean') {
-        // 更新系统自启动设置
-        const success = setAutoStart(data.general.autoStart);
-        if (!success) {
-          console.warn('Failed to set auto-start, but will continue saving settings');
+      if (success) {
+        // Handle content protection settings
+        if (data.general && typeof data.general.hiddenFromScreenCapture === 'boolean') {
+          applyContentProtectionSettings(data.general.hiddenFromScreenCapture);
         }
+        
+        // Update shortcuts
+        registerScreenshotShortcuts();
+        
+        console.log('Settings saved successfully');
       }
       
-      // 确保设置目录存在
-      const settingsDir = path.dirname(settingsPath);
-      if (!fs.existsSync(settingsDir)) {
-        fs.mkdirSync(settingsDir, { recursive: true });
-      }
-      
-      // 写入设置文件
-      fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2));
-      
-      // 更新快捷键
-      registerScreenshotShortcuts();
-      
-      console.log('Settings saved successfully');
-      return true;
+      return success;
     } catch (error) {
       console.error('Error saving app settings:', error);
       return false;
@@ -956,6 +1098,11 @@ function setupIpcHandlers(): void {
   // 获取应用程序版本
   ipcMain.handle('get-app-version', () => {
     return app.getVersion();
+  });
+
+  // Handle screenshot analysis complete
+  ipcMain.on('screenshot-analysis-complete', () => {
+    hideLoadingWindow();
   });
 }
 

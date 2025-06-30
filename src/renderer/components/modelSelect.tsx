@@ -19,10 +19,12 @@ import {
 } from "../components/ui/popover"
 import { models } from "../lib/models"
 import { useTranslation } from "react-i18next"
+import { usePostHog } from "posthog-js/react"
 
-export default function selectModel(props:{handleModelChange:Function}) {
+export default function ModelSelect(props:{handleModelChange:Function}) {
   const [open, setOpen] = React.useState(false)
   const {t} = useTranslation();
+  const posthog = usePostHog();
   //read the model from local storage
   let model = localStorage.getItem("model")
   if (model && models.find((m) => m.value === model)) {
@@ -70,6 +72,11 @@ export default function selectModel(props:{handleModelChange:Function}) {
                 onSelect={(currentValue) => {
                   setValue(currentValue === value ? "" : currentValue)
                   setOpen(false)
+                  try {
+                    posthog?.capture("model_selected", { model: currentValue })
+                  } catch (e) {
+                    console.error(e);
+                  }
                 }}
               >
                 <Check

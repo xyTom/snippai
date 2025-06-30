@@ -22,7 +22,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     autoCopyToClipboard: true,
     autoStart: false,
     horizontalLayout: false,
-    uiLanguage: 'default'
+    uiLanguage: 'default',
+    hiddenFromScreenCapture: false
   }
 };
 

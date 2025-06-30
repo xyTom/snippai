@@ -6,9 +6,10 @@ import "@sentry/electron/preload";
 
 contextBridge.exposeInMainWorld('electronAPI', {
     isDevelopment: !!process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,
-    onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value) => callback(value)),
+    onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value, autoPin) => callback(value, autoPin)),
     onStickyNoteData: (callback: any) => ipcRenderer.on('sticky-note-data', (_event, data) => callback(data)),
     onAuthCallback: (callback: any) => ipcRenderer.on('auth-callback', (_event, data) => callback(data)),
+    sendMessage: (channel: string, data?: any) => ipcRenderer.send(channel, data),
     removeListener(channel: string, func: (...args: unknown[]) => void) {
         ipcRenderer.removeListener(channel, (_event, ...args) => func(...args));
     },

@@ -33,6 +33,7 @@ import ReactDOM from 'react-dom/client'
 import * as Sentry from "@sentry/electron/renderer";
 import { AuthProvider } from './context/AuthContext';
 import '../utils/i18next'
+import { PostHogProvider } from 'posthog-js/react'
 
 Sentry.init({
   dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
@@ -49,9 +50,18 @@ Sentry.init({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <PostHogProvider
+        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
+        options={{
+          api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+          capture_exceptions: true,
+          debug: import.meta.env.MODE === "development",
+        }}
+      >
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </PostHogProvider>
     </React.StrictMode>,
   )
   

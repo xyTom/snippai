@@ -166,6 +166,17 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           }
         />
 
+        {/* Hidden from screen capture setting */}
+        <SettingToggle
+          id="hidden-from-screen-capture"
+          title={t("settings.hidden_from_screen_capture")}
+          description={t("settings.hidden_from_screen_capture_description")}
+          checked={settings.hiddenFromScreenCapture}
+          onChange={(checked) =>
+            handleSettingChange("hiddenFromScreenCapture", checked)
+          }
+        />
+
         {/* UI language setting */}
         <SettingSelect
           id="ui-language"

@@ -9,7 +9,8 @@
 // You can expand this union type whenever a new global shortcut is introduced.
 export type ShortcutAction =
   | 'screenshot'
-  | 'fullscreenScreenshot';
+  | 'fullscreenScreenshot'
+  | 'hideAllStickyNotes';
 
 export interface ShortcutDefinition {
   /** Unique identifier used in settings & IPC path (e.g. shortcuts.{key}) */
@@ -30,6 +31,11 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     key: 'fullscreenScreenshot',
     defaultAccelerator: 'CommandOrControl+Shift+F',
     label: 'settings.shortcut_fullscreen_screenshot',
+  },
+  {
+    key: 'hideAllStickyNotes',
+    defaultAccelerator: 'CommandOrControl+Shift+H',
+    label: 'settings.shortcut_hide_all_sticky_notes',
   },
 ];
 
