@@ -13,6 +13,7 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
+  CommandList,
 } from "../components/ui/command";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
@@ -108,32 +109,36 @@ const TargetLangSelect: React.FC<TargetLangSelectProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        side="bottom"
+        align="start"
         className="w-[180px] p-0 dark"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <Command>
           <CommandInput placeholder="Search language…" />
-          <CommandEmpty>No language found.</CommandEmpty>
-          <CommandGroup>
-            {langs.map((lang) => (
-              <CommandItem
-                key={lang.code}
-                value={lang.code}
-                onSelect={(current) => {
-                  onChange(current);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === lang.code ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {lang.label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <CommandList className="overflow-y-auto max-h-[30vh]">
+            <CommandEmpty>No language found.</CommandEmpty>
+            <CommandGroup>
+              {langs.map((lang) => (
+                <CommandItem
+                  key={lang.code}
+                  value={lang.code}
+                  onSelect={(current) => {
+                    onChange(current);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === lang.code ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {lang.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
