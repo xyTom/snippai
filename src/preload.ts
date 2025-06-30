@@ -3,6 +3,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import "@sentry/electron/preload";
+import { TableData } from './services/excel/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     isDevelopment: !!process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,
@@ -24,6 +25,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
     saveAppSettings: (data: any) => ipcRenderer.invoke('save-app-settings', data),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    exportExcelTables: (data: { tables: TableData[]; defaultFileName?: string }) => ipcRenderer.invoke('export-excel-tables', data),
 })
 
 console.log('preload.ts loaded');

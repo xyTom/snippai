@@ -67,18 +67,30 @@ export default function DisplayTextResult({
       const fileName = `snippai-table-${dateStr}-${timeStr}.xlsx`;
 
       const exportService = ExcelExportServiceFactory.getService();
-      await exportService.exportTables(tables, fileName);
+      const result = await exportService.exportTables(tables, fileName);
 
-      setExported(true);
-      toast({
-        title: t('export.success'),
-        description: t('export.success_description', { 
-          count: tables.length,
-          fileName: fileName,
-          postProcess: 'interval'
-        }),
-        variant: "default",
-      });
+      if (result.success) {
+        setExported(true);
+        toast({
+          title: t('export.success'),
+          description: t('export.success_description', { 
+            count: tables.length,
+            fileName: result.fileName || fileName,
+            postProcess: 'interval'
+          }),
+          variant: "default",
+        });
+      } else if (result.cancelled) {
+        // User cancelled the operation, don't show any toast
+        console.log('Export cancelled by user');
+      } else {
+        // Export failed
+        toast({
+          title: t('export.failed'),
+          description: t('export.failed_description'),
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: t('export.failed'),

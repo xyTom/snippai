@@ -3,9 +3,11 @@ import path from 'path';
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
-import { settingsService } from './services/settingsService';
+import * as XLSX from 'xlsx';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import { TableData } from './services/excel/types';
+import { settingsService } from './services/settingsService';
 
 // Initialize Sentry for error tracking
 Sentry.init({
@@ -1098,6 +1100,69 @@ function setupIpcHandlers(): void {
   // 获取应用程序版本
   ipcMain.handle('get-app-version', () => {
     return app.getVersion();
+  });
+
+// Excel table export function
+  ipcMain.handle('export-excel-tables', async (_event, data) => {
+    try {
+      const { tables, defaultFileName } = data;
+      
+      if (!tables || tables.length === 0) {
+        logger.error('No tables provided for export');
+        return { success: false, error: 'No tables provided' };
+      }
+
+      // show save dialog
+      const result = await dialog.showSaveDialog(mainWindow!, {
+        title: 'Export Tables to Excel',
+        defaultPath: defaultFileName || 'snippai-tables.xlsx',
+        filters: [
+          { name: 'Excel Files', extensions: ['xlsx'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+
+      if (result.canceled || !result.filePath) {
+        logger.info('Excel export cancelled by user');
+        return { success: false, cancelled: true };
+      }
+
+      const workbook = XLSX.utils.book_new();
+
+      tables.forEach((table: TableData, index: number) => {
+        if (!table.headers || table.headers.length === 0) {
+          logger.warn(`Skipping invalid table at index ${index}`);
+          return;
+        }
+
+        const worksheetData = [
+          table.headers,
+          ...(table.rows || [])
+        ];
+
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        
+        const sheetName = `Table${index + 1}`;
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+      await fs.promises.writeFile(result.filePath, wbout);
+
+      logger.info(`Excel file exported successfully to: ${result.filePath}`);
+      return { 
+        success: true, 
+        filePath: result.filePath,
+        fileName: path.basename(result.filePath)
+      };
+
+    } catch (error) {
+      logger.error('Error exporting Excel file:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
   });
 
   // Handle screenshot analysis complete
