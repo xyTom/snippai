@@ -55,6 +55,7 @@ function App() {
   // 获取认证状态
   const { user, setOnAuthSuccess } = useAuth();
   const posthog = usePostHog();
+
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
