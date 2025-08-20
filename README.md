@@ -3,6 +3,8 @@
 
 [English 🇺🇸](./README.md) | [简体中文 🇨🇳](./README-ZH.md)
 
+<img src="https://trendshift.io/api/badge/repositories/14560" alt="xyTom%2Fsnippai | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/>
+
 # Snippai: AI-Powered Snipping Tool
 
 Snippai is a versatile and intelligent snipping tool powered by advanced AI algorithms. It offers a range of features to enhance your snipping experience, making it more efficient and productive. From identifying formulas and text within images to analyzing and describing the content of images, Snippai brings a new level of intelligence to snipping tools.
