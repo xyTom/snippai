@@ -1,5 +1,6 @@
 {
-  "main_instructions": "{{shortcut}}를 눌러 스크린샷을 찍으세요.",
+  "main_instruction_shortcut": "{{shortcut}}를 눌러 스크린샷 찍기",
+  "main_instruction_drag": "또는 이미지를 여기로 끌어 분석하기",
   "auto": "자동",
   "formula": "수식",
   "text": "텍스트",
@@ -89,6 +90,15 @@
     "language": "언어",
     "save": "저장",
     "language_invalid": "유효한 언어를 입력해주세요"
+  },
+  "drop_overlay_message": "이미지를 놓아 분석하기",
+  "upload": {
+    "drag_overlay_title": "이미지를 놓아 분석하기",
+    "drag_overlay_subtitle": "이미지 파일을 앱으로 끌어오면 업로드되어 인식이 시작됩니다.",
+    "unsupported_title": "지원되지 않는 파일",
+    "unsupported_description": "이미지 파일(PNG, JPG, JPEG, GIF 또는 WebP)을 올려주세요.",
+    "failed_title": "이미지 업로드 실패",
+    "failed_description": "이미지를 처리하지 못했습니다. 다른 파일로 다시 시도해 주세요."
   },
   "screenshot": {
     "screenshot": "캡처",

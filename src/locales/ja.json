@@ -1,5 +1,6 @@
 {
-  "main_instructions": "スクリーンショットを撮るには{{shortcut}}を押してください。",
+  "main_instruction_shortcut": "{{shortcut}}を押してスクリーンショットを撮影",
+  "main_instruction_drag": "または画像をここにドラッグして解析",
   "auto": "自動",
   "formula": "数式",
   "text": "テキスト",
@@ -89,6 +90,15 @@
     "language": "言語",
     "save": "保存",
     "language_invalid": "有効な言語を入力してください"
+  },
+  "drop_overlay_message": "画像をドロップして解析",
+  "upload": {
+    "drag_overlay_title": "画像をドロップして解析",
+    "drag_overlay_subtitle": "画像ファイルをアプリにドラッグするとアップロードして認識できます。",
+    "unsupported_title": "対応していないファイルです",
+    "unsupported_description": "画像ファイル（PNG、JPG、JPEG、GIF、またはWebP）をドロップしてください。",
+    "failed_title": "画像のアップロードに失敗しました",
+    "failed_description": "画像を処理できませんでした。別のファイルでお試しください。"
   },
   "screenshot": {
     "screenshot": "キャプチャ",

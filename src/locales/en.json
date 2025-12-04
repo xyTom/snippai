@@ -1,5 +1,6 @@
 {
-  "main_instructions": "Press {{shortcut}} to take a screenshot.",
+  "main_instruction_shortcut": "Press {{shortcut}} to take a screenshot",
+  "main_instruction_drag": "Or drag an image here to analyze it",
   "auto": "Auto",
   "formula": "Formula",
   "text": "Text",
@@ -11,7 +12,6 @@
   "translate": "Translate",
   "login": "Login",
   "logout": "Logout",
-
   "login_form": {
     "welcome": "Welcome to Snippai",
     "magic_link_description": "Enter your email to receive a secure login link. No password required!",
@@ -24,7 +24,6 @@
     "privacy_policy": "Privacy Policy",
     "agree": "By continuing, you agree to our <0>{{terms_of_service}}</0> and <1>{{privacy_policy}}</1>."
   },
-
   "settings": {
     "title": "Settings",
     "general": "General",
@@ -77,7 +76,6 @@
     "about_snippai_description": "Snippai is an intelligent screenshot recognition tool that helps you quickly analyze and understand screenshot content. With powerful AI models, Snippai can recognize text, code, and diagrams in screenshots, and provide relevant analysis and explanations.",
     "about_copyright": "Copyright",
     "about_copyright_all_rights_reserved": "All rights reserved.",
-
     "cancel": "Cancel",
     "save": "Save",
     "reset": "Reset",
@@ -86,7 +84,6 @@
     "stop": "Stop",
     "processing_screenshot": "Processing screenshot..."
   },
-
   "language_input": {
     "set_language": "Please set your language",
     "description": "Please enter the language you want the AI to answer in (e.g. 中文, English, 日本語, etc.)",
@@ -94,7 +91,15 @@
     "save": "Save",
     "language_invalid": "Please enter a valid language"
   },
-
+  "drop_overlay_message": "Drop image to analyze",
+  "upload": {
+    "drag_overlay_title": "Drop image to analyze",
+    "drag_overlay_subtitle": "Drag an image file anywhere in the app to upload it for recognition.",
+    "unsupported_title": "Unsupported file",
+    "unsupported_description": "Please drop an image file (PNG, JPG, JPEG, GIF, or WebP).",
+    "failed_title": "Image upload failed",
+    "failed_description": "We couldn't process that image. Please try again with a different file."
+  },
   "screenshot": {
     "screenshot": "Screenshot",
     "pin_to_screen": "Pin to screen",
@@ -111,12 +116,10 @@
     "retry": "Retry",
     "clear_screenshot": "Clear screenshot"
   },
-
   "error": "Error!",
   "error_description": "Please try again later. Error message: {{error}}",
   "search_model": "Search model...",
   "no_model_found": "No model found",
-
   "export": {
     "no_tables_found": "No Tables Found",
     "no_tables_found_description": "No valid tables were found in the text. Please ensure your text contains properly formatted markdown tables.",

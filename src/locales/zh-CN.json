@@ -1,5 +1,6 @@
 {
-  "main_instructions": "按下{{shortcut}}截取屏幕截图。",
+  "main_instruction_shortcut": "按下{{shortcut}}截屏",
+  "main_instruction_drag": "或拖拽图片到这里进行识别",
   "auto": "自动",
   "formula": "公式",
   "text": "文本",
@@ -89,6 +90,15 @@
     "language": "语言",
     "save": "保存",
     "language_invalid": "请输入有效的语言"
+  },
+  "drop_overlay_message": "拖放图片开始识别",
+  "upload": {
+    "drag_overlay_title": "拖放图片开始识别",
+    "drag_overlay_subtitle": "将图片文件拖入应用即可上传并开始识别。",
+    "unsupported_title": "不支持的文件",
+    "unsupported_description": "请拖入图片文件（PNG、JPG、JPEG、GIF 或 WebP）。",
+    "failed_title": "图片上传失败",
+    "failed_description": "无法处理该图片，请尝试其他文件。"
   },
   "screenshot": {
     "screenshot": "截图",

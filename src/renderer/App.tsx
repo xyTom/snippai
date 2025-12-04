@@ -24,6 +24,10 @@ import { UserMenuButton } from "./components/buttons/UserMenuButton";
 import { useAuth } from "./context/AuthContext";
 import { LoginDialog } from "./components/LoginDialog";
 
+// App.tsx
+import DropOverlay from "./components/DropOverlay";
+import { useImageDrop } from "./hooks/useImageDrop";
+
 // 导入提取的组件
 import StickyNoteTitleBar from "./components/StickyNoteTitleBar";
 import ScreenshotDisplay from "./components/ScreenshotDisplay";
@@ -44,6 +48,8 @@ import { promptOptions, models } from "./lib/models";
 import { useTranslation } from "react-i18next";
 import i18n from "@/utils/i18next";
 import { usePostHog } from "posthog-js/react";
+import { AnimatePresence, motion } from "motion/react";
+import { TextShimmer } from "./components/ui/text-shimmer";
 
 declare global {
   interface Window {
@@ -63,6 +69,8 @@ function App() {
   const [imageCopied, setImageCopied] = useState(false);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [showFloatingButton, setShowFloatingButton] = useState(true);
+  const [instructionIndex, setInstructionIndex] = useState(0);
+  const shimmerDuration = 2.6;
 
   // 便签模式状态
   const [isStickyMode, setIsStickyMode] = useState(false);
@@ -258,6 +266,50 @@ function App() {
     [language]
   );
 
+  const handleImageDrop = useCallback(
+    (base64: string, file: File) => {
+      setResult(null);
+      setOnError(false);
+      setShouldAutoPin(false);
+      setscreenShotResult(base64);
+
+      try {
+        posthog?.capture("image_file_uploaded", {
+          file_type: file.type,
+          file_size: file.size,
+          file_name: file.name,
+          source: "drag_and_drop",
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    },
+    [posthog]
+  );
+
+  const handleInvalidFile = useCallback(() => {
+    toast({
+      title: t("upload.unsupported_title"),
+      description: t("upload.unsupported_description"),
+      variant: "destructive",
+    });
+  }, [toast, t]);
+
+  const handleDropError = useCallback(() => {
+    toast({
+      title: t("upload.failed_title"),
+      description: t("upload.failed_description"),
+      variant: "destructive",
+    });
+  }, [toast, t]);
+
+  const { isDraggingFile } = useImageDrop({
+    onImageDrop: handleImageDrop,
+    onInvalidFile: handleInvalidFile,
+    onDropError: handleDropError,
+    disabled: isStickyMode,
+  });
+
   // 处理API密钥变化
   const handleApiKeyChange = useCallback(
     (value: string) => {
@@ -315,7 +367,7 @@ function App() {
           setLoading(false);
           setResult(res);
           setOnError(false);
-          
+
           try {
             posthog?.capture("ai_recognition_success", {
               model: model,
@@ -327,11 +379,11 @@ function App() {
           } catch (e) {
             console.error(e);
           }
-          
+
           // 如果这是一个需要自动钉图的截图（通常是全屏截图）
           if (shouldAutoPin && window.electronAPI?.pinToScreen) {
             setShouldAutoPin(false); // 重置标记
-            
+
             // 延迟一点时间确保UI更新
             setTimeout(async () => {
               if (window.electronAPI?.pinToScreen) {
@@ -379,6 +431,7 @@ function App() {
     },
     [targetLang, model, prompt, language, apiKey, toast, shouldAutoPin, screenShotResult, posthog]
   );
+
   // 当提示或截图或语言变化时，重新识别截图
   useEffect(() => {
     // 在钉图模式下不重新请求API识别结果
@@ -467,6 +520,25 @@ function App() {
 
   // 存储当前配置的快捷键
   const [shortcut, setShortcut] = useState("");
+  const instructionMessages = useMemo(() => {
+    return [
+      t("main_instruction_shortcut", { shortcut }),
+      t("main_instruction_drag"),
+    ];
+  }, [shortcut, t]);
+
+  useEffect(() => {
+    if (instructionMessages.length <= 1) return;
+    const intervalMs = shimmerDuration * 2 * 1000;
+    const intervalId = setInterval(() => {
+      setInstructionIndex((prev) => (prev + 1) % instructionMessages.length);
+    }, intervalMs);
+    return () => clearInterval(intervalId);
+  }, [instructionMessages.length, shimmerDuration]);
+
+  useEffect(() => {
+    setInstructionIndex(0);
+  }, [instructionMessages.length]);
 
   // 软件更新检查
   useEffect(() => {
@@ -713,13 +785,17 @@ function App() {
       className={`App dark select-none ${isStickyMode ? "sticky-mode" : ""}`}
     >
       <main
-        className={`App-header ${
-          horizontalLayout
-            ? "h-screen overflow-hidden"
-            : "min-h-screen overflow-y-auto"
-        } flex flex-col items-center relative`}
+        className={`App-header ${horizontalLayout
+          ? "h-screen overflow-hidden"
+          : "min-h-screen overflow-y-auto"
+          } flex flex-col items-center relative`}
       >
-        {" "}
+        {isDraggingFile && !isStickyMode && (
+          <DropOverlay
+            message={t("upload.drag_overlay_title")}
+            subtitle={t("upload.drag_overlay_subtitle")}
+          />
+        )}
         {/* 便签模式标题栏 */}
         {isStickyMode && (
           <StickyNoteTitleBar
@@ -730,11 +806,7 @@ function App() {
         )}
         {/* 普通模式头部UI */}
         {!isStickyMode && (
-          <div
-            className={`flex h-8 px-4 md:px-6 w-full shrink-0 transition-all duration-300 ${
-              screenShotResult ? "mt-[1rem]" : "mt-[1rem]"
-            }`}
-          >
+          <div className="flex h-8 px-4 md:px-6 w-full shrink-0 transition-all duration-300 mt-[1rem]">
             <div className="flex items-center">
               {user ? (
                 <UserMenuButton />
@@ -754,23 +826,33 @@ function App() {
         )}
         {/* 显示logo或引导文本 */}
         <div
-          className={` flex-1 flex flex-col items-center w-full ${
-            !screenShotResult ? "justify-center" : ""
-          }`}
+          className={` flex-1 flex flex-col items-center w-full ${!screenShotResult ? "justify-center" : ""
+            }`}
         >
           {!isStickyMode && !screenShotResult && (
             <>
               <img src={logo} className="App-logo select-none" alt="logo" />
-              <p className="mb-2 select-none">
-                {t("main_instructions", { shortcut: shortcut })}
-              </p>
+              <div className="mb-2 select-none text-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={instructionIndex}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <TextShimmer className="text-xl font-semibold" duration={shimmerDuration}>
+                      {instructionMessages[instructionIndex]}
+                    </TextShimmer>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </>
           )}
           {!screenShotResult && (
             <div
-              className={`w-full z-30 ${
-                horizontalLayout ? "sticky top-0 bg-black pt-2" : "py-4"
-              }`}
+              className={`w-full z-30 ${horizontalLayout ? "sticky top-0 bg-black pt-2" : "py-4"
+                }`}
               style={{ zIndex: 30 }}
             >
               <ActionButtons
@@ -816,28 +898,20 @@ function App() {
           ) : null}
           {/* 截图和结果并排显示 */}
           {screenShotResult && (
-            <div
-              className={`w-full flex-1 flex flex-col h-full${
-                !isStickyMode && horizontalLayout
-                  ? "mt-[0.3rem]"
-                  : "mt-[0.3rem]"
-              }`}
-            >
+            <div className="w-full flex-1 flex flex-col h-full mt-[0.3rem]">
               {horizontalLayout ? (
                 <div
-                  className={`flex gap-4 w-full flex-1 px-4 ${
-                    isStickyMode
-                      ? "  max-h-[calc(100vh-2rem)] overflow-y-auto"
-                      : "max-h-[calc(100vh-1rem)] overflow-y-auto"
-                  }`}
+                  className={`flex gap-4 w-full flex-1 px-4 ${isStickyMode
+                    ? "  max-h-[calc(100vh-2rem)] overflow-y-auto"
+                    : "max-h-[calc(100vh-1rem)] overflow-y-auto"
+                    }`}
                 >
                   {/* 左侧截图区域 */}
                   <div
-                    className={`flex-1 min-w-0 flex pt-4 items-center justify-center ${
-                      isStickyMode
-                        ? "pb-2"
-                        : "max-h-[calc(100vh-4.5rem)] h-full pb-10"
-                    }`}
+                    className={`flex-1 min-w-0 flex pt-4 items-center justify-center ${isStickyMode
+                      ? "pb-2"
+                      : "max-h-[calc(100vh-4.5rem)] h-full pb-10"
+                      }`}
                   >
                     <div className="w-full h-full">
                       <ScreenshotDisplay
@@ -853,11 +927,10 @@ function App() {
 
                   {/* 右侧结果区域 */}
                   <div
-                    className={`flex-1 flex flex-col min-h-0  px-2  ${
-                      isStickyMode
-                        ? "pt-2"
-                        : "max-h-[calc(100vh-4.5rem)] overflow-y-auto pt-5 pb-[1.5rem]"
-                    }`}
+                    className={`flex-1 flex flex-col min-h-0  px-2  ${isStickyMode
+                      ? "pt-2"
+                      : "max-h-[calc(100vh-4.5rem)] overflow-y-auto pt-5 pb-[1.5rem]"
+                      }`}
                     style={{ flexGrow: 1 }}
                   >
                     <ResultDisplay
@@ -890,11 +963,10 @@ function App() {
                   )}
                   {/* 显示截图 */}
                   <div
-                    className={` ${
-                      isStickyMode
-                        ? "overflow-y-auto h-full px-4 flex flex-col"
-                        : "h-full px-4 overflow-y-auto"
-                    }`}
+                    className={` ${isStickyMode
+                      ? "overflow-y-auto h-full px-4 flex flex-col"
+                      : "h-full px-4 overflow-y-auto"
+                      }`}
                   >
                     <ScreenshotDisplay
                       screenShotResult={screenShotResult}

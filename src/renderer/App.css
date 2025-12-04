@@ -31,6 +31,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -47,21 +48,21 @@
   background-color: transparent;
   border-radius: 999px;
 }
- 
+
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background-color: hsla(0, 0%, 100%, 0); 
-  background: #888; 
-  border-color: rgba(255,255,255, 1);
+  background-color: hsla(0, 0%, 100%, 0);
+  background: #888;
+  border-color: rgba(255, 255, 255, 1);
   border-radius: 999px;
   border-width: 1px;
 }
 
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: #555;
 }
 
-::-webkit-resizer{ 
+::-webkit-resizer {
   background-color: #000000;
 }

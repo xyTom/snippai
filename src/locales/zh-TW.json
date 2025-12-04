@@ -1,5 +1,6 @@
 {
-  "main_instructions": "按下{{shortcut}}擷取螢幕截圖。",
+  "main_instruction_shortcut": "按下{{shortcut}}擷取螢幕",
+  "main_instruction_drag": "或將圖片拖曳到這裡進行辨識",
   "auto": "自動",
   "formula": "公式",
   "text": "文字",
@@ -89,6 +90,15 @@
     "language": "語言",
     "save": "儲存",
     "language_invalid": "請輸入有效的語言"
+  },
+  "drop_overlay_message": "拖放圖片開始辨識",
+  "upload": {
+    "drag_overlay_title": "拖放圖片開始辨識",
+    "drag_overlay_subtitle": "將圖片檔拖進應用程式即可上傳並開始辨識。",
+    "unsupported_title": "不支援的檔案",
+    "unsupported_description": "請拖入圖片檔（PNG、JPG、JPEG、GIF 或 WebP）。",
+    "failed_title": "圖片上傳失敗",
+    "failed_description": "無法處理該圖片，請換一個檔案再試。"
   },
   "screenshot": {
     "screenshot": "截圖",

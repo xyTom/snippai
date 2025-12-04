@@ -1,5 +1,6 @@
 {
-  "main_instructions": "Presiona {{shortcut}} para tomar una captura de pantalla.",
+  "main_instruction_shortcut": "Presiona {{shortcut}} para tomar una captura de pantalla",
+  "main_instruction_drag": "O arrastra una imagen aquí para analizarla",
   "auto": "Automático",
   "formula": "Fórmula",
   "text": "Texto",
@@ -89,6 +90,15 @@
     "language": "Idioma",
     "save": "Guardar",
     "language_invalid": "Por favor ingresa un idioma válido"
+  },
+  "drop_overlay_message": "Suelta la imagen para analizarla",
+  "upload": {
+    "drag_overlay_title": "Suelta la imagen para analizarla",
+    "drag_overlay_subtitle": "Arrastra una imagen a la app para subirla y ejecutar el reconocimiento.",
+    "unsupported_title": "Archivo no compatible",
+    "unsupported_description": "Suelta un archivo de imagen (PNG, JPG, JPEG, GIF o WebP).",
+    "failed_title": "Error al subir la imagen",
+    "failed_description": "No pudimos procesar esa imagen. Intenta con otro archivo."
   },
   "screenshot": {
     "screenshot": "Captura de pantalla",
