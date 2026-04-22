@@ -1,85 +1,63 @@
-# Markdown Extension Examples
+# Features Guide | 功能说明
 
-This page demonstrates some of the built-in markdown extensions provided by VitePress.
+This page summarizes Snippai capabilities in English and Chinese.
+  
+本页用中英文介绍 Snippai 的主要能力。
 
-## Syntax Highlighting
+## OCR Text Extraction | OCR 文本提取
 
-VitePress provides Syntax Highlighting powered by [Shiki](https://github.com/shikijs/shiki), with additional features like line-highlighting:
+Extract text from screenshots and copy it directly into your editor or notes.
+  
+从截图中提取文本，并可直接复制到编辑器或笔记中。
 
-**Input**
+## Formula to LaTeX | 公式转 LaTeX
 
-````md
-```js{4}
-export default {
-  data () {
-    return {
-      msg: 'Highlighted!'
-    }
-  }
-}
-```
-````
+Recognize mathematical formulas from images and export clean LaTeX expressions.
+  
+识别图像中的数学公式并导出规范的 LaTeX 表达式。
 
-**Output**
+## Table to Markdown | 表格转 Markdown
 
-```js{4}
-export default {
-  data () {
-    return {
-      msg: 'Highlighted!'
-    }
-  }
-}
-```
+Detect table structures and convert them to Markdown for docs and wikis.
+  
+检测表格结构并转换为 Markdown，适用于文档和 Wiki。
 
-## Custom Containers
+## Translation | 翻译
 
-**Input**
+Translate captured text between multiple languages.
+  
+支持截图文本的多语言互译。
 
-```md
-::: info
-This is an info box.
-:::
+## Code Understanding | 代码理解
 
-::: tip
-This is a tip.
-:::
+Analyze code snippets from screenshots and generate explanations.
+  
+分析截图中的代码片段并生成解释。
 
-::: warning
-This is a warning.
-:::
+## Image Understanding | 图像理解
 
-::: danger
-This is a dangerous warning.
-:::
+Generate concise descriptions for visual content.
+  
+对视觉内容生成简洁说明。
 
-::: details
-This is a details block.
-:::
-```
+## Tips | 使用建议
 
-**Output**
+- Keep captures focused for better OCR and formula recognition.  
+  截图尽量聚焦目标区域，可提升 OCR 和公式识别效果。  
+- For tables, include complete borders and headers when possible.  
+  截取表格时尽量包含完整边框和表头。  
+- Review AI outputs before publishing to ensure correctness.  
+  在发布前建议人工复核 AI 输出结果。  
 
-::: info
-This is an info box.
-:::
+## Privacy Note | 隐私说明
 
-::: tip
-This is a tip.
-:::
+Do not capture or upload sensitive information unless you understand your environment and policies.
+  
+请勿在不了解环境与政策的情况下处理敏感信息。
 
-::: warning
-This is a warning.
-:::
+## More Resources | 更多资源
 
-::: danger
-This is a dangerous warning.
-:::
-
-::: details
-This is a details block.
-:::
-
-## More
-
-Check out the documentation for the [full list of markdown extensions](https://vitepress.dev/guide/markdown).
+- Project repository: [https://github.com/xyTom/snippai](https://github.com/xyTom/snippai)  
+  项目仓库：[https://github.com/xyTom/snippai](https://github.com/xyTom/snippai)
+- Releases: [https://github.com/xyTom/snippai/releases](https://github.com/xyTom/snippai/releases)  
+  版本发布页：[https://github.com/xyTom/snippai/releases](https://github.com/xyTom/snippai/releases)
