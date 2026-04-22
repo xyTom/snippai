@@ -3,22 +3,22 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "Snippai",
-  description: "An AI-powered snipping tool | AI 智能截图工具",
+  description: "An AI-powered snipping tool",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     logo: '/logo.svg',
     nav: [
-      { text: 'Home | 首页', link: '/' },
-      { text: 'Getting Started | 快速开始', link: '/api-examples' },
-      { text: 'Features | 功能说明', link: '/markdown-examples' }
+      { text: 'Home', link: '/' },
+      { text: 'Getting Started', link: '/api-examples' },
+      { text: 'Features', link: '/markdown-examples' }
     ],
 
     sidebar: [
       {
-        text: 'Documentation | 文档',
+        text: 'Documentation',
         items: [
-          { text: 'Getting Started | 快速开始', link: '/api-examples' },
-          { text: 'Features Guide | 功能说明', link: '/markdown-examples' }
+          { text: 'Getting Started', link: '/api-examples' },
+          { text: 'Features Guide', link: '/markdown-examples' }
         ]
       }
     ],
