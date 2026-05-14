@@ -48,7 +48,8 @@ export class SettingsService {
         autoStart: this.getAutoStartStatus(),
         uiLanguage: 'default',
         horizontalLayout: false,
-        hiddenFromScreenCapture: false
+        hiddenFromScreenCapture: false,
+        useSystemScreenshot: true
       }
     };
   }

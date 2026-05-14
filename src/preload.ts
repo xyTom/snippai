@@ -7,6 +7,7 @@ import { TableData } from './services/excel/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     isDevelopment: !!process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL,
+    platform: process.platform,
     onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value, autoPin) => callback(value, autoPin)),
     onStickyNoteData: (callback: any) => ipcRenderer.on('sticky-note-data', (_event, data) => callback(data)),
     onAuthCallback: (callback: any) => ipcRenderer.on('auth-callback', (_event, data) => callback(data)),

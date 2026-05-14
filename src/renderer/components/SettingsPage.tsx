@@ -23,7 +23,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     autoStart: false,
     horizontalLayout: false,
     uiLanguage: 'default',
-    hiddenFromScreenCapture: false
+    hiddenFromScreenCapture: false,
+    useSystemScreenshot: true
   }
 };
 

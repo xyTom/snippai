@@ -1,11 +1,12 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, dialog, clipboard } from 'electron';
 import path from 'path';
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import * as XLSX from 'xlsx';
 import fs from 'fs';
-import { spawn } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
+import os from 'os';
 import { TableData } from './services/excel/types';
 import { settingsService } from './services/settingsService';
 
@@ -190,6 +191,75 @@ function showMainWindow(): void {
   mainWindow.focus();
 }
 
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const captureWithNativeMac = async (): Promise<string | null> => {
+  const tmpPath = path.join(os.tmpdir(), `snippai_capture_${Date.now()}.png`);
+
+  return new Promise((resolve) => {
+    execFile('screencapture', ['-i', '-x', tmpPath], (err) => {
+      if (err) {
+        console.warn('Native macOS screenshot canceled or failed:', err);
+        return resolve(null);
+      }
+
+      try {
+        const buffer = fs.readFileSync(tmpPath);
+        fs.unlinkSync(tmpPath);
+        resolve(buffer.toString('base64'));
+      } catch (readErr) {
+        console.error('Failed to read native macOS screenshot output:', readErr);
+        resolve(null);
+      }
+    });
+  });
+};
+
+const captureWithNativeWindows = async (): Promise<string | null> => {
+  clipboard.clear();
+
+  return new Promise((resolve) => {
+    exec('start "" "ms-screenclip:?clippingMode=Rectangle"', async (error) => {
+      if (error) {
+        console.warn('Failed to launch Windows screen clipping:', error);
+        return resolve(null);
+      }
+
+      const timeout = Date.now() + 5000;
+
+      while (Date.now() <= timeout) {
+        const img = clipboard.readImage();
+        if (!img.isEmpty()) {
+          return resolve(img.toDataURL().split(',')[1]);
+        }
+
+        await delay(300);
+      }
+
+      return resolve(null);
+    });
+  });
+};
+
+function sendScreenshotToMainWindow(base64: string, autoPin = false): void {
+  const sendToMain = (win: BrowserWindow) => {
+    win.webContents.send('screenshot-result', base64, autoPin);
+  };
+
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createMainWindow(false);
+    mainWindow.webContents.once('dom-ready', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        sendToMain(mainWindow);
+      }
+    });
+    return;
+  }
+
+  sendToMain(mainWindow);
+}
+
 /**
  * Sets up screenshot functionality
  */
@@ -254,7 +324,25 @@ function registerScreenshotShortcuts(): void {
       }
       mainWindow.minimize();
     }
-    setTimeout(() => {
+    setTimeout(async () => {
+      const useSystemScreenshot = settingsService.getSettingValue('general.useSystemScreenshot', true);
+      const supportsSystemScreenshot = process.platform === 'darwin' || process.platform === 'win32';
+
+      if (useSystemScreenshot && supportsSystemScreenshot) {
+        const base64 = process.platform === 'darwin'
+          ? await captureWithNativeMac()
+          : await captureWithNativeWindows();
+
+        if (base64) {
+          sendScreenshotToMainWindow(base64);
+        } else {
+          console.log('System screenshot capture was canceled or failed');
+        }
+
+        showMainWindow();
+        return;
+      }
+
       screenshots.startCapture();
     }, screenshotDelay);
   });

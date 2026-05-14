@@ -22,6 +22,16 @@ interface SettingToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   id: string;
+  disabled?: boolean;
+}
+
+interface SettingSelectProps {
+  title: string;
+  description: string;
+  options: { value: string; label: string }[];
+  value: LanguageCode;
+  onChange: (value: LanguageCode) => void;
+  id: string;
 }
 
 /**
@@ -33,13 +43,19 @@ const SettingToggle: React.FC<SettingToggleProps> = ({
   checked,
   onChange,
   id,
+  disabled = false,
 }) => (
   <div className="flex items-center justify-between p-4 rounded-md bg-muted/10">
     <div className="space-y-0.5">
       <h3 className="text-sm font-medium">{title}</h3>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
-    <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    <Switch
+      id={id}
+      checked={checked}
+      disabled={disabled}
+      onCheckedChange={onChange}
+    />
   </div>
 );
 
@@ -52,15 +68,6 @@ const languageOptions = [
   { value: "zh-CN", label: "中文（简体）" },
   { value: "zh-TW", label: "中文（繁體）" },
 ];
-
-interface SettingSelectProps {
-  title: string;
-  description: string;
-  options: { value: string; label: string }[];
-  value: LanguageCode;
-  onChange: (value: LanguageCode) => void;
-  id: string;
-}
 
 /**
  * Reusable setting select component
@@ -110,6 +117,9 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   onCancel,
 }) => {
   const { t, i18n } = useTranslation();
+  const systemScreenshotSupported =
+    window.electronAPI?.platform === "darwin" ||
+    window.electronAPI?.platform === "win32";
 
   const handleSettingChange = (key: keyof GeneralSettings, value: boolean) => {
     onSettingsChange({
@@ -186,6 +196,23 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           value={settings.uiLanguage}
           onChange={(value: LanguageCode) => {
             handleLanguageChange(value);
+          }}
+        />
+
+        <SettingToggle
+          id="use-system-screenshot"
+          title={t("settings.use_system_screenshot")}
+          description={
+            systemScreenshotSupported
+              ? t("settings.use_system_screenshot_description")
+              : t("settings.use_system_screenshot_unavailable")
+          }
+          checked={systemScreenshotSupported && settings.useSystemScreenshot}
+          disabled={!systemScreenshotSupported}
+          onChange={(checked) => {
+            if (systemScreenshotSupported) {
+              handleSettingChange("useSystemScreenshot", checked);
+            }
           }}
         />
       </div>

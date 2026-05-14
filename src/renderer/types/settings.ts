@@ -41,6 +41,7 @@ export interface GeneralSettings {
   horizontalLayout: boolean;
   uiLanguage: LanguageCode;
   hiddenFromScreenCapture: boolean;
+  useSystemScreenshot: boolean;
 }
 
 export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = { ...DEFAULT_SHORTCUTS };

@@ -491,7 +491,11 @@ function App() {
 
     // 注册截图结果处理程序
     const handleScreenShotRes = (value: string, autoPin?: boolean) => {
-      setscreenShotResult(value);
+      const rawValue = value.startsWith("data:image")
+        ? value.split(",")[1]
+        : value;
+
+      setscreenShotResult(rawValue);
       // 如果是全屏截图（autoPin为true），设置自动钉图标记
       if (autoPin) {
         setShouldAutoPin(true);
