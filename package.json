@@ -46,7 +46,6 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "ts-node": "^10.0.0",
-    "typescipt": "^1.0.0",
     "typescript": "^5.8.3",
     "vite": "^5.0.12",
     "vite-plugin-external": "^6.0.1",

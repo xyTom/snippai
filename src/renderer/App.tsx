@@ -100,7 +100,7 @@ function App() {
   });
 
   // API密钥管理
-  let keyMap = useMemo(() => {
+  const keyMap = useMemo(() => {
     const map = new Map();
     models.forEach((model) => {
       if (model.requireApiKey) {
@@ -572,7 +572,7 @@ function App() {
         const settings = await window.electronAPI?.getAppSettings();
         if (settings?.shortcuts?.screenshot) {
           // 格式化快捷键显示
-          let formattedShortcut = settings.shortcuts.screenshot
+          const formattedShortcut = settings.shortcuts.screenshot
             .replace(
               "CommandOrControl",
               window.navigator.platform === "MacIntel" ? "Command" : "Ctrl"
@@ -641,8 +641,14 @@ function App() {
 
         ctx.drawImage(img, 0, 0);
 
-        const blob = await new Promise<Blob>((resolve) => {
-          canvas.toBlob((blob) => resolve(blob!), "image/png");
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Unable to encode image"));
+            }
+          }, "image/png");
         });
 
         await navigator.clipboard.write([

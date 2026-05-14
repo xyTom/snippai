@@ -1,4 +1,6 @@
 import { app } from 'electron';
+import fs from 'fs';
+import path from 'path';
 import { logger } from '../utils/logger';
 import { AppSettings } from '../renderer/types/settings';
 
@@ -11,8 +13,6 @@ export class SettingsService {
   private readonly settingsPath: string;
 
   private constructor() {
-    const fs = require('fs');
-    const path = require('path');
     const userDataPath = app.getPath('userData');
     this.settingsPath = path.join(userDataPath, 'app-settings.json');
     
@@ -165,7 +165,6 @@ export class SettingsService {
    * Implements auto-recovery for corrupted config files
    */
   public getSettings(): AppSettings {
-    const fs = require('fs');
     const defaultSettings = this.createDefaultSettings();
 
     try {
@@ -263,8 +262,6 @@ export class SettingsService {
    * Save complete application settings
    */
   public saveSettings(settings: AppSettings): boolean {
-    const fs = require('fs');
-    
     try {
       // Validate data integrity
       if (
@@ -302,8 +299,6 @@ export class SettingsService {
    */
   public getSettingValue(path: string, defaultValue: any = null): any {
     try {
-      const fs = require('fs');
-      
       if (!fs.existsSync(this.settingsPath)) {
         return defaultValue;
       }

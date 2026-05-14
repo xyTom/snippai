@@ -84,7 +84,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
         <TargetLangSelect
           loading={loading}
           value={targetLang}
-          onChange={onTargetLangChange ?? (() => {})}
+          onChange={onTargetLangChange ?? (() => undefined)}
         />
       </div>
     )}

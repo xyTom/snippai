@@ -15,10 +15,7 @@
   "parser": "@typescript-eslint/parser",
   "settings": {
     "import/resolver": {
-      "typescript": {},
-      "alias": [
-        ["@", "./src"]
-      ]
+      "typescript": {}
     }
   }
 }

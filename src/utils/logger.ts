@@ -189,7 +189,7 @@ export class SnippaiLogger {
       case LogLevel.ERROR:
         return this.error.bind(this);
       default:
-        return () => {}; // No-op logger
+        return () => undefined;
     }
   }
 }

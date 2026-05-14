@@ -12,7 +12,7 @@ import {
 import { usePostHog } from "posthog-js/react";
 
 export default function PromptSelect(props: {
-  handlePromptChange: Function;
+  handlePromptChange: (value: string) => void;
   model: string;
   disabled: boolean;
   responsiveMode?: boolean;

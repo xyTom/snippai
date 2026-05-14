@@ -1,12 +1,23 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, dialog, clipboard } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  desktopCapturer,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  screen
+} from 'electron';
 import path from 'path';
 import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import * as XLSX from 'xlsx';
 import fs from 'fs';
-import { exec, execFile, spawn } from 'child_process';
+import { exec, execFile, execSync } from 'child_process';
 import os from 'os';
+import Screenshots from 'electron-screenshots';
+import started from 'electron-squirrel-startup';
 import { TableData } from './services/excel/types';
 import { settingsService } from './services/settingsService';
 
@@ -15,10 +26,8 @@ Sentry.init({
   dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
 });
 
-const Screenshots = require('electron-screenshots');
-
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (require('electron-squirrel-startup')) {
+if (started) {
   app.quit();
 }
 
@@ -264,7 +273,6 @@ function sendScreenshotToMainWindow(base64: string, autoPin = false): void {
  * Sets up screenshot functionality
  */
 function setupScreenshots(): void {
-  const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const scaleFactor = primaryDisplay.scaleFactor;
   console.log('Primary Display Scale Factor:', scaleFactor);
@@ -358,8 +366,6 @@ function registerScreenshotShortcuts(): void {
   console.log('Registering fullscreen screenshot shortcut:', fullscreenShortcutKey);
   const registeredFullscreen = globalShortcut.register(fullscreenShortcutKey, async () => {
     try {
-      const { desktopCapturer, screen } = require('electron');
-
       // 获取鼠标指针所在的屏幕，以实现对当前活动屏幕的精确截图。
       const point = screen.getCursorScreenPoint();
       const activeDisplay = screen.getDisplayNearestPoint(point);
@@ -549,7 +555,6 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
       if (process.platform === 'darwin') {
         try {
           // 记录当前活跃的应用程序，以便稍后恢复
-          const { execSync } = require('child_process');
           previouslyFocusedApp = execSync('osascript -e "tell application \\"System Events\\" to get name of first application process whose frontmost is true"').toString().trim();
           eventLogger.debug('Previously focused app:', previouslyFocusedApp);
         } catch (error) {
@@ -581,8 +586,6 @@ function restorePreviousFocus(appName: string | null): void {
   
   setTimeout(() => {
     try {
-      const { exec } = require('child_process');
-
       exec(`osascript -e 'tell application "${appName}" to activate'`, (error: any) => {
         if (error) {
           logger.error('Failed to restore focus:', error);
@@ -601,7 +604,6 @@ function restorePreviousFocus(appName: string | null): void {
  */
 function isValidWindowPosition(position: { x: number; y: number; width?: number; height?: number }): boolean {
   try {
-    const { screen } = require('electron');
     const displays = screen.getAllDisplays();
     
     // Check if position is within any display's work area
@@ -679,7 +681,7 @@ function saveStickyNotePosition(bounds: Electron.Rectangle): void {
  */
 function createLoadingWindow(display: Electron.Display): BrowserWindow | null {
   try {
-    const { width, height } = display.workArea;
+    const { width } = display.workArea;
     
     const windowWidth = 300;
     const windowHeight = 60;
@@ -777,8 +779,6 @@ function hideLoadingWindow(): void {
  * @returns {BrowserWindow} The sticky note window
  */
 function createStickyNoteWindow(screenshot: string, result: string | null): BrowserWindow {
-  const { screen } = require('electron');
-
   // 1. 确定用户当前鼠标所在的"活动屏幕"。
   const activeDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
 
@@ -999,7 +999,7 @@ function setupDeepLinkHandling(): void {
   });
 
   // Handle protocol on Windows/Linux
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', (_event, commandLine) => {
     // Someone tried to run a second instance, focus our window instead
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
@@ -1030,7 +1030,7 @@ function setupDeepLinkHandling(): void {
  */
 function setupAppEventHandlers(): void {
   // Handle second instance launch
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', () => {
     console.log('Second instance detected, focusing first instance');
     showMainWindow();
   });
@@ -1201,14 +1201,17 @@ function setupIpcHandlers(): void {
       }
 
       // show save dialog
-      const result = await dialog.showSaveDialog(mainWindow!, {
+      const saveDialogOptions = {
         title: 'Export Tables to Excel',
         defaultPath: defaultFileName || 'snippai-tables.xlsx',
         filters: [
           { name: 'Excel Files', extensions: ['xlsx'] },
           { name: 'All Files', extensions: ['*'] }
         ]
-      });
+      };
+      const result = mainWindow && !mainWindow.isDestroyed()
+        ? await dialog.showSaveDialog(mainWindow, saveDialogOptions)
+        : await dialog.showSaveDialog(saveDialogOptions);
 
       if (result.canceled || !result.filePath) {
         logger.info('Excel export cancelled by user');

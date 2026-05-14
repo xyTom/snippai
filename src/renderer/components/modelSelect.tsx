@@ -21,23 +21,21 @@ import { models } from "../lib/models"
 import { useTranslation } from "react-i18next"
 import { usePostHog } from "posthog-js/react"
 
-export default function ModelSelect(props:{handleModelChange:Function}) {
+export default function ModelSelect(props:{handleModelChange: (value: string) => void}) {
   const [open, setOpen] = React.useState(false)
   const {t} = useTranslation();
   const posthog = usePostHog();
   //read the model from local storage
-  let model = localStorage.getItem("model")
-  if (model && models.find((m) => m.value === model)) {
-    model = model
-  }else{
-    model = "auto"
-  }
-  const [value, setValue] = React.useState(model)
+  const savedModel = localStorage.getItem("model")
+  const initialModel = savedModel && models.find((m) => m.value === savedModel)
+    ? savedModel
+    : "auto"
+  const [value, setValue] = React.useState(initialModel)
   
   //when the model is updated, update the parent state
   React.useEffect(() => {
     if (!value) {
-      setValue(model)
+      setValue(initialModel)
     }
     props.handleModelChange(value)
     //save the model to local storage
