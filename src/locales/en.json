@@ -11,6 +11,7 @@
   "image": "Image",
   "color": "Color",
   "translate": "Translate",
+  "calendar_prompt": "Calendar",
   "login": "Login",
   "logout": "Logout",
   "login_form": {
@@ -33,6 +34,7 @@
     "canceled_description": "Settings have been canceled. No changes were made.",
     "shortcuts": "Shortcuts",
     "shortcuts_settings": "Shortcuts Settings",
+    "llm_providers": "LLM Providers",
     "about": "About",
     "auto_copy": "Auto Copy to Clipboard",
     "auto_copy_description": "Automatically copy screenshots to clipboard for easy pasting",
@@ -94,7 +96,16 @@
     "record": "Record",
     "recording": "Recording...",
     "stop": "Stop",
-    "processing_screenshot": "Processing screenshot..."
+    "processing_screenshot": "Processing screenshot...",
+    "llm_provider_empty": "No providers configured.",
+    "llm_provider_add": "Add provider",
+    "llm_provider_edit": "Edit provider",
+    "llm_provider_enabled": "Provider enabled",
+    "llm_provider_name": "Name",
+    "llm_provider_base_url": "Base URL",
+    "llm_provider_api_key": "API key",
+    "llm_provider_org_id": "Organization ID",
+    "llm_provider_models": "Models"
   },
   "language_input": {
     "set_language": "Please set your language",
@@ -113,6 +124,14 @@
     "empty_description": "Copy text first, then paste it into Snippai.",
     "read_failed": "Unable to read clipboard",
     "read_failed_description": "Please allow clipboard access or paste text manually."
+  },
+  "custom_prompts": {
+    "title": "Custom Prompts",
+    "manage": "Manage prompts",
+    "empty": "No custom prompts saved.",
+    "label": "Label",
+    "prompt": "Prompt",
+    "add": "Add prompt"
   },
   "history": {
     "title": "History",
@@ -164,5 +183,8 @@
     "success_description": "Successfully exported {{count}} table{{count, plural, one='' other='s'}} to Excel file: {{fileName}}",
     "failed": "Export Failed",
     "failed_description": "Failed to export tables to Excel. Please try again or check if tables are properly formatted."
+  },
+  "calendar": {
+    "save_ics": "Save .ics"
   }
 }

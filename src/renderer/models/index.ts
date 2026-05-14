@@ -4,7 +4,9 @@ type ModelRunner = (
     input: string,
     prompt: string,
     apiKey?: string,
-    baseURL?: string
+    baseURL?: string,
+    modelName?: string,
+    orgId?: string
 ) => Promise<string>;
 
 export default class aiModel {
@@ -18,27 +20,43 @@ export default class aiModel {
 
     static async create(model: string) {
         const configuredModel = models.find((m) => m.value === model);
-        const importPath = configuredModel?.modelScript || "gemini";
+        const importPath = model.startsWith("provider:")
+            ? "custom"
+            : configuredModel?.modelScript || "gemini";
         const module = await import(`./model-${importPath}.ts`) as { default: ModelRunner };
         return new aiModel(importPath, module.default);
     }
 
-    async run(image: string, prompt: string, apiKey?:string, baseURL?:string) {
+    async run(
+        image: string,
+        prompt: string,
+        apiKey?: string,
+        baseURL?: string,
+        modelName?: string,
+        orgId?: string
+    ) {
         if (apiKey) {
             if (baseURL) {
-                return this.model(image, prompt, apiKey, baseURL);
+                return this.model(image, prompt, apiKey, baseURL, modelName, orgId);
             }
             return this.model(image, prompt, apiKey);
         }
         return this.model(image, prompt);
     }
 
-    async runText(text: string, prompt: string, apiKey?: string, baseURL?: string) {
+    async runText(
+        text: string,
+        prompt: string,
+        apiKey?: string,
+        baseURL?: string,
+        modelName?: string,
+        orgId?: string
+    ) {
         const module = await import(`./model-${this.importPath}-text.ts`) as { default: ModelRunner };
         const model = module.default;
         if (apiKey) {
             if (baseURL) {
-                return model(text, prompt, apiKey, baseURL);
+                return model(text, prompt, apiKey, baseURL, modelName, orgId);
             }
             return model(text, prompt, apiKey);
         }

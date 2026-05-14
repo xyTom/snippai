@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * Available settings tabs
  */
-export type SettingsTab = 'general' | 'shortcuts' | 'about';
+export type SettingsTab = 'general' | 'shortcuts' | 'llmProviders' | 'about';
 
 /**
  * Interface for a settings navigation item

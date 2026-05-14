@@ -120,6 +120,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({
       <DisplayTextResult
         text={result}
         onTextChange={handleTextChange}
+        prompt={prompt}
         isStickyMode={isStickyMode}
         horizontalLayout={horizontalLayout}
       />

@@ -11,6 +11,7 @@
   "image": "画像",
   "color": "色",
   "translate": "翻訳",
+  "calendar_prompt": "カレンダー",
   "login": "ログイン",
   "logout": "ログアウト",
   "login_form": {
@@ -33,6 +34,7 @@
     "canceled_description": "設定がキャンセルされました。変更は適用されませんでした。",
     "shortcuts": "ショートカット",
     "shortcuts_settings": "ショートカット設定",
+    "llm_providers": "LLMプロバイダー",
     "about": "バージョン情報",
     "auto_copy": "自動でクリップボードにコピー",
     "auto_copy_description": "キャプチャを自動でクリップボードにコピーします",
@@ -94,7 +96,16 @@
     "about_snippai_description": "Snippaiは、スクリーンショットの内容を素早く分析・理解するためのインテリジェントなツールです。強力なAIモデルを用いて、テキスト、コード、図を認識し、関連する解析や説明を提供します。",
     "about_copyright": "著作権",
     "about_copyright_all_rights_reserved": "全著作権所有。",
-    "processing_screenshot": "スクリーンショットを処理中..."
+    "processing_screenshot": "スクリーンショットを処理中...",
+    "llm_provider_empty": "プロバイダーは未設定です。",
+    "llm_provider_add": "プロバイダーを追加",
+    "llm_provider_edit": "プロバイダーを編集",
+    "llm_provider_enabled": "プロバイダー有効",
+    "llm_provider_name": "名前",
+    "llm_provider_base_url": "Base URL",
+    "llm_provider_api_key": "APIキー",
+    "llm_provider_org_id": "組織ID",
+    "llm_provider_models": "モデル"
   },
   "language_input": {
     "set_language": "言語を設定してください",
@@ -113,6 +124,14 @@
     "empty_description": "先にテキストをコピーしてから Snippai に貼り付けてください。",
     "read_failed": "クリップボードを読み取れません",
     "read_failed_description": "クリップボードアクセスを許可するか、手動で貼り付けてください。"
+  },
+  "custom_prompts": {
+    "title": "カスタムPrompt",
+    "manage": "Promptを管理",
+    "empty": "保存済みのカスタムPromptはありません。",
+    "label": "ラベル",
+    "prompt": "Prompt",
+    "add": "Promptを追加"
   },
   "history": {
     "title": "履歴",
@@ -164,5 +183,8 @@
     "success_description": "{{count}}個のテーブルをExcelファイルにエクスポートしました：{{fileName}}",
     "failed": "エクスポート失敗",
     "failed_description": "テーブルのExcelへのエクスポートに失敗しました。もう一度お試しいただくか、テーブルの形式が正しいかご確認ください。"
+  },
+  "calendar": {
+    "save_ics": ".icsを保存"
   }
 }

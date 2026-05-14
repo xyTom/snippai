@@ -27,6 +27,16 @@ export type ShortcutsRecord = ShortcutAccelerators & {
 // Backward compatibility alias
 export type ShortcutSettings = ShortcutsRecord;
 
+export interface LLMProvider {
+  id: string;
+  name: string;
+  baseURL: string;
+  apiKey: string;
+  orgId?: string;
+  models: string[];
+  enabled: boolean;
+}
+
 /**
  * Base interface for all application settings
  */
@@ -34,6 +44,7 @@ export interface AppSettings {
   shortcuts: ShortcutsRecord;
   general: GeneralSettings;
   stickyNotePosition?: WindowBounds;
+  llmProviders: LLMProvider[];
 }
 
 /**

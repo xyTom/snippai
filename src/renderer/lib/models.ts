@@ -1,177 +1,118 @@
-export const models = [
-    {
-        value:'auto',
-        label:'Auto',
-        requireApiKey: false,
-        requireBaseURL: false,
-        modelScript: "auto",
-    },
-    {
-      value: "gemini",
-      label: "Google Gemini",
-      requireApiKey: false,
-      requireBaseURL: false,
-      modelScript: "gemini",
-    },
-    {
-      value: "gpt4",
-      label: "OpenAI GPT-4",
-      requireApiKey: true,
-      requireBaseURL: false,
-      modelScript: "gpt4",
-    }
-    // {
-    //     value: "azuregpt4",
-    //     label: "Azure OpenAI GPT-4",
-    //     requireApiKey: true,
-    //     requireBaseURL: true,
-    //     modelScript: "azuregpt4",
-    // }
-  ]
-
-export const promptOptions = {
-    "auto":[
-        {
-            value: "Auto",
-            labelKey: "auto",
-            prompt: "\nThis is an image uploaded by a user, I need your help to analyze the content in the image, if the main content in the image is text, please return the result of OCR text recognition (only return the recognized text, don't add other descriptions), if the main content in the image is a mathematical formula, please return the Latex code of the mathematical formula (only return the Latex code corresponding to the formula, don't add extra If the main content of the image is a math formula, please return the Latex code of the math formula (only return the Latex code of the formula, don't add additional description), if the image contains neither text nor math formula, please return the detailed description of the image (please describe the content of the image in detail).\n",
-        },
-        {
-            value: "Formula",
-            labelKey: "formula",
-            prompt: "Please return the Latex code for this math formula (return only the Latex code corresponding to the formula, do not add additional descriptions)",
-    
-        },
-        {
-            value: "Text",
-            labelKey: "text",
-            prompt: "Please return the result of OCR text recognition (only return the recognized text, do not add other descriptions) Return should be the original text in the image, don't add any other descriptions or explanations.",
-        },
-        {
-            value: "Code",
-            labelKey: "code",
-            prompt: "Please return the content of the code in the picture (please describe in detail what the code in the picture does)",
-        },
-        {
-            value: "Table",
-            labelKey: "table",
-            prompt: "Please return the contents of the table in the image, using the MarkDown format.",
-        },
-        {
-            value: "Solve",
-            labelKey: "solve",
-            prompt: "Please return to the answer to the question in the picture",
-        },
-        {
-            value: "Image",
-            labelKey: "image",
-            prompt: "Please return a detailed description of the image (please describe in detail what is in the image)",
-        },
-        {
-            value:"Color",
-            labelKey:"color",
-            prompt:"Please return the color information in the image, use #RRGGBB format to describe the color.",
-        },
-        {
-            value: "Translate",
-            labelKey: "translate",
-            prompt: "Please help me translate the text in this image to my language. Only return the translated text, don't add any additional descriptions or explanations.",
-        }
-    ],
-    "gemini":[
-    {
-        value: "Auto",
-        labelKey: "auto",
-        prompt: "\nThis is an image uploaded by a user, I need your help to analyze the content in the image, if the main content in the image is text, please return the result of OCR text recognition (only return the recognized text, don't add other descriptions), if the main content in the image is a mathematical formula, please return the Latex code of the mathematical formula (only return the Latex code corresponding to the formula, don't add extra If the main content of the image is a math formula, please return the Latex code of the math formula (only return the Latex code of the formula, don't add additional description), if the image contains neither text nor math formula, please return the detailed description of the image (please describe the content of the image in detail).\n",
-    },
-    {
-        value: "Formula",
-        labelKey: "formula",
-        prompt: "Please return the Latex code for this math formula (return only the Latex code corresponding to the formula, do not add additional descriptions)",
-
-    },
-    {
-        value: "Text",
-        labelKey: "text",
-        prompt: "Please return the result of OCR text recognition (only return the recognized text, do not add other descriptions) Return should be the original text in the image, don't add any other descriptions or explanations.",
-    },
-    {
-        value: "Code",
-        labelKey: "code",
-        prompt: "Please return the content of the code in the picture (please describe in detail what the code in the picture does)",
-    },
-    {
-        value: "Table",
-        labelKey: "table",
-        prompt: "Please return the contents of the table in the image, using the MarkDown format.",
-    },
-    {
-        value: "Solve",
-        labelKey: "solve",
-        prompt: "Please return to the answer to the question in the picture",
-    },
-    {
-        value: "Image",
-        labelKey: "image",
-        prompt: "Please return a detailed description of the image (please describe in detail what is in the image)",
-    },
-    {
-        value:"Color",
-        labelKey:"color",
-        prompt:"Please return the color information in the image, use #RRGGBB format to describe the color.",
-    },
-    {
-        value: "Translate",
-        labelKey: "translate",
-        prompt: "Please help me translate the text in this image to my language. Only return the translated text, don't add any additional descriptions or explanations.",
-    }
-    ],
-    "gpt4":[
-    {
-        value: "Auto",
-        labelKey: "auto",
-        prompt: "This is an image uploaded by a user, I need your help to analyze the content in the image, if the main content in the image is text, please return the result of OCR text recognition (only return the recognized text, don't add other descriptions), if the main content in the image is a mathematical formula, please return the Latex code of the mathematical formula (only return the Latex code corresponding to the formula, don't add extra If the main content of the image is a math formula, please return the Latex code of the math formula (only return the Latex code of the formula, don't add additional description), if the image contains neither text nor math formula, please return the detailed description of the image (please describe the content of the image in detail).\n",
-    },
-    {
-        value: "Formula",
-        labelKey: "formula",
-        prompt: "Please return the Latex code for this math formula (return only the Latex code corresponding to the formula, do not add additional descriptions)",
-
-    },
-    {
-        value: "Text",
-        labelKey: "text",
-        prompt: "Please return the result of OCR text recognition (only return the recognized text, do not add other descriptions)",
-    },
-    {
-        value: "Code",
-        labelKey: "code",
-        prompt: "Please return the content of the code in the picture (please describe in detail what the code in the picture does)",
-    },
-    {
-        value: "Table",
-        labelKey: "table",
-        prompt: "Please return the contents of the table in the image, using the MarkDown format.",
-    },
-    {
-        value: "Solve",
-        labelKey: "solve",
-        prompt: "Please return to the answer to the question in the picture",
-    },
-    {
-        value: "Image",
-        labelKey: "image",
-        prompt: "Please return a detailed description of the image (please describe in detail what is in the image)",
-    },
-    {
-        value:"Color",
-        labelKey:"color",
-        prompt:"Please return the color information in the image, use #RRGGBB format to describe the color.",
-    },
-    {
-        value: "Translate",
-        labelKey: "translate",
-        prompt: "Please help me translate the text in this image to my language. Only return the translated text, don't add any additional descriptions or explanations.",
-    }
-    ]
+export interface ModelConfig {
+  value: string;
+  label: string;
+  requireApiKey: boolean;
+  requireBaseURL: boolean;
+  modelScript: string;
 }
+
+export interface PromptOption {
+  value: string;
+  labelKey: string;
+  prompt: string;
+}
+
+const imageAnalysisPrompt =
+  "This is an image uploaded by a user. Analyze its content. If the main content is text, return only the OCR text. If the main content is a mathematical formula, return only the corresponding LaTeX. If the image contains neither text nor a math formula, describe the image in detail.";
+
+const promptSet: PromptOption[] = [
+  {
+    value: "Auto",
+    labelKey: "auto",
+    prompt: imageAnalysisPrompt,
+  },
+  {
+    value: "Formula",
+    labelKey: "formula",
+    prompt:
+      "Return only the LaTeX code for the math formula in the image. Do not add explanations.",
+  },
+  {
+    value: "Text",
+    labelKey: "text",
+    prompt:
+      "Return only the original text recognized in the image. Do not add descriptions or explanations.",
+  },
+  {
+    value: "Code",
+    labelKey: "code",
+    prompt: "Describe what the code in the image does and include the code content.",
+  },
+  {
+    value: "Table",
+    labelKey: "table",
+    prompt: "Return the table contents in Markdown table format.",
+  },
+  {
+    value: "Solve",
+    labelKey: "solve",
+    prompt: "Return the answer to the question shown in the image.",
+  },
+  {
+    value: "Image",
+    labelKey: "image",
+    prompt: "Describe the image content in detail.",
+  },
+  {
+    value: "Color",
+    labelKey: "color",
+    prompt: "Return color information from the image using #RRGGBB format.",
+  },
+  {
+    value: "Translate",
+    labelKey: "translate",
+    prompt:
+      "Translate the text in the image to the target language. Only return the translated text.",
+  },
+  {
+    value: "Calendar",
+    labelKey: "calendar_prompt",
+    prompt:
+      "Identify schedule or event information in the image and return a valid iCalendar (.ics) VCALENDAR document. Only return the ICS data.",
+  },
+];
+
+export const models: ModelConfig[] = [
+  {
+    value: "auto",
+    label: "Auto",
+    requireApiKey: false,
+    requireBaseURL: false,
+    modelScript: "auto",
+  },
+  {
+    value: "gemini",
+    label: "Google Gemini",
+    requireApiKey: false,
+    requireBaseURL: false,
+    modelScript: "gemini",
+  },
+  {
+    value: "gpt4",
+    label: "OpenAI GPT-4",
+    requireApiKey: true,
+    requireBaseURL: false,
+    modelScript: "gpt4",
+  },
+];
+
+export const promptOptions: Record<string, PromptOption[]> = {
+  auto: promptSet,
+  gemini: promptSet,
+  gpt4: promptSet,
+  custom: promptSet,
+};
+
+export const getPromptModelKey = (model: string): string => {
+  if (model.startsWith("provider:")) {
+    return "custom";
+  }
+
+  return promptOptions[model] ? model : "auto";
+};
+
+export const getPromptOptions = (model: string): PromptOption[] =>
+  promptOptions[getPromptModelKey(model)] ?? promptSet;
+
+export const getBaseModel = (model: string): ModelConfig | undefined =>
+  models.find((item) => item.value === model);

@@ -27,6 +27,9 @@ import { useAuth } from "./context/AuthContext";
 import { LoginDialog } from "./components/LoginDialog";
 import { HistoryDialog } from "./components/history/HistoryDialog";
 import { formatAccelerator } from "./utils/accelerator";
+import CustomPromptDialog, {
+  CustomPrompt,
+} from "./components/CustomPromptDialog";
 
 // App.tsx
 import DropOverlay from "./components/DropOverlay";
@@ -42,7 +45,8 @@ import ImageIcon from "./components/icons/ImageIcon";
 import { SettingsButton } from "./components/buttons/SettingsButton";
 import { HistoryButton } from "./components/buttons/HistoryButton";
 
-import { promptOptions, models } from "./lib/models";
+import { getBaseModel, getPromptOptions, models } from "./lib/models";
+import { LLMProvider } from "./types/settings";
 
 import { useTranslation } from "react-i18next";
 import i18n from "@/utils/i18next";
@@ -50,6 +54,30 @@ import { usePostHog } from "posthog-js/react";
 import { AnimatePresence, motion } from "motion/react";
 import { TextShimmer } from "./components/ui/text-shimmer";
 import { saveSnipHistory, SnipHistoryItem } from "@/utils/history";
+
+const CUSTOM_PROMPTS_STORAGE_KEY = "snippai.customPrompts";
+
+const loadCustomPrompts = (): CustomPrompt[] => {
+  try {
+    const value = localStorage.getItem(CUSTOM_PROMPTS_STORAGE_KEY);
+    return value ? JSON.parse(value) : [];
+  } catch (error) {
+    console.error("Failed to load custom prompts:", error);
+    return [];
+  }
+};
+
+const parseProviderModel = (
+  value: string
+): { providerId: string; modelName: string } | null => {
+  if (!value.startsWith("provider:")) {
+    return null;
+  }
+
+  const [, providerId, ...modelParts] = value.split(":");
+  const modelName = modelParts.join(":");
+  return providerId && modelName ? { providerId, modelName } : null;
+};
 
 function App() {
   // 获取认证状态
@@ -115,6 +143,12 @@ function App() {
 
   // 设置页面状态
   const [openSettings, setOpenSettings] = useState(false);
+  const [providers, setProviders] = useState<LLMProvider[]>([]);
+  const [customPrompts, setCustomPrompts] = useState<CustomPrompt[]>(() =>
+    loadCustomPrompts()
+  );
+  const [openPromptDialog, setOpenPromptDialog] = useState(false);
+  const [promptVersion, setPromptVersion] = useState(0);
 
   // 登录对话框状态
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
@@ -346,6 +380,59 @@ function App() {
     []
   );
 
+  const buildPrompt = useCallback(
+    (textModePrompt = false) => {
+      const customPromptId = prompt.startsWith("custom:")
+        ? prompt.replace("custom:", "")
+        : null;
+      const savedCustomPrompt = customPromptId
+        ? customPrompts.find((item) => item.id === customPromptId)
+        : null;
+      let fullPrompt = savedCustomPrompt?.prompt ?? "";
+
+      if (!fullPrompt) {
+        const selectedPrompt = getPromptOptions(model).find(
+          (item) => item.value === prompt
+        );
+        fullPrompt = selectedPrompt?.prompt ?? "";
+      }
+
+      const effectiveLang =
+        targetLang === "default"
+          ? localStorage.getItem("language") || "English"
+          : targetLang;
+
+      if (prompt === "Translate" && effectiveLang) {
+        return textModePrompt
+          ? `Please translate this text to ${effectiveLang}. Only return the translated text.`
+          : `Please translate the text in this image to ${effectiveLang}. Only return the translated text.`;
+      }
+
+      if (prompt === "Calendar" && textModePrompt) {
+        return "Identify schedule or event information in this text and return a valid iCalendar (.ics) VCALENDAR document. Only return the ICS data.";
+      }
+
+      return `${fullPrompt} Please answer in ${language}.`;
+    },
+    [customPrompts, language, model, prompt, targetLang]
+  );
+
+  const getProviderConfig = useCallback(() => {
+    const providerModel = parseProviderModel(model);
+    if (!providerModel) {
+      return null;
+    }
+
+    const provider = providers.find(
+      (item) => item.id === providerModel.providerId
+    );
+    if (!provider) {
+      throw new Error("Provider not found");
+    }
+
+    return { provider, modelName: providerModel.modelName };
+  }, [model, providers]);
+
   // 识别截图
   const recoginzeScreenshot = useCallback(
     (value: string) => {
@@ -356,24 +443,21 @@ function App() {
       aiModels
         .create(model)
         .then((modelInstance: any) => {
-          const selectedPrompt = promptOptions[
-            model as keyof typeof promptOptions
-          ].find((p) => p.value === prompt);
-          let fullPrompt = selectedPrompt ? selectedPrompt.prompt : "";
+          const fullPrompt = buildPrompt(false);
+          const providerConfig = getProviderConfig();
 
-          // 添加语言指令
-          const effectiveLang =
-            targetLang === "default"
-              ? localStorage.getItem("language") || "English"
-              : targetLang;
-
-          if (prompt === "Translate" && effectiveLang) {
-            fullPrompt = `Please translate the text in this image to ${effectiveLang}. Only return the translated text.`;
-          } else {
-            fullPrompt += ` Please answer in ${language}.`;
+          if (providerConfig) {
+            return modelInstance.run(
+              value,
+              fullPrompt,
+              providerConfig.provider.apiKey,
+              providerConfig.provider.baseURL,
+              providerConfig.modelName,
+              providerConfig.provider.orgId
+            );
           }
 
-          if (models.find((m) => m.value === model)?.requireApiKey) {
+          if (getBaseModel(model)?.requireApiKey) {
             return modelInstance.run(value, fullPrompt, apiKey);
           }
           return modelInstance.run(value, fullPrompt);
@@ -455,7 +539,7 @@ function App() {
           });
         });
     },
-    [targetLang, model, prompt, language, apiKey, toast, shouldAutoPin, screenShotResult, posthog, autoCopyResult, copyTextResult]
+    [model, buildPrompt, getProviderConfig, apiKey, toast, t, shouldAutoPin, screenShotResult, posthog, autoCopyResult, copyTextResult]
   );
 
   const recognizeText = useCallback(
@@ -472,22 +556,21 @@ function App() {
       aiModels
         .create(model)
         .then((modelInstance: any) => {
-          const selectedPrompt = promptOptions[
-            model as keyof typeof promptOptions
-          ].find((p) => p.value === prompt);
-          let fullPrompt = selectedPrompt ? selectedPrompt.prompt : "";
-          const effectiveLang =
-            targetLang === "default"
-              ? localStorage.getItem("language") || "English"
-              : targetLang;
+          const fullPrompt = buildPrompt(true);
+          const providerConfig = getProviderConfig();
 
-          if (prompt === "Translate" && effectiveLang) {
-            fullPrompt = `Please translate this text to ${effectiveLang}. Only return the translated text.`;
-          } else {
-            fullPrompt += ` Please answer in ${language}.`;
+          if (providerConfig) {
+            return modelInstance.runText(
+              trimmedValue,
+              fullPrompt,
+              providerConfig.provider.apiKey,
+              providerConfig.provider.baseURL,
+              providerConfig.modelName,
+              providerConfig.provider.orgId
+            );
           }
 
-          if (models.find((m) => m.value === model)?.requireApiKey) {
+          if (getBaseModel(model)?.requireApiKey) {
             return modelInstance.runText(trimmedValue, fullPrompt, apiKey);
           }
           return modelInstance.runText(trimmedValue, fullPrompt);
@@ -510,7 +593,7 @@ function App() {
           });
         });
     },
-    [targetLang, model, prompt, language, apiKey, toast, t, autoCopyResult, copyTextResult]
+    [model, buildPrompt, getProviderConfig, apiKey, toast, t, autoCopyResult, copyTextResult]
   );
 
   // 当提示或截图或语言变化时，重新识别截图
@@ -697,6 +780,10 @@ function App() {
 
         if (settings?.general?.autoCopyResult !== undefined) {
           setAutoCopyResult(settings.general.autoCopyResult);
+        }
+
+        if (settings?.llmProviders) {
+          setProviders(settings.llmProviders);
         }
       } catch (error) {
         console.error("Failed to load app settings:", error);
@@ -890,6 +977,16 @@ function App() {
     recognizeText(textInput);
   }, [recognizeText, textInput]);
 
+  const handleCustomPromptsChange = useCallback((prompts: CustomPrompt[]) => {
+    setCustomPrompts(prompts);
+    localStorage.setItem(CUSTOM_PROMPTS_STORAGE_KEY, JSON.stringify(prompts));
+    setPromptVersion((version) => version + 1);
+  }, []);
+
+  const openPromptManager = useCallback(() => {
+    setOpenPromptDialog(true);
+  }, []);
+
   // 打开API密钥对话框
   const openApiKeyDialog = useCallback(() => {
     setOpenDialog(true);
@@ -973,7 +1070,10 @@ function App() {
                 onClick={() => setOpenLanguageDialog(true)}
                 language={language}
               />
-              <ModelSelect handleModelChange={handleModelChange} />
+              <ModelSelect
+                handleModelChange={handleModelChange}
+                providers={providers}
+              />
             </div>
           </div>
         )}
@@ -1016,6 +1116,8 @@ function App() {
                 onError={onError}
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
+                customPrompts={customPrompts}
+                promptVersion={promptVersion}
                 recoginzeScreenshot={recoginzeScreenshot}
                 retryTextRecognition={retryTextRecognition}
                 pasteTextFromClipboard={pasteTextFromClipboard}
@@ -1024,6 +1126,7 @@ function App() {
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
+                openPromptDialog={openPromptManager}
                 textMode={textMode}
               />
             </div>
@@ -1042,6 +1145,8 @@ function App() {
                 onError={onError}
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
+                customPrompts={customPrompts}
+                promptVersion={promptVersion}
                 recoginzeScreenshot={recoginzeScreenshot}
                 retryTextRecognition={retryTextRecognition}
                 pasteTextFromClipboard={pasteTextFromClipboard}
@@ -1050,6 +1155,7 @@ function App() {
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
+                openPromptDialog={openPromptManager}
                 textMode={textMode}
                 responsivePromptSelect={true}
               />
@@ -1185,6 +1291,8 @@ function App() {
                           onError={onError}
                           screenShotResult={screenShotResult}
                           handlePromptChange={handlePromptChange}
+                          customPrompts={customPrompts}
+                          promptVersion={promptVersion}
                           recoginzeScreenshot={recoginzeScreenshot}
                           retryTextRecognition={retryTextRecognition}
                           pasteTextFromClipboard={pasteTextFromClipboard}
@@ -1193,6 +1301,7 @@ function App() {
                           pinToScreen={pinToScreen}
                           clearScreenshot={clearScreenshot}
                           openApiKeyDialog={openApiKeyDialog}
+                          openPromptDialog={openPromptManager}
                           textMode={textMode}
                         />
                       </div>
@@ -1254,6 +1363,9 @@ function App() {
                   settings.shortcuts.disabledShortcuts?.screenshot === true
                 );
               }
+              if (settings.llmProviders) {
+                setProviders(settings.llmProviders);
+              }
             }}
           />
           <LoginDialog
@@ -1264,6 +1376,12 @@ function App() {
             open={openHistory}
             onOpenChange={setOpenHistory}
             onRestore={restoreHistoryItem}
+          />
+          <CustomPromptDialog
+            open={openPromptDialog}
+            prompts={customPrompts}
+            onOpenChange={setOpenPromptDialog}
+            onPromptsChange={handleCustomPromptsChange}
           />
         </>
       )}

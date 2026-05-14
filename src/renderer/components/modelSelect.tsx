@@ -18,19 +18,48 @@ import {
   PopoverTrigger,
 } from "../components/ui/popover"
 import { models } from "../lib/models"
+import { LLMProvider } from "../types/settings"
 import { useTranslation } from "react-i18next"
 import { usePostHog } from "posthog-js/react"
 
-export default function ModelSelect(props:{handleModelChange: (value: string) => void}) {
+export default function ModelSelect(props:{
+  handleModelChange: (value: string) => void;
+  providers?: LLMProvider[];
+}) {
   const [open, setOpen] = React.useState(false)
   const {t} = useTranslation();
   const posthog = usePostHog();
+  const allModels = React.useMemo(() => {
+    const providerModels = (props.providers ?? [])
+      .filter((provider) => provider.enabled)
+      .flatMap((provider) =>
+        provider.models.map((modelName) => ({
+          value: `provider:${provider.id}:${modelName}`,
+          label: `${modelName} (${provider.name})`,
+        }))
+      );
+
+    return [...models, ...providerModels];
+  }, [props.providers]);
+
   //read the model from local storage
   const savedModel = localStorage.getItem("model")
-  const initialModel = savedModel && models.find((m) => m.value === savedModel)
+  const initialModel = savedModel && allModels.find((m) => m.value === savedModel)
     ? savedModel
     : "auto"
   const [value, setValue] = React.useState(initialModel)
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("model");
+    if (saved && allModels.find((item) => item.value === saved)) {
+      setValue(saved);
+      return;
+    }
+
+    setValue((current) =>
+      allModels.find((item) => item.value === current) ? current : "auto"
+    );
+  }, [allModels]);
   
   //when the model is updated, update the parent state
   React.useEffect(() => {
@@ -53,7 +82,7 @@ export default function ModelSelect(props:{handleModelChange: (value: string) =>
           className="w-[200px] justify-between"
         >
           {value
-            ? models.find((model) => model.value === value)?.label
+            ? allModels.find((model) => model.value === value)?.label
             : ""}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -63,7 +92,7 @@ export default function ModelSelect(props:{handleModelChange: (value: string) =>
           <CommandInput placeholder={`${t("search_model")}`} />
           <CommandEmpty>{t("no_model_found")}</CommandEmpty>
           <CommandGroup>
-            {models.map((model) => (
+            {allModels.map((model) => (
               <CommandItem
                 key={model.value}
                 value={model.value}

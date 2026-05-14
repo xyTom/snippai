@@ -7,6 +7,8 @@ import { CopyImageButton } from "./CopyImageButton";
 import { PinButton } from "./PinButton";
 import { TrashButton } from "./TrashButton";
 import { PasteTextButton } from "./PasteTextButton";
+import { PromptEditButton } from "./PromptEditButton";
+import { CustomPrompt } from "../CustomPromptDialog";
 
 interface ActionButtonsProps {
   isStickyMode: boolean;
@@ -16,6 +18,8 @@ interface ActionButtonsProps {
   onError: boolean;
   screenShotResult: string | null;
   handlePromptChange: (value: string) => void;
+  customPrompts?: CustomPrompt[];
+  promptVersion?: number;
   recoginzeScreenshot: (value: string) => void;
   retryTextRecognition?: () => void;
   pasteTextFromClipboard?: () => void;
@@ -24,6 +28,7 @@ interface ActionButtonsProps {
   pinToScreen: () => void;
   clearScreenshot: () => void;
   openApiKeyDialog: () => void;
+  openPromptDialog?: () => void;
   textMode?: boolean;
   responsivePromptSelect?: boolean;
 }
@@ -36,6 +41,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onError,
   screenShotResult,
   handlePromptChange,
+  customPrompts,
+  promptVersion,
   recoginzeScreenshot,
   retryTextRecognition,
   pasteTextFromClipboard,
@@ -44,6 +51,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   pinToScreen,
   clearScreenshot,
   openApiKeyDialog,
+  openPromptDialog,
   textMode,
   responsivePromptSelect,
 }) => {
@@ -57,9 +65,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           model={model}
           disabled={loading}
           responsiveMode={responsivePromptSelect ?? false}
+          customPrompts={customPrompts}
+          version={promptVersion}
         />
       </div>
       <div className="flex flex-nowrap gap-2 items-center">
+        {openPromptDialog && <PromptEditButton onClick={openPromptDialog} />}
         {(result || onError) && (
           <RetryButton
             onClick={() => {

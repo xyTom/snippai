@@ -11,6 +11,7 @@
   "image": "Imagen",
   "color": "Color",
   "translate": "Traducir",
+  "calendar_prompt": "Calendario",
   "login": "Iniciar sesión",
   "logout": "Cerrar sesión",
   "login_form": {
@@ -33,6 +34,7 @@
     "canceled_description": "La configuración ha sido cancelada. No se realizaron cambios.",
     "shortcuts": "Atajos",
     "shortcuts_settings": "Configuración de Atajos",
+    "llm_providers": "Proveedores LLM",
     "about": "Acerca de",
     "auto_copy": "Copiar automáticamente al portapapeles",
     "auto_copy_description": "Copia automáticamente las capturas al portapapeles para facilitar el pegado",
@@ -94,7 +96,16 @@
     "about_copyright": "Copyright",
     "about_copyright_all_rights_reserved": "Todos los derechos reservados.",
     "processing_screenshot": "Procesando captura de pantalla...",
-    "shortcut_hide_all_sticky_notes": "Atajo para ocultar/mostrar todas las notas adhesivas"
+    "shortcut_hide_all_sticky_notes": "Atajo para ocultar/mostrar todas las notas adhesivas",
+    "llm_provider_empty": "No hay proveedores configurados.",
+    "llm_provider_add": "Agregar proveedor",
+    "llm_provider_edit": "Editar proveedor",
+    "llm_provider_enabled": "Proveedor activado",
+    "llm_provider_name": "Nombre",
+    "llm_provider_base_url": "Base URL",
+    "llm_provider_api_key": "Clave API",
+    "llm_provider_org_id": "ID de organización",
+    "llm_provider_models": "Modelos"
   },
   "language_input": {
     "set_language": "Por favor selecciona tu idioma",
@@ -113,6 +124,14 @@
     "empty_description": "Copia texto primero y luego pégalo en Snippai.",
     "read_failed": "No se pudo leer el portapapeles",
     "read_failed_description": "Permite el acceso al portapapeles o pega el texto manualmente."
+  },
+  "custom_prompts": {
+    "title": "Prompts personalizados",
+    "manage": "Gestionar prompts",
+    "empty": "No hay prompts personalizados guardados.",
+    "label": "Etiqueta",
+    "prompt": "Prompt",
+    "add": "Agregar prompt"
   },
   "history": {
     "title": "Historial",
@@ -164,5 +183,8 @@
     "success_description": "Se exportaron exitosamente {{count}} tabla{{count, plural, one='' other='s'}} al archivo Excel: {{fileName}}",
     "failed": "Error de exportación",
     "failed_description": "Error al exportar las tablas a Excel. Por favor inténtelo de nuevo o verifique si las tablas están correctamente formateadas."
+  },
+  "calendar": {
+    "save_ics": "Guardar .ics"
   }
 }

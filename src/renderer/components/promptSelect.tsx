@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { promptOptions } from "../lib/models";
+import { getPromptOptions, PromptOption } from "../lib/models";
 import {
   Select,
   SelectContent,
@@ -10,27 +10,36 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { usePostHog } from "posthog-js/react";
+import { CustomPrompt } from "./CustomPromptDialog";
 
 export default function PromptSelect(props: {
   handlePromptChange: (value: string) => void;
   model: string;
   disabled: boolean;
   responsiveMode?: boolean;
+  customPrompts?: CustomPrompt[];
+  version?: number;
 }) {
   const { t } = useTranslation();
   const posthog = usePostHog();
   const DROPDOWN_SWITCH_WIDTH = 790;
-  const options = promptOptions as {
-    [key: string]: { value: string; labelKey: string; prompt: string }[];
-  };
+  const options = getPromptOptions(props.model);
+  const customOptions: PromptOption[] = (props.customPrompts ?? []).map(
+    (item) => ({
+      value: `custom:${item.id}`,
+      labelKey: item.label,
+      prompt: item.prompt,
+    })
+  );
+  const allOptions = [...options, ...customOptions];
 
   const [useDropdown, setUseDropdown] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState(() => {
     const saved = localStorage.getItem("lastPrompt");
-    const validPrompts = options[props.model]?.map((p) => p.value) || [];
+    const validPrompts = allOptions.map((p) => p.value);
     return saved && validPrompts.includes(saved)
       ? saved
-      : options[props.model][0]?.value || "";
+      : allOptions[0]?.value || "";
   });
 
   useEffect(() => {
@@ -39,14 +48,14 @@ export default function PromptSelect(props: {
 
   useEffect(() => {
     const saved = localStorage.getItem("lastPrompt");
-    const validPrompts = options[props.model]?.map((p) => p.value) || [];
+    const validPrompts = allOptions.map((p) => p.value);
     if (!validPrompts.includes(saved || "")) {
-      const fallback = options[props.model][0]?.value || "";
+      const fallback = allOptions[0]?.value || "";
       setSelectedPrompt(fallback);
       localStorage.setItem("lastPrompt", fallback);
       props.handlePromptChange(fallback);
     }
-  }, [props.model]);
+  }, [props.model, props.version]);
 
   useEffect(() => {
     props.handlePromptChange(selectedPrompt);
@@ -97,13 +106,15 @@ export default function PromptSelect(props: {
           </SelectTrigger>
 
           <SelectContent className="bg-[#1e1e1e] text-white border border-[#2a2a2a]">
-            {options[props.model].map((prompt, index) => (
+            {allOptions.map((prompt, index) => (
               <SelectItem
                 key={index}
                 value={prompt.value}
                 className="!text-white hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] data-[state=checked]:bg-[#333] data-[state=checked]:!text-white"
               >
-                {t(prompt.labelKey)}
+                {prompt.value.startsWith("custom:")
+                  ? prompt.labelKey
+                  : t(prompt.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -114,13 +125,15 @@ export default function PromptSelect(props: {
           onValueChange={(value) => handleChange(value)}
         >
           <TabsList>
-            {options[props.model].map((prompt, index) => (
+            {allOptions.map((prompt, index) => (
               <TabsTrigger
                 disabled={props.disabled}
                 key={index}
                 value={prompt.value}
               >
-                {t(prompt.labelKey)}
+                {prompt.value.startsWith("custom:")
+                  ? prompt.labelKey
+                  : t(prompt.labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>

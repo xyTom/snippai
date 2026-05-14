@@ -9,6 +9,7 @@ import SettingsNavigation, { SettingsTab, SettingsNavItem } from './settings/Set
 import KeyboardShortcutsTab from './settings/KeyboardShortcutsTab';
 import AboutTab from './settings/AboutTab';
 import GeneralTab from './settings/GeneralTab';
+import LLMProvidersTab from './settings/LLMProvidersTab';
 
 import { useTranslation } from 'react-i18next';
 
@@ -26,7 +27,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     uiLanguage: 'default',
     hiddenFromScreenCapture: false,
     useSystemScreenshot: true
-  }
+  },
+  llmProviders: []
 };
 
 interface SettingsPageProps {
@@ -52,6 +54,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
   const navItems: SettingsNavItem[] = [
     { id: 'general', label: t('settings.general') },
     { id: 'shortcuts', label:  t('settings.shortcuts') },
+    { id: 'llmProviders', label: t('settings.llm_providers') },
     { id: 'about', label:  t('settings.about') }
   ];
 
@@ -148,6 +151,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
     const titles: Record<SettingsTab, string> = {
       general: t('settings.general_settings'),
       shortcuts: t('settings.shortcuts'),
+      llmProviders: t('settings.llm_providers'),
       about: t('settings.about')
     };
     return titles[tab];
@@ -189,6 +193,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
                 onSave={saveSettings}
                 onCancel={onClose}
                 onReset={handleResetShortcuts}
+              />
+            )}
+
+            {activeTab === 'llmProviders' && (
+              <LLMProvidersTab
+                providers={appSettings.llmProviders}
+                onProvidersChange={(providers) =>
+                  updateSettings('llmProviders', providers)
+                }
+                onSave={saveSettings}
+                onCancel={onClose}
               />
             )}
 

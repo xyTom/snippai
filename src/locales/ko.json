@@ -11,6 +11,7 @@
   "image": "이미지",
   "color": "색상",
   "translate": "번역",
+  "calendar_prompt": "캘린더",
   "login": "로그인",
   "logout": "로그아웃",
   "login_form": {
@@ -33,6 +34,7 @@
     "canceled_description": "설정이 취소되었습니다. 변경 사항이 적용되지 않았습니다.",
     "shortcuts": "단축키",
     "shortcuts_settings": "단축키 설정",
+    "llm_providers": "LLM 제공자",
     "about": "정보",
     "auto_copy": "자동 클립보드 복사",
     "auto_copy_description": "캡처를 자동으로 클립보드에 복사합니다",
@@ -94,7 +96,16 @@
     "about_snippai_description": "Snippai는 스크린샷 내용을 빠르게 분석하고 이해할 수 있게 돕는 지능형 도구입니다. 강력한 AI 모델로 텍스트, 코드, 다이어그램을 인식하고 관련 분석과 설명을 제공합니다.",
     "about_copyright": "저작권",
     "about_copyright_all_rights_reserved": "판권 소유.",
-    "processing_screenshot": "스크린샷 처리 중..."
+    "processing_screenshot": "스크린샷 처리 중...",
+    "llm_provider_empty": "설정된 제공자가 없습니다.",
+    "llm_provider_add": "제공자 추가",
+    "llm_provider_edit": "제공자 편집",
+    "llm_provider_enabled": "제공자 활성화됨",
+    "llm_provider_name": "이름",
+    "llm_provider_base_url": "Base URL",
+    "llm_provider_api_key": "API 키",
+    "llm_provider_org_id": "조직 ID",
+    "llm_provider_models": "모델"
   },
   "language_input": {
     "set_language": "언어를 설정해주세요",
@@ -113,6 +124,14 @@
     "empty_description": "먼저 텍스트를 복사한 다음 Snippai에 붙여넣으세요.",
     "read_failed": "클립보드를 읽을 수 없습니다",
     "read_failed_description": "클립보드 접근을 허용하거나 텍스트를 직접 붙여넣으세요."
+  },
+  "custom_prompts": {
+    "title": "사용자 Prompt",
+    "manage": "Prompt 관리",
+    "empty": "저장된 사용자 Prompt가 없습니다.",
+    "label": "라벨",
+    "prompt": "Prompt",
+    "add": "Prompt 추가"
   },
   "history": {
     "title": "기록",
@@ -164,5 +183,8 @@
     "success_description": "{{count}}개의 테이블을 Excel 파일로 내보냈습니다: {{fileName}}",
     "failed": "내보내기 실패",
     "failed_description": "테이블을 Excel로 내보내는 데 실패했습니다. 다시 시도하거나 테이블 형식이 올바른지 확인해 주세요."
+  },
+  "calendar": {
+    "save_ics": ".ics 저장"
   }
 }

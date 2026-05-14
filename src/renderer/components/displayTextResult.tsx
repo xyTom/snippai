@@ -1,6 +1,7 @@
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import React, { useEffect, useRef, useState, ChangeEvent, useMemo } from "react";
+import { CalendarCheck, CalendarPlus } from "lucide-react";
 import { useToast } from "./ui/use-toast";
 import { MarkdownTableParser } from "../../services/parser/markdownParser";
 import { ExcelExportServiceFactory } from "../../services/excel/factory";
@@ -9,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 interface DisplayTextResultProps {
   text: string;
   onTextChange: (text: string) => void;
+  prompt: string;
   isStickyMode?: boolean;
   horizontalLayout?: boolean;
 }
@@ -16,6 +18,7 @@ interface DisplayTextResultProps {
 export default function DisplayTextResult({
   text,
   onTextChange,
+  prompt,
   isStickyMode = false,
   horizontalLayout = false,
 }: DisplayTextResultProps) {
@@ -25,6 +28,7 @@ export default function DisplayTextResult({
   const [copied, setCopied] = useState(false);
   const [exported, setExported] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [calendarSaved, setCalendarSaved] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const parseMarkdownTables = useMemo(() => {
@@ -34,6 +38,13 @@ export default function DisplayTextResult({
   const containsTable = useMemo(() => {
     return parseMarkdownTables.length > 0;
   }, [parseMarkdownTables]);
+
+  const calendarText = useMemo(() => {
+    const match = text.match(/BEGIN:VCALENDAR[\s\S]*END:VCALENDAR/i);
+    return match?.[0] ?? "";
+  }, [text]);
+
+  const containsCalendar = prompt === "Calendar" && Boolean(calendarText);
 
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onTextChange(event.target.value);
@@ -101,6 +112,24 @@ export default function DisplayTextResult({
       setIsExporting(false);
       setTimeout(() => setExported(false), 1000);
     }
+  };
+
+  const handleCalendarExport = () => {
+    if (!calendarText) return;
+
+    const blob = new Blob([calendarText], {
+      type: "text/calendar;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `snippai-event-${Date.now()}.ics`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    setCalendarSaved(true);
+    setTimeout(() => setCalendarSaved(false), 1000);
   };
 
   // 自动调整文本框高度的函数
@@ -212,6 +241,22 @@ export default function DisplayTextResult({
               <ExportToExcelIcon className={iconSize} />
             )}
             <span>{isExporting ? "Exporting..." : "Export as Excel"}</span>
+          </Button>
+        )}
+        {containsCalendar && (
+          <Button
+            variant="outline"
+            size={isStickyMode ? "sm" : "default"}
+            className={buttonClasses}
+            onClick={handleCalendarExport}
+            disabled={isExporting}
+          >
+            {calendarSaved ? (
+              <CalendarCheck className={iconSize} />
+            ) : (
+              <CalendarPlus className={iconSize} />
+            )}
+            <span>{t("calendar.save_ics")}</span>
           </Button>
         )}
       </div>

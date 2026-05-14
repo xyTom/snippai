@@ -50,6 +50,7 @@ describe('SettingsService', () => {
     expect(settings.general.autoStart).toBe(true);
     expect(settings.general.autoCopyResult).toBe(false);
     expect(settings.shortcuts.pinToScreen).toBe('CommandOrControl+Shift+P');
+    expect(settings.llmProviders).toEqual([]);
     expect(fs.existsSync(path.join(tempDir, 'app-settings.json'))).toBe(true);
     expect(mockApp.getPath).toHaveBeenCalledWith('userData');
   });
@@ -108,11 +109,32 @@ describe('SettingsService', () => {
     expect(saved.shortcuts.fullscreenScreenshot).toBe('CommandOrControl+Shift+F');
     expect(saved.shortcuts.pinToScreen).toBe('CommandOrControl+Shift+P');
     expect(saved.general.uiLanguage).toBe('default');
+    expect(saved.llmProviders).toEqual([]);
     expect(mockLogger.warn).toHaveBeenCalledWith(
       'Detected malformed shortcuts settings block. Reset to defaults.'
     );
     expect(mockLogger.warn).toHaveBeenCalledWith(
       'Detected malformed general settings block. Reset to defaults.'
+    );
+  });
+
+  it('repairs malformed provider settings', async () => {
+    const { service, tempDir, mockLogger } = await createService();
+    cleanupDirs.push(tempDir);
+    const settingsPath = path.join(tempDir, 'app-settings.json');
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        shortcuts: { screenshot: 'CommandOrControl+Shift+A' },
+        general: { autoCopyToClipboard: true, autoStart: false },
+        llmProviders: {}
+      })
+    );
+
+    const settings = service.getSettings();
+    expect(settings.llmProviders).toEqual([]);
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      'Detected malformed llmProviders settings block. Reset to defaults.'
     );
   });
 

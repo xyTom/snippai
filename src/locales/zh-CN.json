@@ -11,6 +11,7 @@
   "image": "图像",
   "color": "颜色",
   "translate": "翻译",
+  "calendar_prompt": "日历",
   "login": "登录",
   "logout": "登出",
   "login_form": {
@@ -33,6 +34,7 @@
     "canceled_description": "设置已取消。未进行任何更改。",
     "shortcuts": "快捷键",
     "shortcuts_settings": "快捷键设置",
+    "llm_providers": "LLM 提供商",
     "about": "关于",
     "auto_copy": "自动复制到剪贴板",
     "auto_copy_description": "自动将截图复制到剪贴板，便于粘贴",
@@ -94,7 +96,16 @@
     "about_snippai_description": "Snippai 是一款智能截图识别工具，可帮助您快速分析并理解截图内容。借助强大的 AI 模型，Snippai 可以识别截图中的文本、代码和图表，并提供相关的分析和解释。",
     "about_copyright": "版权所有",
     "about_copyright_all_rights_reserved": "保留所有权利。",
-    "processing_screenshot": "正在处理截图..."
+    "processing_screenshot": "正在处理截图...",
+    "llm_provider_empty": "尚未配置提供商。",
+    "llm_provider_add": "添加提供商",
+    "llm_provider_edit": "编辑提供商",
+    "llm_provider_enabled": "提供商已启用",
+    "llm_provider_name": "名称",
+    "llm_provider_base_url": "Base URL",
+    "llm_provider_api_key": "API 密钥",
+    "llm_provider_org_id": "组织 ID",
+    "llm_provider_models": "模型"
   },
   "language_input": {
     "set_language": "请选择您的语言",
@@ -113,6 +124,14 @@
     "empty_description": "请先复制文本，再粘贴到 Snippai。",
     "read_failed": "无法读取剪贴板",
     "read_failed_description": "请允许剪贴板访问，或手动粘贴文本。"
+  },
+  "custom_prompts": {
+    "title": "自定义 Prompt",
+    "manage": "管理 Prompt",
+    "empty": "暂无自定义 Prompt。",
+    "label": "标签",
+    "prompt": "Prompt",
+    "add": "添加 Prompt"
   },
   "history": {
     "title": "历史记录",
@@ -164,5 +183,8 @@
     "success_description": "成功导出 {{count}} 个表格到 Excel 文件：{{fileName}}",
     "failed": "导出失败",
     "failed_description": "导出表格到 Excel 失败。请重试或检查表格格式是否正确。"
+  },
+  "calendar": {
+    "save_ics": "保存 .ics"
   }
 }

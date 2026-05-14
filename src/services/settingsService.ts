@@ -53,7 +53,8 @@ export class SettingsService {
         horizontalLayout: false,
         hiddenFromScreenCapture: false,
         useSystemScreenshot: true
-      }
+      },
+      llmProviders: []
     };
   }
 
@@ -159,6 +160,12 @@ export class SettingsService {
         logger.warn(`Detected malformed ${section} settings block. Reset to defaults.`);
       }
     });
+
+    if (!Array.isArray(savedSettings.llmProviders)) {
+      savedSettings.llmProviders = [];
+      settingsChanged = true;
+      logger.warn('Detected malformed llmProviders settings block. Reset to defaults.');
+    }
 
     return settingsChanged;
   }
