@@ -51,12 +51,6 @@ import { usePostHog } from "posthog-js/react";
 import { AnimatePresence, motion } from "motion/react";
 import { TextShimmer } from "./components/ui/text-shimmer";
 
-declare global {
-  interface Window {
-    electronAPI: any;
-  }
-}
-
 function App() {
   // 获取认证状态
   const { user, setOnAuthSuccess } = useAuth();

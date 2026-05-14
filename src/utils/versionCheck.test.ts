@@ -3,15 +3,6 @@ import type { SoftwareUpdate } from './versionCheck';
 import { checkForUpdates, getCurrentVersion, showUpdateNotification } from './versionCheck';
 import { toast } from '../renderer/components/ui/use-toast';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      getAppVersion?: () => Promise<string>;
-      openExternal?: (url: string) => void;
-    };
-  }
-}
-
 const supabaseResponse = vi.hoisted(() => ({ data: null as any, error: null as any }));
 
 vi.mock('./supabase', () => {

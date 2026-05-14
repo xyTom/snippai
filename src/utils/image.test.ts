@@ -3,13 +3,13 @@ import { convertFileToPngBase64 } from './image';
 
 class MockFileReader {
   public result: string | ArrayBuffer | null = null;
-  public onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  public onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  public onload: (() => void) | null = null;
+  public onerror: (() => void) | null = null;
 
-  readAsDataURL() {
+  readAsDataURL(): void {
     setTimeout(() => {
       this.result = 'data:image/png;base64,abc123';
-      this.onload?.(new ProgressEvent('load') as any);
+      this.onload?.();
     });
   }
 }
@@ -52,7 +52,7 @@ describe('convertFileToPngBase64', () => {
     const originalCreateElement = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
       if (tagName === 'canvas') {
-        return { getContext: () => null } as any;
+        return { getContext: (): null => null } as any;
       }
       return originalCreateElement(tagName);
     });
@@ -86,8 +86,8 @@ describe('convertFileToPngBase64', () => {
 
   it('rejects when file reader errors', async () => {
     class ErrorFileReader extends MockFileReader {
-      readAsDataURL() {
-        setTimeout(() => this.onerror?.(new ProgressEvent('error') as any));
+      readAsDataURL(): void {
+        setTimeout(() => this.onerror?.());
       }
     }
     vi.stubGlobal('FileReader', ErrorFileReader as any);
