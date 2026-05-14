@@ -48,6 +48,23 @@ describe('convertFileToPngBase64', () => {
     expect(data).toBe('abc123');
   });
 
+  it('rejects when canvas returns an invalid image data URL', async () => {
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      if (tagName === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({ drawImage: vi.fn() }),
+          toDataURL: () => 'data:image/png;base64'
+        } as any;
+      }
+      return originalCreateElement(tagName);
+    });
+
+    await expect(convertFileToPngBase64(new File([], 'test.png'))).rejects.toThrow('Invalid image data');
+  });
+
   it('rejects when canvas context is missing', async () => {
     const originalCreateElement = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {

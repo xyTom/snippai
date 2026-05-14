@@ -65,7 +65,7 @@ const handleOpenLoginDialog = useCallback(() => {
   setOpenLoginDialog(true);
   // 设置认证成功回调以自动关闭对话框
   setOnAuthSuccess(() => () => {
-    console.log('Auth success callback triggered - closing login dialog');
+    console.log('Auth success - closing login dialog');
     setOpenLoginDialog(false);
   });
 }, [setOnAuthSuccess]);
@@ -126,7 +126,7 @@ Found tokens in hash: { accessToken: true, refreshToken: true }
 Setting session with tokens
 Successfully authenticated via magic link
 Triggering auth success callback for deep link authentication  // 关键日志
-Auth success callback triggered - closing login dialog         // 关键日志
+Auth success - closing login dialog         // 关键日志
 Auth state changed: SIGNED_IN {...}
 ```
 
@@ -142,7 +142,7 @@ Auth state changed: SIGNED_IN {...}
 
 1. **检查控制台日志**
    - 确认看到 "Triggering auth success callback" 日志
-   - 确认看到 "Auth success callback triggered - closing login dialog" 日志
+   - 确认看到 "Auth success - closing login dialog" 日志
 
 2. **检查认证状态**
    ```javascript

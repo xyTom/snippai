@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { logger } from '../utils/logger';
-import { AppSettings, GeneralSettings, ShortcutsRecord } from '../renderer/types/settings';
+import { AppSettings } from '../renderer/types/settings';
 
 /**
  * Centralized settings service for managing application settings
@@ -134,6 +134,32 @@ export class SettingsService {
     return settingsChanged;
   }
 
+  private isPlainObject(value: unknown): value is Record<string, any> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private cloneDefaults<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  private normalizeSettingsShape(
+    savedSettings: Record<string, any>,
+    defaultSettings: AppSettings
+  ): boolean {
+    let settingsChanged = false;
+    const objectSections = ['shortcuts', 'general'] as const;
+
+    objectSections.forEach((section) => {
+      if (!this.isPlainObject(savedSettings[section])) {
+        savedSettings[section] = this.cloneDefaults(defaultSettings[section]);
+        settingsChanged = true;
+        logger.warn(`Detected malformed ${section} settings block. Reset to defaults.`);
+      }
+    });
+
+    return settingsChanged;
+  }
+
   /**
    * Get complete application settings with robust error handling
    * Implements auto-recovery for corrupted config files
@@ -198,13 +224,16 @@ export class SettingsService {
         return defaultSettings;
       }
       
+      let settingsChanged = this.normalizeSettingsShape(savedSettings, defaultSettings);
+
       // Deep merge with defaults and track changes
-      const settingsChanged = this.mergeDefaultsRecursive(savedSettings, defaultSettings);
+      settingsChanged = this.mergeDefaultsRecursive(savedSettings, defaultSettings) || settingsChanged;
       
       // Special handling for autoStart property - sync with actual system state
       const actualAutoStartStatus = this.getAutoStartStatus();
       if (savedSettings.general.autoStart !== actualAutoStartStatus) {
         savedSettings.general.autoStart = actualAutoStartStatus;
+        settingsChanged = true;
         logger.info(`Updated autoStart setting to match system state: ${actualAutoStartStatus}`);
       }
       
@@ -238,7 +267,11 @@ export class SettingsService {
     
     try {
       // Validate data integrity
-      if (!settings || typeof settings !== 'object') {
+      if (
+        !this.isPlainObject(settings) ||
+        !this.isPlainObject(settings.shortcuts) ||
+        !this.isPlainObject(settings.general)
+      ) {
         logger.error('Invalid settings data received');
         return false;
       }

@@ -81,6 +81,36 @@ describe('SettingsService', () => {
     expect(settings.general.autoStart).toBe(true);
     expect(settings.general.uiLanguage).toBeDefined();
     expect(mockApp.getLoginItemSettings).toHaveBeenCalled();
+
+    const saved = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    expect(saved.general.autoStart).toBe(true);
+  });
+
+  it('repairs malformed settings sections before merging defaults', async () => {
+    const { service, tempDir, mockLogger } = await createService();
+    cleanupDirs.push(tempDir);
+    const settingsPath = path.join(tempDir, 'app-settings.json');
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        shortcuts: [],
+        general: 'invalid'
+      })
+    );
+
+    const settings = service.getSettings();
+    const saved = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+
+    expect(settings.shortcuts.screenshot).toBe('CommandOrControl+Shift+A');
+    expect(settings.general.autoCopyToClipboard).toBe(true);
+    expect(saved.shortcuts.fullscreenScreenshot).toBe('CommandOrControl+Shift+F');
+    expect(saved.general.uiLanguage).toBe('default');
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      'Detected malformed shortcuts settings block. Reset to defaults.'
+    );
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      'Detected malformed general settings block. Reset to defaults.'
+    );
   });
 
   it('continues saving when enabling autoStart fails', async () => {
