@@ -1,17 +1,17 @@
 import * as React from 'react';
-import { X } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '../ui/use-toast';
-import { ShortcutAction, getConflictingAction, getShortcutLabel } from '../../../shared/shortcuts';
+import { ShortcutAction, getConflictingAction } from '../../../shared/shortcuts';
 import { useTranslation } from 'react-i18next';
 
 // Utility function for debouncing
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+function debounce<T extends unknown[]>(func: (...args: T) => void, wait: number): (...args: T) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function(...args: Parameters<T>) {
+  return function(...args: T) {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
@@ -27,6 +27,7 @@ interface KeyboardShortcutInputProps {
   shortcuts: Record<ShortcutAction, string>;
   onChange: (key: ShortcutAction, value: string) => void;
   onReset?: () => void; // 可选的重置功能
+  disabled?: boolean;
 }
 
 /**
@@ -39,7 +40,8 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
   value,
   shortcuts,
   onChange,
-  onReset
+  onReset,
+  disabled = false,
 }) => {
   const [isRecording, setIsRecording] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -87,7 +89,7 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
    * Set up key event listener for shortcut recording
    */
   React.useEffect(() => {
-    if (!isRecording) return;
+    if (!isRecording || disabled) return;
     
     // Debounced version of the key handler to prevent multiple rapid recordings
     const debouncedKeyHandler = debounce((e: KeyboardEvent): void => {
@@ -120,6 +122,19 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
       // Only save if we have at least one modifier and one regular key
       if (keys.length >= 2 && !modifierKeys.includes(keys[keys.length - 1])) {
         const newShortcut = keys.join('+');
+
+        const conflictAction = getConflictingAction(shortcuts, newShortcut, shortcutKey);
+        if (conflictAction) {
+          setIsRecording(false);
+          toast({
+            title: t('settings.shortcut_conflict', { shortcut: newShortcut }),
+            description: t('settings.shortcut_conflict_description', {
+              shortcut: newShortcut,
+            }),
+            variant: 'destructive'
+          });
+          return;
+        }
         
         // Check if this is a system shortcut
         if (systemShortcuts.includes(newShortcut)) {
@@ -132,20 +147,6 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
         
         onChange(shortcutKey, newShortcut);
         setIsRecording(false);
-
-        const conflictAction = getConflictingAction(shortcuts, newShortcut, shortcutKey);
-        if (conflictAction) {
-          toast({
-            title: t('settings.shortcut_conflict', { shortcut: newShortcut }),
-            description: t(
-              'settings.shortcut_conflict_description',
-              { shortcut: newShortcut }
-            ),
-            variant: 'destructive'
-          });
-          setIsRecording(false);
-          return;
-        }
 
         toast({
           title: t('settings.shortcut_recorded'),
@@ -167,12 +168,14 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isRecording, shortcutKey, onChange, toast, specialKeyMap, systemShortcuts]);
+  }, [isRecording, disabled, shortcutKey, shortcuts, onChange, toast, t, specialKeyMap, systemShortcuts]);
 
   /**
    * Start or stop recording a new shortcut
    */
   const handleRecording = (): void => {
+    if (disabled) return;
+
     // If already recording, stop recording
     if (isRecording) {
       setIsRecording(false);
@@ -193,7 +196,7 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
   };
 
   return (
-    <div className="space-y-3 p-4 rounded-md bg-muted/10">
+    <div className={`space-y-3 p-4 rounded-md bg-muted/10 ${disabled ? 'opacity-60' : ''}`}>
       <div className="flex justify-between items-center">
         <Label htmlFor={`${shortcutKey}-shortcut`} className="text-sm font-medium">{label}</Label>
         <div className="flex items-center gap-1">
@@ -207,6 +210,7 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
           id={`${shortcutKey}-shortcut`}
           value={value}
           readOnly
+          disabled={disabled}
           className="flex-1 h-9"
           placeholder={t('settings.shortcut_placeholder')}
         />
@@ -215,13 +219,11 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
             onClick={onReset}
             variant="outline"
             size="sm"
+            disabled={disabled}
             className="gap-1 text-xs"
-            title="Reset to default shortcut"
+            title={t('settings.reset')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-            </svg>
+            <RotateCcw className="h-3 w-3" />
             <span className="hidden sm:inline">{t('settings.reset')}</span>
           </Button>
         )}
@@ -229,6 +231,7 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
           onClick={handleRecording}
           variant={isRecording ? "destructive" : "secondary"}
           size="sm"
+          disabled={disabled}
           className="gap-1"
         >
           {isRecording ? (

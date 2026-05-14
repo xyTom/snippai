@@ -9,7 +9,7 @@ import {
   screen
 } from 'electron';
 import path from 'path';
-import { DEFAULT_SHORTCUTS, getShortcutLabel } from './shared/shortcuts';
+import { DEFAULT_SHORTCUTS, getShortcutLabel, ShortcutAction } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import * as XLSX from 'xlsx';
@@ -309,18 +309,37 @@ function setupScreenshots(): void {
  * Registers keyboard shortcuts for screenshot functionality
  */
 function registerScreenshotShortcuts(): void {
-  // Unregister any existing shortcuts first
   globalShortcut.unregisterAll();
 
-  // Get the shortcut from settings with fallback to default
   const shortcutKey = settingsService.getSettingValue('shortcuts.screenshot', DEFAULT_SHORTCUTS.screenshot);
   const fullscreenShortcutKey = settingsService.getSettingValue('shortcuts.fullscreenScreenshot', DEFAULT_SHORTCUTS.fullscreenScreenshot);
   const hideAllStickyNotesKey = settingsService.getSettingValue('shortcuts.hideAllStickyNotes', DEFAULT_SHORTCUTS.hideAllStickyNotes);
+  const pinToScreenKey = settingsService.getSettingValue('shortcuts.pinToScreen', DEFAULT_SHORTCUTS.pinToScreen);
+  const disabledShortcuts = settingsService.getSettingValue('shortcuts.disabledShortcuts', {});
+  const isDisabled = (action: ShortcutAction): boolean =>
+    Boolean(disabledShortcuts?.[action]);
 
-  console.log('Registering screenshot shortcut:', shortcutKey);
-  // Register screenshot and check result
-  const registeredScreenshot = globalShortcut.register(shortcutKey, () => {
-    // Skip if screenshot window is already focused
+  const registerShortcut = (
+    action: ShortcutAction,
+    accelerator: string,
+    handler: () => void | Promise<void>
+  ): void => {
+    if (!accelerator || isDisabled(action)) {
+      console.log(`Shortcut ${action} is disabled or empty; skipping registration.`);
+      return;
+    }
+
+    const registered = globalShortcut.register(accelerator, handler);
+    if (!registered) {
+      console.error(`Failed to register ${action} shortcut: ${accelerator}`);
+      dialog.showErrorBox(
+        'Shortcut Registration Failed',
+        `Cannot register ${getShortcutLabel(action)} shortcut (${accelerator}). It may be in use by another application.`
+      );
+    }
+  };
+
+  registerShortcut('screenshot', shortcutKey, () => {
     if (screenshots.$win?.isFocused()) {
       return;
     }
@@ -354,67 +373,43 @@ function registerScreenshotShortcuts(): void {
       screenshots.startCapture();
     }, screenshotDelay);
   });
-  if (!registeredScreenshot) {
-    console.error(`Failed to register screenshot shortcut: ${shortcutKey}`);
-    dialog.showErrorBox(
-      'Shortcut Registration Failed',
-      `Cannot register ${getShortcutLabel('screenshot')} shortcut (${shortcutKey}). It may be in use by another application.`
-    );
-  }
 
-  // 全屏截图快捷键注册
-  console.log('Registering fullscreen screenshot shortcut:', fullscreenShortcutKey);
-  const registeredFullscreen = globalShortcut.register(fullscreenShortcutKey, async () => {
+  registerShortcut('fullscreenScreenshot', fullscreenShortcutKey, async () => {
     try {
-      // 获取鼠标指针所在的屏幕，以实现对当前活动屏幕的精确截图。
       const point = screen.getCursorScreenPoint();
       const activeDisplay = screen.getDisplayNearestPoint(point);
 
-      // 显示 loading 窗口
       showLoadingWindow(activeDisplay);
       
-      // 最小化主窗口以避免它出现在截图中
       if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
         mainWindow.minimize();
       }
       
-      // 短暂延迟确保窗口最小化完成
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // 使用 desktopCapturer 获取所有屏幕的源。
       const sources = await desktopCapturer.getSources({ 
         types: ['screen'],
-        // 设置缩略图尺寸为活动屏幕的实际尺寸，以确保截图质量。
         thumbnailSize: { width: activeDisplay.size.width, height: activeDisplay.size.height },
         fetchWindowIcons: false
       });
       
       if (sources.length > 0) {
-        // 查找与活动屏幕ID完全匹配的源，这是最可靠的方式。
         let activeSource = sources.find((source: Electron.DesktopCapturerSource) => source.display_id === activeDisplay.id.toString());
 
-        // 如果因未知原因找不到匹配，则回退到第一个源作为保险。
         if (!activeSource) {
           console.warn('Could not find screen source for the active display. Falling back to the first source.');
           activeSource = sources[0];
         }
         
-        // 获取完整尺寸的截图
         const image = activeSource.thumbnail;
-        
-        // 转换为 base64 - 使用 toDataURL 方法
         const pngBuffer = await image.toPNG();
-        // 转换为 base64
         const base64 = Buffer.from(pngBuffer).toString('base64');
-        console.log('Base64 image:', base64);
         
         const sendToMain = (win: BrowserWindow) => {
           win.webContents.send('screenshot-result', base64, true);
         };
 
-        // 确保主窗口始终存在，即使它被关闭了
         if (!mainWindow || mainWindow.isDestroyed()) {
-          // 如果主窗口不存在，就在后台创建一个新的，但不显示它
           mainWindow = createMainWindow(false);
           mainWindow.webContents.once('dom-ready', () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -422,7 +417,6 @@ function registerScreenshotShortcuts(): void {
             }
           });
         } else {
-          // 如果主窗口存在，就直接使用它
           sendToMain(mainWindow);
         }
       } else {
@@ -434,31 +428,19 @@ function registerScreenshotShortcuts(): void {
       hideLoadingWindow();
     }
   });
-  if (!registeredFullscreen) {
-    console.error(`Failed to register fullscreen screenshot shortcut: ${fullscreenShortcutKey}`);
-    dialog.showErrorBox(
-      'Shortcut Registration Failed',
-      `Cannot register ${getShortcutLabel('fullscreenScreenshot')} shortcut (${fullscreenShortcutKey}). It may be in use by another application.`
-    );
-  }
 
-  // 隐藏所有便签窗口快捷键注册
-  console.log('Registering hide all sticky notes shortcut:', hideAllStickyNotesKey);
-  const registeredHideAllStickyNotes = globalShortcut.register(hideAllStickyNotesKey, () => {
+  registerShortcut('hideAllStickyNotes', hideAllStickyNotesKey, () => {
     try {
-      // 隐藏所有便签窗口
       stickyNotes.forEach(stickyNote => {
         if (!stickyNote.isDestroyed()) {
           if (stickyNote.isVisible()) {
             stickyNote.hide();
           } else {
-            // 显示窗口但不抢夺焦点
             stickyNote.showInactive();
           }
         }
       });
       
-      // 过滤掉已销毁的窗口
       stickyNotes = stickyNotes.filter(note => !note.isDestroyed());
       
       console.log(`Toggled visibility for ${stickyNotes.length} sticky notes`);
@@ -466,13 +448,13 @@ function registerScreenshotShortcuts(): void {
       console.error('Error toggling sticky notes visibility:', error);
     }
   });
-  if (!registeredHideAllStickyNotes) {
-    console.error(`Failed to register hide all sticky notes shortcut: ${hideAllStickyNotesKey}`);
-    dialog.showErrorBox(
-      'Shortcut Registration Failed',
-      `Cannot register ${getShortcutLabel('hideAllStickyNotes')} shortcut (${hideAllStickyNotesKey}). It may be in use by another application.`
-    );
-  }
+
+  registerShortcut('pinToScreen', pinToScreenKey, () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return;
+    }
+    mainWindow.webContents.send('pin-current-screenshot');
+  });
 }
 
 
@@ -1183,6 +1165,15 @@ function setupIpcHandlers(): void {
       console.error('Error saving app settings:', error);
       return false;
     }
+  });
+
+  ipcMain.handle('read-clipboard-text', () => {
+    return clipboard.readText();
+  });
+
+  ipcMain.handle('write-clipboard-text', (_event, text: string) => {
+    clipboard.writeText(text);
+    return true;
   });
   
   // 获取应用程序版本

@@ -13,6 +13,7 @@ declare global {
     onStickyNoteData?: (
       callback: (data: { screenshot?: string; result?: string }) => void
     ) => void;
+    onPinCurrentScreenshot?: (callback: () => void) => void;
     onAuthCallback?: (callback: (data: unknown) => void) => void;
     sendMessage?: (channel: string, data?: unknown) => void;
     removeListener?: (
@@ -28,6 +29,8 @@ declare global {
     getAppSettings?: () => Promise<AppSettings>;
     saveAppSettings?: (data: AppSettings) => Promise<boolean>;
     getAppVersion?: () => Promise<string>;
+    readClipboardText?: () => Promise<string>;
+    writeClipboardText?: (text: string) => Promise<boolean>;
     openExternal?: (url: string) => void;
     exportExcelTables?: (data: {
       tables: TableData[];

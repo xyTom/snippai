@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Check } from "lucide-react";
 import { Button } from '../ui/button';
+import { Switch } from '../ui/switch';
 import { useToast } from '../ui/use-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -13,8 +14,6 @@ import {
   SHORTCUT_DEFINITIONS,
   ShortcutAction,
   hasShortcutConflict,
-  getConflictingAction,
-  getShortcutLabel,
 } from '../../../shared/shortcuts';
 
 // Import types
@@ -41,9 +40,16 @@ const KeyboardShortcutsTab: React.FC<KeyboardShortcutsTabProps> = ({
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const acceleratorSettings = React.useMemo(() => {
+    return SHORTCUT_DEFINITIONS.reduce((acc, def) => {
+      acc[def.key] = settings[def.key];
+      return acc;
+    }, {} as Record<ShortcutAction, string>);
+  }, [settings]);
+
   const handleShortcutChange = (key: ShortcutAction, value: string) => {
     // Conflict detection
-    if (hasShortcutConflict(settings, value, key)) {
+    if (hasShortcutConflict(acceleratorSettings, value, key)) {
       toast({
         title: t("settings.shortcut_conflict", {shortcut: value}),
         description: t("settings.shortcut_conflict_description", {shortcut: value}),
@@ -55,6 +61,16 @@ const KeyboardShortcutsTab: React.FC<KeyboardShortcutsTabProps> = ({
     onSettingsChange({
       ...settings,
       [key]: value,
+    });
+  };
+
+  const handleShortcutEnabledChange = (key: ShortcutAction, enabled: boolean) => {
+    onSettingsChange({
+      ...settings,
+      disabledShortcuts: {
+        ...settings.disabledShortcuts,
+        [key]: !enabled,
+      },
     });
   };
   
@@ -75,19 +91,42 @@ const KeyboardShortcutsTab: React.FC<KeyboardShortcutsTabProps> = ({
 
   return (
     <div className="space-y-6 mt-6">
-      {SHORTCUT_DEFINITIONS.map((def: ShortcutDefinition) => (
-        <KeyboardShortcutInput
-          key={def.key}
-          shortcutKey={def.key}
-          shortcuts={settings}
-          label={`${t(def.label)}`}
-          value={settings[def.key] as string}
-          onChange={handleShortcutChange}
-          onReset={() => handleResetSingleShortcut(def.key)}
-        />
-      ))}
+      {SHORTCUT_DEFINITIONS.map((def: ShortcutDefinition) => {
+        const disabled = settings.disabledShortcuts?.[def.key] === true;
+
+        return (
+          <div key={def.key} className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs text-muted-foreground">
+                {disabled ? t('settings.shortcut_disabled') : t('settings.shortcut_enabled')}
+              </span>
+              <Switch
+                checked={!disabled}
+                aria-label={t('settings.toggle_shortcut')}
+                onCheckedChange={(checked) =>
+                  handleShortcutEnabledChange(def.key, checked)
+                }
+              />
+            </div>
+            <KeyboardShortcutInput
+              shortcutKey={def.key}
+              shortcuts={acceleratorSettings}
+              label={`${t(def.label)}`}
+              value={settings[def.key] as string}
+              onChange={handleShortcutChange}
+              onReset={() => handleResetSingleShortcut(def.key)}
+              disabled={disabled}
+            />
+          </div>
+        );
+      })}
 
       <div className="pt-4 flex justify-end gap-2">
+        {onReset && (
+          <Button variant="outline" onClick={onReset} size="sm">
+            {t('settings.reset_all')}
+          </Button>
+        )}
         <Button variant="outline" onClick={onCancel} size="sm">{t('settings.cancel')}</Button>
         <Button onClick={onSave} size="sm" className="gap-1">
           <Check className="h-4 w-4" />

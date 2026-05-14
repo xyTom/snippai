@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   shortcuts: { ...DEFAULT_SHORTCUT_SETTINGS },
   general: {
     autoCopyToClipboard: true,
+    autoCopyResult: false,
     autoStart: false,
     horizontalLayout: false,
     uiLanguage: 'default',

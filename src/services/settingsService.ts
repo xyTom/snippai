@@ -41,10 +41,13 @@ export class SettingsService {
       shortcuts: {
         screenshot: 'CommandOrControl+Shift+A',
         fullscreenScreenshot: 'CommandOrControl+Shift+F',
-        hideAllStickyNotes: 'CommandOrControl+Shift+H'
+        hideAllStickyNotes: 'CommandOrControl+Shift+H',
+        pinToScreen: 'CommandOrControl+Shift+P',
+        disabledShortcuts: {}
       },
       general: {
         autoCopyToClipboard: true,
+        autoCopyResult: false,
         autoStart: this.getAutoStartStatus(),
         uiLanguage: 'default',
         horizontalLayout: false,

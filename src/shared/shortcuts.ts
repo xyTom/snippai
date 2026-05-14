@@ -10,7 +10,8 @@
 export type ShortcutAction =
   | 'screenshot'
   | 'fullscreenScreenshot'
-  | 'hideAllStickyNotes';
+  | 'hideAllStickyNotes'
+  | 'pinToScreen';
 
 export interface ShortcutDefinition {
   /** Unique identifier used in settings & IPC path (e.g. shortcuts.{key}) */
@@ -36,6 +37,11 @@ export const SHORTCUT_DEFINITIONS: ShortcutDefinition[] = [
     key: 'hideAllStickyNotes',
     defaultAccelerator: 'CommandOrControl+Shift+H',
     label: 'settings.shortcut_hide_all_sticky_notes',
+  },
+  {
+    key: 'pinToScreen',
+    defaultAccelerator: 'CommandOrControl+Shift+P',
+    label: 'settings.shortcut_pin_to_screen',
   },
 ];
 

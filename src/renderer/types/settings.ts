@@ -18,7 +18,11 @@ export interface WindowBounds {
 /**
  * All shortcuts are stored in Record<ShortcutAction,string> for scalability.
  */
-export type ShortcutsRecord = Record<ShortcutAction, string>;
+export type DisabledShortcutMap = Partial<Record<ShortcutAction, boolean>>;
+export type ShortcutAccelerators = Record<ShortcutAction, string>;
+export type ShortcutsRecord = ShortcutAccelerators & {
+  disabledShortcuts?: DisabledShortcutMap;
+};
 
 // Backward compatibility alias
 export type ShortcutSettings = ShortcutsRecord;
@@ -37,6 +41,7 @@ export interface AppSettings {
  */
 export interface GeneralSettings {
   autoCopyToClipboard: boolean;
+  autoCopyResult: boolean;
   autoStart: boolean;
   horizontalLayout: boolean;
   uiLanguage: LanguageCode;
@@ -44,4 +49,7 @@ export interface GeneralSettings {
   useSystemScreenshot: boolean;
 }
 
-export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = { ...DEFAULT_SHORTCUTS };
+export const DEFAULT_SHORTCUT_SETTINGS: ShortcutsRecord = {
+  ...DEFAULT_SHORTCUTS,
+  disabledShortcuts: {},
+};

@@ -12,6 +12,8 @@ import aiModels from "./models";
 // eslint-disable-next-line
 import logo from "./assets/logo.png";
 import { Badge } from "./components/ui/badge";
+import { Button } from "./components/ui/button";
+import { Textarea } from "./components/ui/textarea";
 import ModelSelect from "./components/modelSelect";
 import ApiKeyInput from "./components/apiKeyInput";
 import LanguageInput from "./components/languageInput";
@@ -24,6 +26,7 @@ import { UserMenuButton } from "./components/buttons/UserMenuButton";
 import { useAuth } from "./context/AuthContext";
 import { LoginDialog } from "./components/LoginDialog";
 import { HistoryDialog } from "./components/history/HistoryDialog";
+import { formatAccelerator } from "./utils/accelerator";
 
 // App.tsx
 import DropOverlay from "./components/DropOverlay";
@@ -36,12 +39,6 @@ import ActionButtons from "./components/buttons/ActionButtons";
 import ResultDisplay from "./components/ResultDisplay";
 import ImageIcon from "./components/icons/ImageIcon";
 
-// 导入按钮组件（仅用于类型导出）
-import { ApiKeyButton } from "./components/buttons/ApiKeyButton";
-import { RetryButton } from "./components/buttons/RetryButton";
-import { CopyImageButton } from "./components/buttons/CopyImageButton";
-import { PinButton } from "./components/buttons/PinButton";
-import { TrashButton } from "./components/buttons/TrashButton";
 import { SettingsButton } from "./components/buttons/SettingsButton";
 import { HistoryButton } from "./components/buttons/HistoryButton";
 
@@ -62,9 +59,10 @@ function App() {
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState("");
+  const [textMode, setTextMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [showFloatingButton, setShowFloatingButton] = useState(true);
   const [instructionIndex, setInstructionIndex] = useState(0);
   const shimmerDuration = 2.6;
@@ -124,6 +122,7 @@ function App() {
 
   // 布局设置
   const [horizontalLayout, setHorizontalLayout] = useState(false);
+  const [autoCopyResult, setAutoCopyResult] = useState(false);
 
   // 工作线程引用
   const worker = useRef<Worker | null>(null);
@@ -270,6 +269,8 @@ function App() {
       setResult(null);
       setOnError(false);
       setShouldAutoPin(false);
+      setTextMode(false);
+      setTextInput("");
       setscreenShotResult(base64);
 
       try {
@@ -330,6 +331,21 @@ function App() {
     }
   }, [apiKey]);
 
+  const copyTextResult = useCallback(
+    async (text: string) => {
+      try {
+        if (window.electronAPI?.writeClipboardText) {
+          await window.electronAPI.writeClipboardText(text);
+        } else {
+          await navigator.clipboard.writeText(text);
+        }
+      } catch (error) {
+        console.error("Failed to copy recognized text:", error);
+      }
+    },
+    []
+  );
+
   // 识别截图
   const recoginzeScreenshot = useCallback(
     (value: string) => {
@@ -366,6 +382,9 @@ function App() {
           setLoading(false);
           setResult(res);
           setOnError(false);
+          if (autoCopyResult) {
+            void copyTextResult(res);
+          }
           void saveSnipHistory({
             imageBase64: value,
             result: res,
@@ -436,20 +455,89 @@ function App() {
           });
         });
     },
-    [targetLang, model, prompt, language, apiKey, toast, shouldAutoPin, screenShotResult, posthog]
+    [targetLang, model, prompt, language, apiKey, toast, shouldAutoPin, screenShotResult, posthog, autoCopyResult, copyTextResult]
+  );
+
+  const recognizeText = useCallback(
+    (value: string) => {
+      const trimmedValue = value.trim();
+      if (!trimmedValue) {
+        return;
+      }
+
+      setResult(null);
+      setOnError(false);
+      setLoading(true);
+
+      aiModels
+        .create(model)
+        .then((modelInstance: any) => {
+          const selectedPrompt = promptOptions[
+            model as keyof typeof promptOptions
+          ].find((p) => p.value === prompt);
+          let fullPrompt = selectedPrompt ? selectedPrompt.prompt : "";
+          const effectiveLang =
+            targetLang === "default"
+              ? localStorage.getItem("language") || "English"
+              : targetLang;
+
+          if (prompt === "Translate" && effectiveLang) {
+            fullPrompt = `Please translate this text to ${effectiveLang}. Only return the translated text.`;
+          } else {
+            fullPrompt += ` Please answer in ${language}.`;
+          }
+
+          if (models.find((m) => m.value === model)?.requireApiKey) {
+            return modelInstance.runText(trimmedValue, fullPrompt, apiKey);
+          }
+          return modelInstance.runText(trimmedValue, fullPrompt);
+        })
+        .then((res: string) => {
+          setLoading(false);
+          setResult(res);
+          setOnError(false);
+          if (autoCopyResult) {
+            void copyTextResult(res);
+          }
+        })
+        .catch((error: any) => {
+          console.error("Text model error:", error);
+          setLoading(false);
+          setOnError(true);
+          toast({
+            title: t('error'),
+            description: t('error_description', { error: error.message }),
+          });
+        });
+    },
+    [targetLang, model, prompt, language, apiKey, toast, t, autoCopyResult, copyTextResult]
   );
 
   // 当提示或截图或语言变化时，重新识别截图
   useEffect(() => {
     // 在钉图模式下不重新请求API识别结果
-    if (screenShotResult !== null && !isStickyMode) {
+    if (screenShotResult !== null && !isStickyMode && !textMode) {
       if (skipNextRecognitionRef.current) {
         skipNextRecognitionRef.current = false;
         return;
       }
       recoginzeScreenshot(screenShotResult);
     }
-  }, [prompt, screenShotResult, language, recoginzeScreenshot, isStickyMode]);
+  }, [prompt, screenShotResult, language, recoginzeScreenshot, isStickyMode, textMode]);
+
+  useEffect(() => {
+    if (!textMode || !textInput.trim() || isStickyMode) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      recognizeText(textInput);
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [prompt, language, targetLang, textMode, textInput, recognizeText, isStickyMode]);
 
   // 设置工作线程
   useEffect(() => {
@@ -506,6 +594,8 @@ function App() {
         ? value.split(",")[1]
         : value;
 
+      setTextMode(false);
+      setTextInput("");
       setscreenShotResult(rawValue);
       // 如果是全屏截图（autoPin为true），设置自动钉图标记
       if (autoPin) {
@@ -535,12 +625,16 @@ function App() {
 
   // 存储当前配置的快捷键
   const [shortcut, setShortcut] = useState("");
+  const [screenshotShortcutDisabled, setScreenshotShortcutDisabled] =
+    useState(false);
   const instructionMessages = useMemo(() => {
     return [
-      t("main_instruction_shortcut", { shortcut }),
+      screenshotShortcutDisabled
+        ? t("main_instruction_shortcut_disabled")
+        : t("main_instruction_shortcut", { shortcut }),
       t("main_instruction_drag"),
     ];
-  }, [shortcut, t]);
+  }, [shortcut, screenshotShortcutDisabled, t]);
 
   useEffect(() => {
     if (instructionMessages.length <= 1) return;
@@ -587,51 +681,36 @@ function App() {
     const loadShortcut = async () => {
       try {
         const settings = await window.electronAPI?.getAppSettings();
+        setScreenshotShortcutDisabled(
+          settings?.shortcuts?.disabledShortcuts?.screenshot === true
+        );
         if (settings?.shortcuts?.screenshot) {
-          // 格式化快捷键显示
-          const formattedShortcut = settings.shortcuts.screenshot
-            .replace(
-              "CommandOrControl",
-              window.navigator.platform === "MacIntel" ? "Command" : "Ctrl"
-            )
-            .split("+")
-            .join(" + ");
-          setShortcut(formattedShortcut);
+          setShortcut(formatAccelerator(settings.shortcuts.screenshot));
         } else {
-          // 如果没有设置，使用默认值
-          setShortcut(
-            window.navigator.platform === "MacIntel"
-              ? "Command + Shift + A"
-              : "Ctrl + Shift + A"
-          );
+          setShortcut(formatAccelerator("CommandOrControl+Shift+A"));
         }
 
         // 加载布局设置
         if (settings?.general?.horizontalLayout !== undefined) {
           setHorizontalLayout(settings.general.horizontalLayout);
         }
+
+        if (settings?.general?.autoCopyResult !== undefined) {
+          setAutoCopyResult(settings.general.autoCopyResult);
+        }
       } catch (error) {
         console.error("Failed to load app settings:", error);
-        // 加载失败时使用默认值
-        setShortcut(
-          window.navigator.platform === "MacIntel"
-            ? "Command + Shift + A"
-            : "Ctrl + Shift + A"
-        );
+        setScreenshotShortcutDisabled(false);
+        setShortcut(formatAccelerator("CommandOrControl+Shift+A"));
       }
     };
 
     loadShortcut();
-  }, []);
+  }, [t]);
 
   // 检测图片尺寸并决定是否显示悬浮按钮
   const checkImageSize = useCallback((img: HTMLImageElement) => {
     const MIN_SIZE = 32;
-
-    setImageSize({
-      width: img.width,
-      height: img.height,
-    });
 
     setShowFloatingButton(img.width > MIN_SIZE && img.height > MIN_SIZE);
   }, []);
@@ -728,6 +807,13 @@ function App() {
     }
   }, [screenShotResult, result, toast]);
 
+  useEffect(() => {
+    window.electronAPI?.onPinCurrentScreenshot?.(pinToScreen);
+    return () => {
+      window.electronAPI?.removeAllListeners?.("pin-current-screenshot");
+    };
+  }, [pinToScreen]);
+
   // 切换便签的固定状态
   const toggleStickyNotePin = useCallback(() => {
     if (!window.electronAPI?.toggleStickyNotePin) return;
@@ -765,7 +851,44 @@ function App() {
     setscreenShotResult(null);
     setResult(null);
     setOnError(false);
+    setTextMode(false);
+    setTextInput("");
   }, []);
+
+  const pasteTextFromClipboard = useCallback(async () => {
+    try {
+      const text =
+        (await window.electronAPI?.readClipboardText?.()) ??
+        (await navigator.clipboard.readText());
+
+      if (!text.trim()) {
+        toast({
+          title: t("text_input.empty"),
+          description: t("text_input.empty_description"),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setscreenShotResult(null);
+      setShouldAutoPin(false);
+      setTextMode(true);
+      setTextInput(text);
+      setResult(null);
+      setOnError(false);
+    } catch (error) {
+      console.error("Failed to read clipboard text:", error);
+      toast({
+        title: t("text_input.read_failed"),
+        description: t("text_input.read_failed_description"),
+        variant: "destructive",
+      });
+    }
+  }, [toast, t]);
+
+  const retryTextRecognition = useCallback(() => {
+    recognizeText(textInput);
+  }, [recognizeText, textInput]);
 
   // 打开API密钥对话框
   const openApiKeyDialog = useCallback(() => {
@@ -856,10 +979,10 @@ function App() {
         )}
         {/* 显示logo或引导文本 */}
         <div
-          className={` flex-1 flex flex-col items-center w-full ${!screenShotResult ? "justify-center" : ""
+          className={` flex-1 flex flex-col items-center w-full ${!screenShotResult && !textMode ? "justify-center" : ""
             }`}
         >
-          {!isStickyMode && !screenShotResult && (
+          {!isStickyMode && !screenShotResult && !textMode && (
             <>
               <img src={logo} className="App-logo select-none" alt="logo" />
               <div className="mb-2 select-none text-center">
@@ -894,11 +1017,14 @@ function App() {
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
                 recoginzeScreenshot={recoginzeScreenshot}
+                retryTextRecognition={retryTextRecognition}
+                pasteTextFromClipboard={pasteTextFromClipboard}
                 copyImageToClipboard={copyImageToClipboard}
                 imageCopied={imageCopied}
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
+                textMode={textMode}
               />
             </div>
           )}
@@ -917,15 +1043,57 @@ function App() {
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
                 recoginzeScreenshot={recoginzeScreenshot}
+                retryTextRecognition={retryTextRecognition}
+                pasteTextFromClipboard={pasteTextFromClipboard}
                 copyImageToClipboard={copyImageToClipboard}
                 imageCopied={imageCopied}
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
+                textMode={textMode}
                 responsivePromptSelect={true}
               />
             </div>
           ) : null}
+          {textMode && !screenShotResult && (
+            <div className="w-full max-w-4xl flex-1 px-4 pb-6 overflow-y-auto">
+              <div className="pt-4">
+                <Badge
+                  variant="secondary"
+                  className="mb-3 antialiased font-medium"
+                >
+                  {t("text_input.source")}
+                </Badge>
+                <Textarea
+                  value={textInput}
+                  onChange={(event) => setTextInput(event.target.value)}
+                  className="min-h-[140px] bg-[#111] text-white border-[#333]"
+                  placeholder={t("text_input.placeholder")}
+                />
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    size="sm"
+                    disabled={loading || !textInput.trim()}
+                    onClick={() => recognizeText(textInput)}
+                  >
+                    {t("text_input.analyze")}
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-5">
+                <ResultDisplay
+                  loading={loading}
+                  result={result}
+                  prompt={prompt}
+                  handleTextChange={handleTextChange}
+                  isStickyMode={isStickyMode}
+                  horizontalLayout={false}
+                  targetLang={targetLang}
+                  onTargetLangChange={setTargetLang}
+                />
+              </div>
+            </div>
+          )}
           {/* 截图和结果并排显示 */}
           {screenShotResult && (
             <div className="w-full flex-1 flex flex-col h-full mt-[0.3rem]">
@@ -1018,11 +1186,14 @@ function App() {
                           screenShotResult={screenShotResult}
                           handlePromptChange={handlePromptChange}
                           recoginzeScreenshot={recoginzeScreenshot}
+                          retryTextRecognition={retryTextRecognition}
+                          pasteTextFromClipboard={pasteTextFromClipboard}
                           copyImageToClipboard={copyImageToClipboard}
                           imageCopied={imageCopied}
                           pinToScreen={pinToScreen}
                           clearScreenshot={clearScreenshot}
                           openApiKeyDialog={openApiKeyDialog}
+                          textMode={textMode}
                         />
                       </div>
                     )}
@@ -1073,6 +1244,15 @@ function App() {
               // Update layout setting immediately without restart
               if (settings.general?.horizontalLayout !== undefined) {
                 setHorizontalLayout(settings.general.horizontalLayout);
+              }
+              if (settings.general?.autoCopyResult !== undefined) {
+                setAutoCopyResult(settings.general.autoCopyResult);
+              }
+              if (settings.shortcuts?.screenshot) {
+                setShortcut(formatAccelerator(settings.shortcuts.screenshot));
+                setScreenshotShortcutDisabled(
+                  settings.shortcuts.disabledShortcuts?.screenshot === true
+                );
               }
             }}
           />

@@ -48,6 +48,8 @@ describe('SettingsService', () => {
 
     const settings = service.getSettings();
     expect(settings.general.autoStart).toBe(true);
+    expect(settings.general.autoCopyResult).toBe(false);
+    expect(settings.shortcuts.pinToScreen).toBe('CommandOrControl+Shift+P');
     expect(fs.existsSync(path.join(tempDir, 'app-settings.json'))).toBe(true);
     expect(mockApp.getPath).toHaveBeenCalledWith('userData');
   });
@@ -104,6 +106,7 @@ describe('SettingsService', () => {
     expect(settings.shortcuts.screenshot).toBe('CommandOrControl+Shift+A');
     expect(settings.general.autoCopyToClipboard).toBe(true);
     expect(saved.shortcuts.fullscreenScreenshot).toBe('CommandOrControl+Shift+F');
+    expect(saved.shortcuts.pinToScreen).toBe('CommandOrControl+Shift+P');
     expect(saved.general.uiLanguage).toBe('default');
     expect(mockLogger.warn).toHaveBeenCalledWith(
       'Detected malformed shortcuts settings block. Reset to defaults.'

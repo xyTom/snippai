@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     platform: process.platform,
     onScreenShotRes: (callback: any) => ipcRenderer.on('screenshot-result', (_event, value, autoPin) => callback(value, autoPin)),
     onStickyNoteData: (callback: any) => ipcRenderer.on('sticky-note-data', (_event, data) => callback(data)),
+    onPinCurrentScreenshot: (callback: any) => ipcRenderer.on('pin-current-screenshot', () => callback()),
     onAuthCallback: (callback: any) => ipcRenderer.on('auth-callback', (_event, data) => callback(data)),
     sendMessage: (channel: string, data?: any) => ipcRenderer.send(channel, data),
     removeListener(channel: string, func: (...args: unknown[]) => void) {
@@ -26,6 +27,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
     saveAppSettings: (data: any) => ipcRenderer.invoke('save-app-settings', data),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    readClipboardText: () => ipcRenderer.invoke('read-clipboard-text'),
+    writeClipboardText: (text: string) => ipcRenderer.invoke('write-clipboard-text', text),
     exportExcelTables: (data: { tables: TableData[]; defaultFileName?: string }) => ipcRenderer.invoke('export-excel-tables', data),
 })
 

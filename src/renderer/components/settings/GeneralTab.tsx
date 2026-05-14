@@ -156,6 +156,16 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
           }
         />
 
+        <SettingToggle
+          id="auto-copy-result"
+          title={t("settings.auto_copy_result")}
+          description={t("settings.auto_copy_result_description")}
+          checked={settings.autoCopyResult}
+          onChange={(checked) =>
+            handleSettingChange("autoCopyResult", checked)
+          }
+        />
+
         {/* Auto start setting */}
         <SettingToggle
           id="auto-start"
