@@ -2,7 +2,7 @@ name: Build and Release
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "beta/**"]
   push:
     branches:
       - main

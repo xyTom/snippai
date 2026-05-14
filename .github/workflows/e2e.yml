@@ -2,7 +2,7 @@ name: End-to-End User Flows
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, "beta/**"]
   push:
     branches:
       - main
