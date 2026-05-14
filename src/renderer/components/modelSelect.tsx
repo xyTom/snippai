@@ -76,6 +76,7 @@ export default function ModelSelect(props:{
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          data-testid="model-selector"
           variant="outline"
           role="combobox"
           aria-expanded={open}

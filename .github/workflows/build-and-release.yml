@@ -4,17 +4,22 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - "beta/**"
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.artifact_name }})
     runs-on: ${{ matrix.os }}
     env:
       VITE_SUPABASE_URL:     ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       VITE_PUBLIC_POSTHOG_KEY: ${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}
       VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
+      VITE_PORTKEY_API_KEY: ${{ secrets.VITE_PORTKEY_API_KEY }}
     strategy:
       fail-fast: false
       matrix:
@@ -28,9 +33,17 @@ jobs:
             command: npm run make
             artifact_name: Snippai-linux-x64
             extension: zip
+          - os: ubuntu-latest
+            command: npm run make:linux-arm64
+            artifact_name: Snippai-linux-arm64
+            extension: zip
           - os: macos-latest
             command: npm run make:mac
             artifact_name: Snippai-darwin-arm64
+            extension: zip
+          - os: macos-latest
+            command: npm run make:mac-amd64
+            artifact_name: Snippai-darwin-x64
             extension: zip
 
     steps:
@@ -97,4 +110,4 @@ jobs:
           files: artifacts/**/*
           generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

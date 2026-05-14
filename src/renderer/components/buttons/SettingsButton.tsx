@@ -29,6 +29,7 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            data-testid="settings-button"
             variant="outline"
             size="icon"
             className="mt-auto"

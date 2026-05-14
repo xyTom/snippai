@@ -1,0 +1,86 @@
+name: End-to-End User Flows
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches:
+      - main
+      - develop
+      - "beta/**"
+  workflow_dispatch:
+
+env:
+  VITE_SUPABASE_URL: https://example.supabase.co
+  VITE_SUPABASE_ANON_KEY: test-anon-key
+  VITE_PUBLIC_POSTHOG_KEY: ""
+  VITE_PUBLIC_POSTHOG_HOST: ""
+  VITE_PORTKEY_API_KEY: test-portkey-key
+
+jobs:
+  web-user-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run web user-flow tests
+        run: npm run test:e2e
+
+      - name: Upload web report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-web-report
+          path: |
+            playwright-report/web
+            test-results
+          retention-days: 14
+
+  desktop-user-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install virtual desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libgtk-3-0 libxss1 libxtst6 libnss3 libasound2
+          npx playwright install-deps chromium
+
+      - name: Run desktop user-flow tests
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:desktop
+
+      - name: Upload desktop report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-desktop-report
+          path: |
+            playwright-report/desktop
+            test-results/desktop
+          retention-days: 14

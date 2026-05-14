@@ -101,7 +101,10 @@ export default function PromptSelect(props: {
           value={selectedPrompt}
           onValueChange={handleChange}
         >
-          <SelectTrigger className="w-[180px] bg-[#2a2a2a] text-white border border-[#3a3a3a] hover:bg-[#3a3a3a]">
+          <SelectTrigger
+            data-testid="prompt-selector"
+            className="w-[180px] bg-[#2a2a2a] text-white border border-[#3a3a3a] hover:bg-[#3a3a3a]"
+          >
             <SelectValue placeholder="Select a prompt" />
           </SelectTrigger>
 
@@ -121,6 +124,7 @@ export default function PromptSelect(props: {
         </Select>
       ) : (
         <Tabs
+          data-testid="prompt-selector"
           value={selectedPrompt}
           onValueChange={(value) => handleChange(value)}
         >

@@ -13,6 +13,7 @@ const config: ForgeConfig = {
     name: 'Snippai',
     executableName: 'Snippai',
     appBundleId: 'com.snapbit.snippai',
+    extendInfo: 'Info.plist',
     protocols: [
       {
         name: 'Snippai Protocol',

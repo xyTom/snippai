@@ -4,8 +4,17 @@
 // Needed to ensure the UI thread is not blocked when running  //
 /////////////////////////////////////////////////////////////////
 
-import { pipeline, env } from "@xenova/transformers";
-env.allowLocalModels = false;
+let pipeline;
+let transformersEnv;
+
+async function loadTransformers() {
+    if (!pipeline) {
+        const transformers = await import("@xenova/transformers");
+        pipeline = transformers.pipeline;
+        transformersEnv = transformers.env;
+        transformersEnv.allowLocalModels = false;
+    }
+}
 
 // Define task function mapping
 const TASK_FUNCTION_MAPPING = {
@@ -59,10 +68,11 @@ class PipelineFactory {
      * @param {*} progressCallback 
      * @returns {Promise}
      */
-    static getInstance(progressCallback = null) {
+    static async getInstance(progressCallback = null) {
         if (this.task === null || this.model === null) {
             throw Error("Must set task and model")
         }
+        await loadTransformers();
         if (this.instance === null) {
             this.instance = pipeline(this.task, this.model, {
                 progress_callback: progressCallback

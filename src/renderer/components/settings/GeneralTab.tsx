@@ -143,7 +143,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
   };
 
   return (
-    <div className="space-y-6 mt-6">
+    <div className="space-y-6 mt-6" data-testid="settings-general-tab">
       <div className="space-y-4">
         {/* Auto copy to clipboard setting */}
         <SettingToggle

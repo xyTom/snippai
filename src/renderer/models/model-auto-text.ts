@@ -1,11 +1,18 @@
-const PORTKEY_API_KEY = "oo6Aq6IAJGWxjmRo0eK9s6Y8TPpz";
-const PORTKEY_GATEWAY_URL = "https://api.portkey.ai/v1/chat/completions";
+const getPortkeyConfig = () => ({
+  apiKey: import.meta.env.VITE_PORTKEY_API_KEY?.trim() ?? "",
+  gatewayUrl: import.meta.env.VITE_PORTKEY_GATEWAY_URL?.trim() || "https://api.portkey.ai/v1/chat/completions",
+});
 
 async function AutoText(text: string, prompt: string): Promise<string> {
-  const response = await fetch(PORTKEY_GATEWAY_URL, {
+  const { apiKey, gatewayUrl } = getPortkeyConfig();
+  if (!apiKey) {
+    throw new Error("Auto model is not configured. Set VITE_PORTKEY_API_KEY or use another model/provider.");
+  }
+
+  const response = await fetch(gatewayUrl, {
     method: "POST",
     headers: {
-      authorization: `Bearer ${PORTKEY_API_KEY}`,
+      authorization: `Bearer ${apiKey}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({

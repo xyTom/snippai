@@ -3,6 +3,20 @@
 import type { AppSettings } from "./renderer/types/settings";
 import type { ExportResult, TableData } from "./services/excel/types";
 
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL?: string;
+  readonly VITE_SUPABASE_ANON_KEY?: string;
+  readonly VITE_PUBLIC_POSTHOG_KEY?: string;
+  readonly VITE_PUBLIC_POSTHOG_HOST?: string;
+  readonly VITE_SENTRY_DSN?: string;
+  readonly VITE_PORTKEY_API_KEY?: string;
+  readonly VITE_PORTKEY_GATEWAY_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 declare global {
   interface SnippaiElectronAPI {
     isDevelopment?: boolean;

@@ -19,7 +19,13 @@ export function PinButton({ onClick }: PinButtonProps) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button className="mt-auto" variant="secondary" size="icon" onClick={onClick}>
+          <Button
+            data-testid="pin-button"
+            className="mt-auto"
+            variant="secondary"
+            size="icon"
+            onClick={onClick}
+          >
             <Pin className="h-10 w-5" />
           </Button>
         </TooltipTrigger>
@@ -29,4 +35,4 @@ export function PinButton({ onClick }: PinButtonProps) {
       </Tooltip>
     </TooltipProvider>
   )
-} 
+}

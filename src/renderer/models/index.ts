@@ -18,7 +18,7 @@ export default class aiModel {
         this.model = model;
     }
 
-    static async create(model: string) {
+    static async create(model: string): Promise<aiModel> {
         const configuredModel = models.find((m) => m.value === model);
         const importPath = model.startsWith("provider:")
             ? "custom"
@@ -34,7 +34,7 @@ export default class aiModel {
         baseURL?: string,
         modelName?: string,
         orgId?: string
-    ) {
+    ): Promise<string> {
         if (apiKey) {
             if (baseURL) {
                 return this.model(image, prompt, apiKey, baseURL, modelName, orgId);
@@ -51,7 +51,7 @@ export default class aiModel {
         baseURL?: string,
         modelName?: string,
         orgId?: string
-    ) {
+    ): Promise<string> {
         const module = await import(`./model-${this.importPath}-text.ts`) as { default: ModelRunner };
         const model = module.default;
         if (apiKey) {

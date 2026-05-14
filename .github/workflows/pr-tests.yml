@@ -4,12 +4,18 @@ on:
   pull_request:
     branches:
       - develop
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: development
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_ANON_KEY: test-anon-key
+      VITE_PUBLIC_POSTHOG_KEY: ""
+      VITE_PUBLIC_POSTHOG_HOST: ""
+      VITE_PORTKEY_API_KEY: test-portkey-key
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

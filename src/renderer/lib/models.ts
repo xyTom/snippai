@@ -13,7 +13,7 @@ export interface PromptOption {
 }
 
 const imageAnalysisPrompt =
-  "This is an image uploaded by a user. Analyze its content. If the main content is text, return only the OCR text. If the main content is a mathematical formula, return only the corresponding LaTeX. If the image contains neither text nor a math formula, describe the image in detail.";
+  "Analyze the image and return strict JSON only. Use this schema: {\"primaryAction\":\"Text|Formula|Table|Code|Solve|Image|Color|Translate|Calendar\",\"candidates\":[{\"rank\":1,\"action\":\"Text|Formula|Table|Code|Solve|Image|Color|Translate|Calendar\",\"confidence\":0.0,\"reason\":\"short reason\",\"result\":\"the useful answer for this action\"}]}. Include the best 1-4 relevant actions. For Text, return OCR text. For Formula, return LaTeX only. For Table, return Markdown table text. For Calendar, return a valid VCALENDAR document when event details are visible.";
 
 const promptSet: PromptOption[] = [
   {

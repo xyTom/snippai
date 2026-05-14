@@ -18,11 +18,15 @@ const ScreenshotDisplay: React.FC<ScreenshotDisplayProps> = ({
   isStickyMode,
   isHorizontalMode,
 }) => (
-  <div className={`group flex justify-center items-center w-full relative overflow-hidden ${isHorizontalMode ? 'h-full mb-2' : 'flex-none shrink-0'}`}>
+  <div
+    data-testid="screenshot-preview"
+    className={`group flex justify-center items-center w-full relative overflow-hidden ${isHorizontalMode ? 'h-full mb-2' : 'flex-none shrink-0'}`}
+  >
    
       <img
         src={`data:image/png;base64,${screenShotResult}`}
         alt="screenshot"
+        data-testid="screenshot-image"
       className="rounded-lg object-contain max-w-full max-h-full w-auto h-auto border border-gray-100 dark:border-gray-800"
       />
    

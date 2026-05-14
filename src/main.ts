@@ -6,44 +6,202 @@ import {
   dialog,
   globalShortcut,
   ipcMain,
-  screen
+  Menu,
+  nativeImage,
+  screen,
+  Tray
 } from 'electron';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { DEFAULT_SHORTCUTS, getShortcutLabel, ShortcutAction } from './shared/shortcuts';
 import * as Sentry from "@sentry/electron/main";
 import { logger, LogLevel, createLogger } from './utils/logger';
 import * as XLSX from 'xlsx';
 import fs from 'fs';
-import { exec, execFile, execSync } from 'child_process';
+import { exec, execFile, execSync, spawnSync, type ExecException } from 'child_process';
 import os from 'os';
-import Screenshots from 'electron-screenshots';
+import Screenshots, { type Bounds } from 'electron-screenshots';
 import started from 'electron-squirrel-startup';
 import { TableData } from './services/excel/types';
 import { settingsService } from './services/settingsService';
 
-// Initialize Sentry for error tracking
-Sentry.init({
-  dsn: "https://b07962090a9e8e5aaf2a34a0b8721a9e@o4507063511089152.ingest.us.sentry.io/4507128527781888",
-});
-
-// Handle creating/removing shortcuts on Windows when installing/uninstalling
-if (started) {
-  app.quit();
+// Initialize Sentry for error tracking when configured.
+const sentryDsn = process.env.SENTRY_DSN || process.env.VITE_SENTRY_DSN;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: app.isPackaged ? 'production' : 'development'
+  });
 }
 
 // URL scheme for deep linking
 const PROTOCOL_NAME = 'snippai';
+const OPEN_FILE_ARG = '--open-file';
+const SUPPORTED_IMAGE_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.bmp',
+  '.gif',
+  '.webp',
+  '.tiff',
+  '.tif',
+  '.heic'
+]);
+
+// Handle creating/removing shortcuts on Windows when installing/uninstalling
+if (started) {
+  handleWindowsSquirrelEvent();
+  app.quit();
+}
 
 // Register protocol for deep linking
-if (!app.isDefaultProtocolClient(PROTOCOL_NAME)) {
+if (!started && !app.isDefaultProtocolClient(PROTOCOL_NAME)) {
   app.setAsDefaultProtocolClient(PROTOCOL_NAME);
 }
 
 // Global reference to the main window to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
-let screenshots: any = null;
+let screenshots: Screenshots | null = null;
 let stickyNotes: BrowserWindow[] = [];
 let loadingWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+let isQuitting = false;
+let areaCaptureInProgress = false;
+let fullscreenCaptureInProgress = false;
+let pendingImagePaths: string[] = [];
+
+type ScreenshotCaptureEvent = {
+  preventDefault: () => void;
+};
+
+function runRegistryCommand(args: string[]): void {
+  const result = spawnSync('reg', args, { stdio: 'ignore' });
+  if (result.error || result.status !== 0) {
+    logger.warn('Windows context menu registry command failed', {
+      args,
+      error: result.error?.message,
+      status: result.status
+    });
+  }
+}
+
+function registerWindowsContextMenu(): void {
+  if (process.platform !== 'win32' || !app.isPackaged) return;
+
+  const command = `"${process.execPath}" ${OPEN_FILE_ARG} "%1"`;
+  SUPPORTED_IMAGE_EXTENSIONS.forEach((extension) => {
+    const baseKey = `HKCU\\Software\\Classes\\SystemFileAssociations\\${extension}\\shell\\Snippai`;
+    runRegistryCommand(['add', baseKey, '/ve', '/d', 'Open with Snippai', '/f']);
+    runRegistryCommand(['add', baseKey, '/v', 'Icon', '/d', process.execPath, '/f']);
+    runRegistryCommand(['add', `${baseKey}\\command`, '/ve', '/d', command, '/f']);
+  });
+}
+
+function unregisterWindowsContextMenu(): void {
+  if (process.platform !== 'win32') return;
+
+  SUPPORTED_IMAGE_EXTENSIONS.forEach((extension) => {
+    const baseKey = `HKCU\\Software\\Classes\\SystemFileAssociations\\${extension}\\shell\\Snippai`;
+    runRegistryCommand(['delete', baseKey, '/f']);
+  });
+}
+
+function handleWindowsSquirrelEvent(): void {
+  if (process.platform !== 'win32') return;
+
+  const squirrelEvent = process.argv[1];
+  if (squirrelEvent === '--squirrel-install' || squirrelEvent === '--squirrel-updated') {
+    registerWindowsContextMenu();
+  } else if (squirrelEvent === '--squirrel-uninstall') {
+    unregisterWindowsContextMenu();
+  }
+}
+
+function normalizeOpenFilePath(value: string): string {
+  const trimmed = value.trim().replace(/^"|"$/g, '');
+  if (trimmed.startsWith('file://')) {
+    try {
+      return fileURLToPath(trimmed);
+    } catch (error) {
+      logger.warn('Failed to parse file URL argument:', error);
+    }
+  }
+  return trimmed;
+}
+
+function isSupportedImagePath(filePath: string): boolean {
+  const extension = path.extname(filePath).toLowerCase();
+  return SUPPORTED_IMAGE_EXTENSIONS.has(extension);
+}
+
+function getOpenImageArgs(args: string[]): string[] {
+  const paths: string[] = [];
+
+  args.forEach((arg, index) => {
+    if (arg === OPEN_FILE_ARG && args[index + 1]) {
+      paths.push(normalizeOpenFilePath(args[index + 1]));
+      return;
+    }
+
+    const maybePath = normalizeOpenFilePath(arg);
+    if (!arg.startsWith('-') && isSupportedImagePath(maybePath)) {
+      paths.push(maybePath);
+    }
+  });
+
+  return Array.from(new Set(paths));
+}
+
+function imageFileToPngBase64(filePath: string): string | null {
+  const image = nativeImage.createFromPath(filePath);
+  if (image.isEmpty()) {
+    return null;
+  }
+  return image.toPNG().toString('base64');
+}
+
+function openImageFile(filePath: string): void {
+  const normalizedPath = normalizeOpenFilePath(filePath);
+  if (!isSupportedImagePath(normalizedPath)) {
+    dialog.showErrorBox('Unsupported File', 'Snippai can only open common image files.');
+    return;
+  }
+
+  if (!fs.existsSync(normalizedPath)) {
+    dialog.showErrorBox('File Not Found', `The file does not exist: ${normalizedPath}`);
+    return;
+  }
+
+  try {
+    const base64 = imageFileToPngBase64(normalizedPath);
+    if (!base64) {
+      dialog.showErrorBox('Cannot Open Image', `Snippai could not decode this image: ${normalizedPath}`);
+      return;
+    }
+
+    sendScreenshotToMainWindow(base64);
+    showMainWindow();
+  } catch (error) {
+    logger.error('Failed to open image file:', error);
+    dialog.showErrorBox('Cannot Open Image', 'Snippai failed to load the selected image.');
+  }
+}
+
+function queueOpenImageFiles(paths: string[]): void {
+  if (paths.length === 0) return;
+  pendingImagePaths.push(...paths);
+
+  if (app.isReady()) {
+    flushPendingImageFiles();
+  }
+}
+
+function flushPendingImageFiles(): void {
+  const paths = pendingImagePaths;
+  pendingImagePaths = [];
+  paths.forEach(openImageFile);
+}
 
 /**
  * Handle deep link URL
@@ -142,15 +300,18 @@ function createMainWindow(showOnReady = true): BrowserWindow {
   });
 
   // Handle window close event
-  window.on('close', () => {
-    console.log('Main window closed');
-    if (process.platform !== 'darwin') {
-      app.quit();
+  window.on('close', (event) => {
+    if (isQuitting) {
+      return;
     }
+
+    event.preventDefault();
+    console.log('Main window close intercepted; hiding to tray/background');
+    window.hide();
   });
 
   // Load the application content
-  loadApplicationContent(window);
+  loadApplicationContent(window, showOnReady);
 
   // Apply content protection setting to the main window
   try {
@@ -167,12 +328,13 @@ function createMainWindow(showOnReady = true): BrowserWindow {
  * Loads the appropriate content into the window based on environment
  * @param {BrowserWindow} window - The window to load content into
  */
-function loadApplicationContent(window: BrowserWindow): void {
+function loadApplicationContent(window: BrowserWindow, openDevTools = true): void {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     console.log('Loading from dev server URL:', MAIN_WINDOW_VITE_DEV_SERVER_URL);
     window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-    // Open DevTools in development mode
-    window.webContents.openDevTools();
+    if (openDevTools) {
+      window.webContents.openDevTools();
+    }
   } else {
     const filePath = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`);
     console.log('Loading from file path:', filePath);
@@ -202,6 +364,223 @@ function showMainWindow(): void {
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+function hideMainWindowForCapture(force = false): boolean {
+  if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) {
+    return false;
+  }
+
+  const hiddenFromScreenCapture = settingsService.getSettingValue('general.hiddenFromScreenCapture', false);
+  if (!force && hiddenFromScreenCapture) {
+    return false;
+  }
+
+  mainWindow.hide();
+  return true;
+}
+
+function sendTrayMenuScreenshot(): void {
+  void startAreaScreenshotCapture();
+}
+
+function toggleStickyNotesVisibility(): void {
+  try {
+    stickyNotes.forEach(stickyNote => {
+      if (!stickyNote.isDestroyed()) {
+        if (stickyNote.isVisible()) {
+          stickyNote.hide();
+        } else {
+          stickyNote.showInactive();
+        }
+      }
+    });
+
+    stickyNotes = stickyNotes.filter(note => !note.isDestroyed());
+    console.log(`Toggled visibility for ${stickyNotes.length} sticky notes`);
+  } catch (error) {
+    console.error('Error toggling sticky notes visibility:', error);
+  }
+}
+
+function resolveTrayIcon(): Electron.NativeImage {
+  const sourceLogoPath = path.join(app.getAppPath(), 'src/renderer/assets/logo.png');
+  if (fs.existsSync(sourceLogoPath)) {
+    const image = nativeImage.createFromPath(sourceLogoPath).resize({ width: 16, height: 16 });
+    if (process.platform === 'darwin') image.setTemplateImage(true);
+    return image;
+  }
+
+  const rendererAssetsDir = path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/assets`);
+  try {
+    const packagedLogo = fs
+      .readdirSync(rendererAssetsDir)
+      .find((file) => /^logo.*\.png$/i.test(file));
+
+    if (packagedLogo) {
+      const image = nativeImage.createFromPath(path.join(rendererAssetsDir, packagedLogo)).resize({ width: 16, height: 16 });
+      if (process.platform === 'darwin') image.setTemplateImage(true);
+      return image;
+    }
+  } catch (error) {
+    logger.debug('No packaged tray logo found:', error);
+  }
+
+  return nativeImage.createEmpty();
+}
+
+function refreshTrayMenu(): void {
+  if (!tray) return;
+
+  const screenshotAccelerator = settingsService.getSettingValue('shortcuts.screenshot', DEFAULT_SHORTCUTS.screenshot);
+  tray.setContextMenu(Menu.buildFromTemplate([
+    {
+      label: mainWindow?.isVisible() ? 'Hide Snippai' : 'Show Snippai',
+      click: () => {
+        if (mainWindow?.isVisible()) {
+          mainWindow.hide();
+        } else {
+          showMainWindow();
+        }
+      }
+    },
+    {
+      label: 'Take Screenshot',
+      accelerator: screenshotAccelerator,
+      click: sendTrayMenuScreenshot
+    },
+    {
+      label: 'Toggle Sticky Notes',
+      click: toggleStickyNotesVisibility
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit Snippai',
+      click: () => {
+        isQuitting = true;
+        globalShortcut.unregisterAll();
+        tray?.destroy();
+        tray = null;
+        app.quit();
+      }
+    }
+  ]));
+}
+
+function createSystemTray(): void {
+  if (tray) {
+    refreshTrayMenu();
+    return;
+  }
+
+  tray = new Tray(resolveTrayIcon());
+  tray.setToolTip('Snippai');
+  tray.on('click', () => showMainWindow());
+  tray.on('right-click', refreshTrayMenu);
+  refreshTrayMenu();
+}
+
+async function captureActiveDisplayToBase64(): Promise<{ base64: string; display: Electron.Display }> {
+  const point = screen.getCursorScreenPoint();
+  const activeDisplay = screen.getDisplayNearestPoint(point);
+  const scaleFactor = activeDisplay.scaleFactor || 1;
+  const thumbnailSize = {
+    width: Math.round(activeDisplay.size.width * scaleFactor),
+    height: Math.round(activeDisplay.size.height * scaleFactor)
+  };
+  const sources = await desktopCapturer.getSources({
+    types: ['screen'],
+    thumbnailSize,
+    fetchWindowIcons: false
+  });
+
+  let activeSource = sources.find((source) => source.display_id === activeDisplay.id.toString());
+  if (!activeSource) {
+    console.warn('Could not find screen source for the active display. Falling back to the first source.');
+    activeSource = sources[0];
+  }
+
+  if (!activeSource || activeSource.thumbnail.isEmpty()) {
+    throw new Error('No screen sources found');
+  }
+
+  return {
+    base64: activeSource.thumbnail.toPNG().toString('base64'),
+    display: activeDisplay
+  };
+}
+
+async function startAreaScreenshotCapture(): Promise<void> {
+  if (areaCaptureInProgress || screenshots?.$win?.isFocused()) {
+    return;
+  }
+
+  areaCaptureInProgress = true;
+  const hiddenMainWindow = hideMainWindowForCapture();
+  if (hiddenMainWindow) {
+    await delay(120);
+  }
+
+  try {
+    const useSystemScreenshot = settingsService.getSettingValue('general.useSystemScreenshot', true);
+    const supportsSystemScreenshot = process.platform === 'darwin' || process.platform === 'win32';
+
+    if (useSystemScreenshot && supportsSystemScreenshot) {
+      const base64 = process.platform === 'darwin'
+        ? await captureWithNativeMac()
+        : await captureWithNativeWindows();
+
+      if (base64) {
+        sendScreenshotToMainWindow(base64);
+      } else {
+        console.log('System screenshot capture was canceled or failed');
+      }
+
+      showMainWindow();
+      areaCaptureInProgress = false;
+      return;
+    }
+
+    if (!screenshots) {
+      areaCaptureInProgress = false;
+      showMainWindow();
+      logger.error('Screenshot controller is not initialized');
+      return;
+    }
+
+    await screenshots.startCapture();
+  } catch (error) {
+    areaCaptureInProgress = false;
+    showMainWindow();
+    logger.error('Failed to start screenshot capture:', error);
+  }
+}
+
+async function startFullscreenScreenshotCapture(): Promise<void> {
+  if (fullscreenCaptureInProgress) {
+    return;
+  }
+
+  fullscreenCaptureInProgress = true;
+  const hiddenMainWindow = hideMainWindowForCapture(true);
+
+  try {
+    if (hiddenMainWindow) {
+      await delay(120);
+    }
+
+    const { base64, display } = await captureActiveDisplayToBase64();
+    showLoadingWindow(display);
+    sendScreenshotToMainWindow(base64, true);
+  } catch (error) {
+    console.error('Failed to capture fullscreen screenshot:', error);
+    hideLoadingWindow();
+    if (hiddenMainWindow) {
+      showMainWindow();
+    }
+  } finally {
+    fullscreenCaptureInProgress = false;
+  }
+}
 
 const captureWithNativeMac = async (): Promise<string | null> => {
   const tmpPath = path.join(os.tmpdir(), `snippai_capture_${Date.now()}.png`);
@@ -285,16 +664,17 @@ function setupScreenshots(): void {
   });
   
   // Initialize screenshot module with options
-  screenshots = new Screenshots({
+  const screenshotController = new Screenshots({
     singleWindow: true,
     // lang: lang,
     logger: screenshotsLogger.createLoggerFn()
   });
+  screenshots = screenshotController;
 
   // Set zoom factor when capture starts
-  screenshots.on("capture-start", () => {
-    if (screenshots.$win) {
-      screenshots.$win.webContents.setZoomFactor(1);
+  screenshotController.on("capture-start", () => {
+    if (screenshotController.$win) {
+      screenshotController.$win.webContents.setZoomFactor(1);
     }
   });
 
@@ -302,7 +682,7 @@ function setupScreenshots(): void {
   registerScreenshotShortcuts();
 
   // Configure screenshot event handlers
-  setupScreenshotEventHandlers(scaleFactor);
+  setupScreenshotEventHandlers(screenshotController, scaleFactor);
 }
 
 /**
@@ -339,115 +719,9 @@ function registerScreenshotShortcuts(): void {
     }
   };
 
-  registerShortcut('screenshot', shortcutKey, () => {
-    if (screenshots.$win?.isFocused()) {
-      return;
-    }
-
-    let screenshotDelay = 0;
-    if (!mainWindow?.isDestroyed()) {
-      if (!mainWindow.isMinimized() && !settingsService.getSettingValue('general.hiddenFromScreenCapture', false)) {
-        screenshotDelay = 500;
-      }
-      mainWindow.minimize();
-    }
-    setTimeout(async () => {
-      const useSystemScreenshot = settingsService.getSettingValue('general.useSystemScreenshot', true);
-      const supportsSystemScreenshot = process.platform === 'darwin' || process.platform === 'win32';
-
-      if (useSystemScreenshot && supportsSystemScreenshot) {
-        const base64 = process.platform === 'darwin'
-          ? await captureWithNativeMac()
-          : await captureWithNativeWindows();
-
-        if (base64) {
-          sendScreenshotToMainWindow(base64);
-        } else {
-          console.log('System screenshot capture was canceled or failed');
-        }
-
-        showMainWindow();
-        return;
-      }
-
-      screenshots.startCapture();
-    }, screenshotDelay);
-  });
-
-  registerShortcut('fullscreenScreenshot', fullscreenShortcutKey, async () => {
-    try {
-      const point = screen.getCursorScreenPoint();
-      const activeDisplay = screen.getDisplayNearestPoint(point);
-
-      showLoadingWindow(activeDisplay);
-      
-      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isMinimized()) {
-        mainWindow.minimize();
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const sources = await desktopCapturer.getSources({ 
-        types: ['screen'],
-        thumbnailSize: { width: activeDisplay.size.width, height: activeDisplay.size.height },
-        fetchWindowIcons: false
-      });
-      
-      if (sources.length > 0) {
-        let activeSource = sources.find((source: Electron.DesktopCapturerSource) => source.display_id === activeDisplay.id.toString());
-
-        if (!activeSource) {
-          console.warn('Could not find screen source for the active display. Falling back to the first source.');
-          activeSource = sources[0];
-        }
-        
-        const image = activeSource.thumbnail;
-        const pngBuffer = await image.toPNG();
-        const base64 = Buffer.from(pngBuffer).toString('base64');
-        
-        const sendToMain = (win: BrowserWindow) => {
-          win.webContents.send('screenshot-result', base64, true);
-        };
-
-        if (!mainWindow || mainWindow.isDestroyed()) {
-          mainWindow = createMainWindow(false);
-          mainWindow.webContents.once('dom-ready', () => {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              sendToMain(mainWindow);
-            }
-          });
-        } else {
-          sendToMain(mainWindow);
-        }
-      } else {
-        console.error('No screen sources found');
-        hideLoadingWindow();
-      }
-    } catch (err) {
-      console.error('Failed to capture fullscreen screenshot:', err);
-      hideLoadingWindow();
-    }
-  });
-
-  registerShortcut('hideAllStickyNotes', hideAllStickyNotesKey, () => {
-    try {
-      stickyNotes.forEach(stickyNote => {
-        if (!stickyNote.isDestroyed()) {
-          if (stickyNote.isVisible()) {
-            stickyNote.hide();
-          } else {
-            stickyNote.showInactive();
-          }
-        }
-      });
-      
-      stickyNotes = stickyNotes.filter(note => !note.isDestroyed());
-      
-      console.log(`Toggled visibility for ${stickyNotes.length} sticky notes`);
-    } catch (error) {
-      console.error('Error toggling sticky notes visibility:', error);
-    }
-  });
+  registerShortcut('screenshot', shortcutKey, startAreaScreenshotCapture);
+  registerShortcut('fullscreenScreenshot', fullscreenShortcutKey, startFullscreenScreenshotCapture);
+  registerShortcut('hideAllStickyNotes', hideAllStickyNotesKey, toggleStickyNotesVisibility);
 
   registerShortcut('pinToScreen', pinToScreenKey, () => {
     if (!mainWindow || mainWindow.isDestroyed()) {
@@ -455,6 +729,8 @@ function registerScreenshotShortcuts(): void {
     }
     mainWindow.webContents.send('pin-current-screenshot');
   });
+
+  refreshTrayMenu();
 }
 
 
@@ -462,7 +738,7 @@ function registerScreenshotShortcuts(): void {
  * Sets up event handlers for screenshot operations
  * @param {number} scaleFactor - The display scale factor
  */
-function setupScreenshotEventHandlers(scaleFactor: number): void {
+function setupScreenshotEventHandlers(screenshotController: Screenshots, scaleFactor: number): void {
   // Create a dedicated logger for screenshot event handlers
   const eventLogger = createLogger({
     namespace: 'snippai:screenshots:events',
@@ -474,7 +750,8 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   let previouslyFocusedApp: string | null = null;
 
   // Handle successful screenshot capture
-  screenshots.on("ok", (e: any, buffer: Uint8Array, bounds: any) => {
+  screenshotController.on("ok", (event: ScreenshotCaptureEvent, buffer: Uint8Array) => {
+    areaCaptureInProgress = false;
     const base64 = Buffer.from(buffer).toString("base64");
     eventLogger.info("Screenshot captured successfully");
     eventLogger.debug("Base64 image captured with scale factor:", scaleFactor);
@@ -485,11 +762,11 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
     // Handle auto-copy based on settings
     if (isAutoCopyDisabled) {
       // Prevent default behavior (copying to clipboard)
-      e.preventDefault();
+      event.preventDefault();
       eventLogger.info('Auto copy to clipboard is disabled');
       
       // Manually end capture since we prevented the default behavior
-      screenshots.endCapture();
+      void screenshotController.endCapture();
     } else {
       // Use library's default implementation (copies to clipboard and ends capture)
       eventLogger.info('Auto copy to clipboard is enabled');
@@ -512,7 +789,8 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   });
 
   // Handle screenshot cancellation
-  screenshots.on("cancel", () => {
+  screenshotController.on("cancel", () => {
+    areaCaptureInProgress = false;
     eventLogger.info("Screenshot capture cancelled");
     showMainWindow();
     
@@ -521,18 +799,18 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
   });
 
   // Handle screenshot save
-  screenshots.on("save", (e: any, buffer: Uint8Array, bounds: any) => {
+  screenshotController.on("save", (...[, , bounds]: [ScreenshotCaptureEvent, Uint8Array, Bounds]) => {
     eventLogger.info("Screenshot saved");
     eventLogger.debug("Screenshot bounds:", bounds);
   });
 
   // Handle after-save event
-  screenshots.on("afterSave", (e: any, buffer: Uint8Array, bounds: any, isSaved: any) => {
+  screenshotController.on("afterSave", (...[, , , isSaved]: [ScreenshotCaptureEvent, Uint8Array, Bounds, boolean]) => {
     eventLogger.info("Screenshot afterSave event");
     eventLogger.debug("Save status:", isSaved);
   });
   
-  screenshots.on('windowCreated', ($win: Electron.BrowserWindow) => {
+  screenshotController.on('windowCreated', ($win: Electron.BrowserWindow) => {
     $win.on('focus', () => {
       if (process.platform === 'darwin') {
         try {
@@ -547,7 +825,7 @@ function setupScreenshotEventHandlers(scaleFactor: number): void {
       }
       globalShortcut.register('esc', () => {
         if ($win?.isFocused()) {
-          screenshots.endCapture();
+          void screenshotController.endCapture();
         }
         restorePreviousFocus(previouslyFocusedApp);
       });
@@ -568,7 +846,7 @@ function restorePreviousFocus(appName: string | null): void {
   
   setTimeout(() => {
     try {
-      exec(`osascript -e 'tell application "${appName}" to activate'`, (error: any) => {
+      exec(`osascript -e 'tell application "${appName}" to activate'`, (error: ExecException | null) => {
         if (error) {
           logger.error('Failed to restore focus:', error);
         } else {
@@ -589,7 +867,7 @@ function isValidWindowPosition(position: { x: number; y: number; width?: number;
     const displays = screen.getAllDisplays();
     
     // Check if position is within any display's work area
-    const isWithinDisplay = displays.some((display: any) => {
+    const isWithinDisplay = displays.some((display: Electron.Display) => {
       const { x, y, width, height } = display.workArea;
       return position.x >= x && position.y >= y && 
              position.x < x + width && position.y < y + height;
@@ -954,6 +1232,9 @@ function initializeApp(): void {
 
   // Set up screenshot functionality
   setupScreenshots();
+
+  // Keep the app accessible after the main window is closed.
+  createSystemTray();
   
   // 设置IPC处理程序
   setupIpcHandlers();
@@ -968,6 +1249,7 @@ function initializeApp(): void {
 
   // Setup deep link handling
   setupDeepLinkHandling();
+  flushPendingImageFiles();
 }
 
 /**
@@ -980,23 +1262,6 @@ function setupDeepLinkHandling(): void {
     handleDeepLink(url);
   });
 
-  // Handle protocol on Windows/Linux
-  app.on('second-instance', (_event, commandLine) => {
-    // Someone tried to run a second instance, focus our window instead
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-      mainWindow.focus();
-    }
-
-    // Handle deep link from command line
-    const url = commandLine.find(arg => arg.startsWith(`${PROTOCOL_NAME}://`));
-    if (url) {
-      handleDeepLink(url);
-    }
-  });
-
   // Handle deep link on app startup (Windows/Linux)
   if (process.platform !== 'darwin') {
     const url = process.argv.find(arg => arg.startsWith(`${PROTOCOL_NAME}://`));
@@ -1007,26 +1272,44 @@ function setupDeepLinkHandling(): void {
   }
 }
 
+function handleCommandLineArgs(args: string[]): void {
+  const url = args.find(arg => arg.startsWith(`${PROTOCOL_NAME}://`));
+  if (url) {
+    handleDeepLink(url);
+  }
+
+  queueOpenImageFiles(getOpenImageArgs(args));
+}
+
 /**
  * Sets up application lifecycle event handlers
  */
 function setupAppEventHandlers(): void {
+  app.on('before-quit', () => {
+    isQuitting = true;
+  });
+
   // Handle second instance launch
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, commandLine) => {
     console.log('Second instance detected, focusing first instance');
     showMainWindow();
+    handleCommandLineArgs(commandLine);
   });
 
   // Application ready event
   app.on('ready', () => {
     console.log('App ready event fired');
-    mainWindow = createMainWindow(true);
+  });
+
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault();
+    queueOpenImageFiles([filePath]);
   });
 
   // Window closed event
   app.on('window-all-closed', () => {
     console.log('All windows closed');
-    if (process.platform !== 'darwin') {
+    if (isQuitting) {
       app.quit();
     }
   });
@@ -1063,8 +1346,8 @@ function applyContentProtectionSettings(enable: boolean): void {
     });
     
     // 应用到截图窗口（如果存在）
-    if (screenshots && screenshots.win && !screenshots.win.isDestroyed()) {
-      screenshots.win.setContentProtection(enable);
+    if (screenshots?.$win && !screenshots.$win.isDestroyed()) {
+      screenshots.$win.setContentProtection(enable);
     }
     
     console.log(`Content protection ${enable ? 'enabled' : 'disabled'} for all windows`);
@@ -1265,6 +1548,7 @@ function main(): void {
   } else {
     // Set up event handlers
     setupAppEventHandlers();
+    queueOpenImageFiles(getOpenImageArgs(process.argv.slice(1)));
     
     // Initialize app when ready
     app.whenReady().then(initializeApp);
