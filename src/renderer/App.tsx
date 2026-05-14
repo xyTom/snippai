@@ -23,6 +23,7 @@ import { LoginButton } from "./components/buttons/LoginButton";
 import { UserMenuButton } from "./components/buttons/UserMenuButton";
 import { useAuth } from "./context/AuthContext";
 import { LoginDialog } from "./components/LoginDialog";
+import { HistoryDialog } from "./components/history/HistoryDialog";
 
 // App.tsx
 import DropOverlay from "./components/DropOverlay";
@@ -42,6 +43,7 @@ import { CopyImageButton } from "./components/buttons/CopyImageButton";
 import { PinButton } from "./components/buttons/PinButton";
 import { TrashButton } from "./components/buttons/TrashButton";
 import { SettingsButton } from "./components/buttons/SettingsButton";
+import { HistoryButton } from "./components/buttons/HistoryButton";
 
 import { promptOptions, models } from "./lib/models";
 
@@ -50,6 +52,7 @@ import i18n from "@/utils/i18next";
 import { usePostHog } from "posthog-js/react";
 import { AnimatePresence, motion } from "motion/react";
 import { TextShimmer } from "./components/ui/text-shimmer";
+import { saveSnipHistory, SnipHistoryItem } from "@/utils/history";
 
 function App() {
   // 获取认证状态
@@ -117,12 +120,14 @@ function App() {
 
   // 登录对话框状态
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
+  const [openHistory, setOpenHistory] = useState(false);
 
   // 布局设置
   const [horizontalLayout, setHorizontalLayout] = useState(false);
 
   // 工作线程引用
   const worker = useRef<Worker | null>(null);
+  const skipNextRecognitionRef = useRef(false);
 
   // 检查是否为便签模式
   useEffect(() => {
@@ -361,6 +366,14 @@ function App() {
           setLoading(false);
           setResult(res);
           setOnError(false);
+          void saveSnipHistory({
+            imageBase64: value,
+            result: res,
+            model,
+            prompt,
+          }).catch((error) => {
+            console.error("Failed to save screenshot history:", error);
+          });
 
           try {
             posthog?.capture("ai_recognition_success", {
@@ -430,6 +443,10 @@ function App() {
   useEffect(() => {
     // 在钉图模式下不重新请求API识别结果
     if (screenShotResult !== null && !isStickyMode) {
+      if (skipNextRecognitionRef.current) {
+        skipNextRecognitionRef.current = false;
+        return;
+      }
       recoginzeScreenshot(screenShotResult);
     }
   }, [prompt, screenShotResult, language, recoginzeScreenshot, isStickyMode]);
@@ -770,6 +787,14 @@ function App() {
     });
   }, [setOnAuthSuccess]);
 
+  const restoreHistoryItem = useCallback((item: SnipHistoryItem) => {
+    skipNextRecognitionRef.current = true;
+    setscreenShotResult(item.imageBase64);
+    setResult(item.result);
+    setPrompt(item.prompt);
+    setOpenHistory(false);
+  }, []);
+
   // 设置全局认证成功回调，用于处理深度链接认证
   useEffect(() => {
     // 总是设置一个回调来处理认证成功
@@ -819,6 +844,7 @@ function App() {
               )}
             </div>
             <div className="ml-auto space-x-4 flex text-white select-none">
+              <HistoryButton onClick={() => setOpenHistory(true)} />
               <SettingsButton onClick={() => setOpenSettings(true)} />
               <LanguageButton
                 onClick={() => setOpenLanguageDialog(true)}
@@ -1053,6 +1079,11 @@ function App() {
           <LoginDialog
             open={openLoginDialog}
             onOpenChange={setOpenLoginDialog}
+          />
+          <HistoryDialog
+            open={openHistory}
+            onOpenChange={setOpenHistory}
+            onRestore={restoreHistoryItem}
           />
         </>
       )}

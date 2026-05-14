@@ -95,6 +95,21 @@
     "language_invalid": "請輸入有效的語言"
   },
   "drop_overlay_message": "拖放圖片開始辨識",
+  "history": {
+    "title": "歷史記錄",
+    "description": "查看並復原此裝置上分析過的截圖。",
+    "loading": "正在載入歷史記錄...",
+    "empty": "尚無已儲存截圖。",
+    "item_alt": "已儲存截圖",
+    "restore": "復原",
+    "copy": "複製",
+    "delete": "刪除歷史記錄項目",
+    "clear": "清除歷史記錄",
+    "load_failed": "無法載入截圖歷史記錄。",
+    "copy_failed": "無法複製歷史截圖。",
+    "delete_failed": "無法刪除歷史記錄項目。",
+    "clear_failed": "無法清除截圖歷史記錄。"
+  },
   "upload": {
     "drag_overlay_title": "拖放圖片開始辨識",
     "drag_overlay_subtitle": "將圖片檔拖進應用程式即可上傳並開始辨識。",

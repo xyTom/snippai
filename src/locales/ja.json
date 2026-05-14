@@ -95,6 +95,21 @@
     "language_invalid": "有効な言語を入力してください"
   },
   "drop_overlay_message": "画像をドロップして解析",
+  "history": {
+    "title": "履歴",
+    "description": "このデバイスで解析したスクリーンショットを表示、復元します。",
+    "loading": "履歴を読み込み中...",
+    "empty": "保存されたスクリーンショットはまだありません。",
+    "item_alt": "保存済みスクリーンショット",
+    "restore": "復元",
+    "copy": "コピー",
+    "delete": "履歴項目を削除",
+    "clear": "履歴を消去",
+    "load_failed": "スクリーンショット履歴を読み込めませんでした。",
+    "copy_failed": "履歴のスクリーンショットをコピーできませんでした。",
+    "delete_failed": "履歴項目を削除できませんでした。",
+    "clear_failed": "スクリーンショット履歴を消去できませんでした。"
+  },
   "upload": {
     "drag_overlay_title": "画像をドロップして解析",
     "drag_overlay_subtitle": "画像ファイルをアプリにドラッグするとアップロードして認識できます。",

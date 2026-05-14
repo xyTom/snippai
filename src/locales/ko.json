@@ -95,6 +95,21 @@
     "language_invalid": "유효한 언어를 입력해주세요"
   },
   "drop_overlay_message": "이미지를 놓아 분석하기",
+  "history": {
+    "title": "기록",
+    "description": "이 기기에서 분석한 스크린샷을 보고 복원합니다.",
+    "loading": "기록을 불러오는 중...",
+    "empty": "아직 저장된 스크린샷이 없습니다.",
+    "item_alt": "저장된 스크린샷",
+    "restore": "복원",
+    "copy": "복사",
+    "delete": "기록 항목 삭제",
+    "clear": "기록 지우기",
+    "load_failed": "스크린샷 기록을 불러올 수 없습니다.",
+    "copy_failed": "기록의 스크린샷을 복사할 수 없습니다.",
+    "delete_failed": "기록 항목을 삭제할 수 없습니다.",
+    "clear_failed": "스크린샷 기록을 지울 수 없습니다."
+  },
   "upload": {
     "drag_overlay_title": "이미지를 놓아 분석하기",
     "drag_overlay_subtitle": "이미지 파일을 앱으로 끌어오면 업로드되어 인식이 시작됩니다.",

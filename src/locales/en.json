@@ -95,6 +95,21 @@
     "language_invalid": "Please enter a valid language"
   },
   "drop_overlay_message": "Drop image to analyze",
+  "history": {
+    "title": "History",
+    "description": "View and restore screenshots analyzed on this device.",
+    "loading": "Loading history...",
+    "empty": "No screenshots saved yet.",
+    "item_alt": "Saved screenshot",
+    "restore": "Restore",
+    "copy": "Copy",
+    "delete": "Delete history item",
+    "clear": "Clear history",
+    "load_failed": "Unable to load screenshot history.",
+    "copy_failed": "Unable to copy screenshot from history.",
+    "delete_failed": "Unable to delete screenshot history item.",
+    "clear_failed": "Unable to clear screenshot history."
+  },
   "upload": {
     "drag_overlay_title": "Drop image to analyze",
     "drag_overlay_subtitle": "Drag an image file anywhere in the app to upload it for recognition.",

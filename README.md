@@ -36,6 +36,9 @@ Understand and explain the functionality of code snippets found in images, helpi
 Identify and extract the predominant colors in an image, useful for tasks such as design analysis and image processing.
 ![Snippai Color](https://im.gurl.eu.org/file/3ff5f3143bff27fdd3a8d.png)
 
+### Local Screenshot History
+Review, restore, copy, and delete screenshots that were analyzed on your device without uploading history data by default.
+
 ### And More...
 Stay tuned for more powerful AI capabilities coming soon! Snippai is continuously evolving to offer new features and enhancements to improve your snipping workflow.
 

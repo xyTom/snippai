@@ -95,6 +95,21 @@
     "language_invalid": "请输入有效的语言"
   },
   "drop_overlay_message": "拖放图片开始识别",
+  "history": {
+    "title": "历史记录",
+    "description": "查看并恢复此设备上分析过的截图。",
+    "loading": "正在加载历史记录...",
+    "empty": "暂无已保存截图。",
+    "item_alt": "已保存截图",
+    "restore": "恢复",
+    "copy": "复制",
+    "delete": "删除历史记录项",
+    "clear": "清空历史记录",
+    "load_failed": "无法加载截图历史记录。",
+    "copy_failed": "无法复制历史截图。",
+    "delete_failed": "无法删除历史记录项。",
+    "clear_failed": "无法清空截图历史记录。"
+  },
   "upload": {
     "drag_overlay_title": "拖放图片开始识别",
     "drag_overlay_subtitle": "将图片文件拖入应用即可上传并开始识别。",

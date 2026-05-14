@@ -95,6 +95,21 @@
     "language_invalid": "Por favor ingresa un idioma válido"
   },
   "drop_overlay_message": "Suelta la imagen para analizarla",
+  "history": {
+    "title": "Historial",
+    "description": "Consulta y restaura capturas analizadas en este dispositivo.",
+    "loading": "Cargando historial...",
+    "empty": "Aún no hay capturas guardadas.",
+    "item_alt": "Captura guardada",
+    "restore": "Restaurar",
+    "copy": "Copiar",
+    "delete": "Eliminar elemento del historial",
+    "clear": "Borrar historial",
+    "load_failed": "No se pudo cargar el historial de capturas.",
+    "copy_failed": "No se pudo copiar la captura del historial.",
+    "delete_failed": "No se pudo eliminar el elemento del historial.",
+    "clear_failed": "No se pudo borrar el historial de capturas."
+  },
   "upload": {
     "drag_overlay_title": "Suelta la imagen para analizarla",
     "drag_overlay_subtitle": "Arrastra una imagen a la app para subirla y ejecutar el reconocimiento.",
