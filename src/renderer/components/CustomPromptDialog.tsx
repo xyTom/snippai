@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -32,30 +32,48 @@ const CustomPromptDialog: React.FC<CustomPromptDialogProps> = ({
   onPromptsChange,
 }) => {
   const { t } = useTranslation();
+  const [editingId, setEditingId] = React.useState<string | null>(null);
   const [label, setLabel] = React.useState("");
   const [prompt, setPrompt] = React.useState("");
 
   const canSave = label.trim() && prompt.trim();
 
-  const addPrompt = () => {
-    if (!canSave) {
-      return;
-    }
-
-    onPromptsChange([
-      ...prompts,
-      {
-        id: crypto.randomUUID(),
-        label: label.trim(),
-        prompt: prompt.trim(),
-      },
-    ]);
+  const resetDraft = () => {
+    setEditingId(null);
     setLabel("");
     setPrompt("");
   };
 
+  const editPrompt = (item: CustomPrompt) => {
+    setEditingId(item.id);
+    setLabel(item.label);
+    setPrompt(item.prompt);
+  };
+
+  const upsertPrompt = () => {
+    if (!canSave) {
+      return;
+    }
+
+    const nextPrompt = {
+      id: editingId ?? crypto.randomUUID(),
+      label: label.trim(),
+      prompt: prompt.trim(),
+    };
+
+    onPromptsChange(
+      editingId
+        ? prompts.map((item) => (item.id === editingId ? nextPrompt : item))
+        : [...prompts, nextPrompt]
+    );
+    resetDraft();
+  };
+
   const removePrompt = (id: string) => {
     onPromptsChange(prompts.filter((item) => item.id !== id));
+    if (editingId === id) {
+      resetDraft();
+    }
   };
 
   return (
@@ -73,14 +91,26 @@ const CustomPromptDialog: React.FC<CustomPromptDialogProps> = ({
                 className="rounded-md border border-border bg-muted/10 p-3"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    onClick={() => editPrompt(item)}
+                  >
                     <div className="truncate text-sm font-medium">
                       {item.label}
                     </div>
                     <div className="mt-1 line-clamp-3 whitespace-pre-wrap break-words text-xs text-muted-foreground">
                       {item.prompt}
                     </div>
-                  </div>
+                  </button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => editPrompt(item)}
+                    title={t("settings.edit")}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="destructive"
                     size="icon"
@@ -120,10 +150,15 @@ const CustomPromptDialog: React.FC<CustomPromptDialogProps> = ({
                 className="min-h-[120px]"
               />
             </div>
-            <div className="flex justify-end">
-              <Button size="sm" disabled={!canSave} onClick={addPrompt}>
+            <div className="flex justify-end gap-2">
+              {editingId && (
+                <Button variant="outline" size="sm" onClick={resetDraft}>
+                  {t("settings.cancel")}
+                </Button>
+              )}
+              <Button size="sm" disabled={!canSave} onClick={upsertPrompt}>
                 <Check className="h-4 w-4" />
-                {t("custom_prompts.add")}
+                {editingId ? t("settings.save") : t("custom_prompts.add")}
               </Button>
             </div>
           </div>

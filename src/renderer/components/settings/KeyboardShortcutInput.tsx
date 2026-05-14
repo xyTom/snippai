@@ -28,6 +28,7 @@ interface KeyboardShortcutInputProps {
   onChange: (key: ShortcutAction, value: string) => void;
   onReset?: () => void; // 可选的重置功能
   disabled?: boolean;
+  showLabel?: boolean;
 }
 
 /**
@@ -42,6 +43,7 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
   onChange,
   onReset,
   disabled = false,
+  showLabel = true,
 }) => {
   const [isRecording, setIsRecording] = React.useState<boolean>(false);
   const { toast } = useToast();
@@ -196,18 +198,23 @@ const KeyboardShortcutInput: React.FC<KeyboardShortcutInputProps> = ({
   };
 
   return (
-    <div className={`space-y-3 p-4 rounded-md bg-muted/10 ${disabled ? 'opacity-60' : ''}`}>
-      <div className="flex justify-between items-center">
-        <Label htmlFor={`${shortcutKey}-shortcut`} className="text-sm font-medium">{label}</Label>
-        <div className="flex items-center gap-1">
-          {isRecording && (
-            <span className="text-xs text-red-500 animate-pulse">{t('settings.recording')}</span>
+    <div className={`space-y-3 ${showLabel ? 'rounded-md bg-muted/10 p-4' : ''} ${disabled && showLabel ? 'opacity-60' : ''}`}>
+      {(showLabel || isRecording) && (
+        <div className="flex justify-between items-center">
+          {showLabel && (
+            <Label htmlFor={`${shortcutKey}-shortcut`} className="text-sm font-medium">{label}</Label>
           )}
+          <div className="flex items-center gap-1">
+            {isRecording && (
+              <span className="text-xs text-red-500 animate-pulse">{t('settings.recording')}</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <div className="flex gap-2">
         <Input
           id={`${shortcutKey}-shortcut`}
+          aria-label={label}
           value={value}
           readOnly
           disabled={disabled}

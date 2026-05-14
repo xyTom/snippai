@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import {
     Dialog,
     DialogContent,
@@ -10,12 +10,13 @@ import {
 import { Label } from "../components/ui/label"
 import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
-import { models } from "../lib/models"
+import { getBaseModel } from "../lib/models"
 
-export default function displayTextResult(props: { apikey: string, onKeySave: (apikey: string) => void, open: boolean,onOpenChange: (value: boolean) => void, model: string}) {
-    const [apiKey, setApiKey] = React.useState(props.apikey);
-    const [baseURL, setBaseURL] = React.useState("");
-    const [open, setOpen] = React.useState(props.open);
+export default function ApiKeyInput(props: { apikey: string, onKeySave: (apikey: string) => void, open: boolean,onOpenChange: (value: boolean) => void, model: string}) {
+    const [apiKey, setApiKey] = useState(props.apikey);
+    const [baseURL, setBaseURL] = useState("");
+    const [open, setOpen] = useState(props.open);
+    const requiresBaseURL = getBaseModel(props.model)?.requireBaseURL ?? false;
     const onKeyChange = (value: string) => {
         setApiKey(value);
     }
@@ -25,23 +26,22 @@ export default function displayTextResult(props: { apikey: string, onKeySave: (a
         localStorage.setItem(`${props.model}_baseURL`, value);
     }
     //read the base URL from local storage
-    React.useEffect(() => {
+    useEffect(() => {
         const baseURL = localStorage.getItem(`${props.model}_baseURL`);
-        console.log(`${props.model}_baseURL`,baseURL);
         if (baseURL) {
             setBaseURL(baseURL);
         }
     }, [props.model]);
     //when setOpen is called, update the parent state
-    React.useEffect(() => {
+    useEffect(() => {
         props.onOpenChange(open);
     }, [open]);
     //when the parent state is updated, update the local state
-    React.useEffect(() => {
+    useEffect(() => {
         setOpen(props.open);
     }, [props.open]);
     //when the parent API key is updated, update the local state
-    React.useEffect(() => {
+    useEffect(() => {
         setApiKey(props.apikey);
     }
     , [props.apikey]);
@@ -63,7 +63,7 @@ export default function displayTextResult(props: { apikey: string, onKeySave: (a
                     onChange={(event) => onKeyChange((event.target as HTMLInputElement).value)}
                     />
                 </div>
-                    {models.find((m) => m.value === props.model).requireBaseURL && (
+                    {requiresBaseURL && (
                     <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="baseURL" className="text-right">
                         Base URL

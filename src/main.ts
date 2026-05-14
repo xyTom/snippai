@@ -749,6 +749,24 @@ function setupScreenshotEventHandlers(screenshotController: Screenshots, scaleFa
   // Save previously active application information
   let previouslyFocusedApp: string | null = null;
 
+  const finishAreaCapture = () => {
+    areaCaptureInProgress = false;
+    globalShortcut.unregister('Esc');
+    showMainWindow();
+    restorePreviousFocus(previouslyFocusedApp);
+  };
+
+  const cancelAreaCapture = () => {
+    if (!areaCaptureInProgress) {
+      return;
+    }
+
+    areaCaptureInProgress = false;
+    void screenshotController.endCapture().finally(() => {
+      finishAreaCapture();
+    });
+  };
+
   // Handle successful screenshot capture
   screenshotController.on("ok", (event: ScreenshotCaptureEvent, buffer: Uint8Array) => {
     areaCaptureInProgress = false;
@@ -790,12 +808,8 @@ function setupScreenshotEventHandlers(screenshotController: Screenshots, scaleFa
 
   // Handle screenshot cancellation
   screenshotController.on("cancel", () => {
-    areaCaptureInProgress = false;
     eventLogger.info("Screenshot capture cancelled");
-    showMainWindow();
-    
-    // Restore focus to previously active application
-    restorePreviousFocus(previouslyFocusedApp);
+    finishAreaCapture();
   });
 
   // Handle screenshot save
@@ -811,6 +825,20 @@ function setupScreenshotEventHandlers(screenshotController: Screenshots, scaleFa
   });
   
   screenshotController.on('windowCreated', ($win: Electron.BrowserWindow) => {
+    const handleBeforeInput = (event: Electron.Event, input: Electron.Input) => {
+      if (input.type === 'keyDown' && input.key === 'Escape') {
+        event.preventDefault();
+        cancelAreaCapture();
+      }
+    };
+
+    $win.webContents.on('before-input-event', handleBeforeInput);
+
+    const screenshotView = (screenshotController as Screenshots & {
+      $view?: Electron.BrowserView;
+    }).$view;
+    screenshotView?.webContents.on('before-input-event', handleBeforeInput);
+
     $win.on('focus', () => {
       if (process.platform === 'darwin') {
         try {
@@ -823,16 +851,21 @@ function setupScreenshotEventHandlers(screenshotController: Screenshots, scaleFa
         }
         app.focus({steal: true});
       }
-      globalShortcut.register('esc', () => {
-        if ($win?.isFocused()) {
-          void screenshotController.endCapture();
-        }
-        restorePreviousFocus(previouslyFocusedApp);
-      });
+
+      globalShortcut.unregister('Esc');
+      const registered = globalShortcut.register('Esc', cancelAreaCapture);
+      if (!registered) {
+        eventLogger.warn('Failed to register Esc shortcut for screenshot cancellation');
+      }
     });
 
     $win.on('blur', () => {
-      globalShortcut.unregister('esc');
+      globalShortcut.unregister('Esc');
+    });
+
+    $win.on('closed', () => {
+      globalShortcut.unregister('Esc');
+      screenshotView?.webContents.removeListener('before-input-event', handleBeforeInput);
     });
   });
 }
@@ -1448,10 +1481,6 @@ function setupIpcHandlers(): void {
       console.error('Error saving app settings:', error);
       return false;
     }
-  });
-
-  ipcMain.handle('read-clipboard-text', () => {
-    return clipboard.readText();
   });
 
   ipcMain.handle('write-clipboard-text', (_event, text: string) => {

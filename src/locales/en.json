@@ -91,6 +91,8 @@
     "about_copyright_all_rights_reserved": "All rights reserved.",
     "cancel": "Cancel",
     "save": "Save",
+    "edit": "Edit",
+    "optional": "Optional",
     "reset": "Reset",
     "reset_all": "Reset all",
     "record": "Record",
@@ -115,16 +117,6 @@
     "language_invalid": "Please enter a valid language"
   },
   "drop_overlay_message": "Drop image to analyze",
-  "text_input": {
-    "paste": "Paste text",
-    "source": "Text Input",
-    "placeholder": "Paste or type text to analyze...",
-    "analyze": "Analyze Text",
-    "empty": "Clipboard is empty",
-    "empty_description": "Copy text first, then paste it into Snippai.",
-    "read_failed": "Unable to read clipboard",
-    "read_failed_description": "Please allow clipboard access or paste text manually."
-  },
   "custom_prompts": {
     "title": "Custom Prompts",
     "manage": "Manage prompts",

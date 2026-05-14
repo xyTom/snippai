@@ -12,8 +12,6 @@ import aiModels from "./models";
 // eslint-disable-next-line
 import logo from "./assets/logo.png";
 import { Badge } from "./components/ui/badge";
-import { Button } from "./components/ui/button";
-import { Textarea } from "./components/ui/textarea";
 import ModelSelect from "./components/modelSelect";
 import ApiKeyInput from "./components/apiKeyInput";
 import LanguageInput from "./components/languageInput";
@@ -41,7 +39,6 @@ import ScreenshotDisplay from "./components/ScreenshotDisplay";
 import ActionButtons from "./components/buttons/ActionButtons";
 import ResultDisplay from "./components/ResultDisplay";
 import ImageIcon from "./components/icons/ImageIcon";
-import AutoCandidateTabs from "./components/AutoCandidateTabs";
 
 import { SettingsButton } from "./components/buttons/SettingsButton";
 import { HistoryButton } from "./components/buttons/HistoryButton";
@@ -50,13 +47,13 @@ import { getBaseModel, getPromptOptions, models } from "./lib/models";
 import {
   getAutoPrimaryCandidate,
   parseAutoResponse,
+  type AutoCandidate,
   type AutoAction,
   type AutoResponse,
 } from "./lib/auto-response";
 import { LLMProvider } from "./types/settings";
 
 import { useTranslation } from "react-i18next";
-import i18n from "@/utils/i18next";
 import { usePostHog } from "posthog-js/react";
 import { AnimatePresence, motion } from "motion/react";
 import { TextShimmer } from "./components/ui/text-shimmer";
@@ -109,8 +106,6 @@ function App() {
   // 状态管理
   const [screenShotResult, setscreenShotResult] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
-  const [textInput, setTextInput] = useState("");
-  const [textMode, setTextMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
   const [showFloatingButton, setShowFloatingButton] = useState(true);
@@ -130,8 +125,6 @@ function App() {
 
   // Translations
   const { t } = useTranslation();
-  // To revert the language back to the previous one, in case the user presses the X button
-  const previousLanguage = useRef(i18n.language);
 
   // AI模型选择
   const [model, setModel] = useState("auto");
@@ -180,6 +173,7 @@ function App() {
   // 工作线程引用
   const worker = useRef<Worker | null>(null);
   const skipNextRecognitionRef = useRef(false);
+  const lastRecognitionKeyRef = useRef<string | null>(null);
 
   // 检查是否为便签模式
   useEffect(() => {
@@ -256,22 +250,8 @@ function App() {
     }
   }, [model, keyMap]);
 
-  // Close the settings and revert the language back (when pressing the X or the Cancel button)
-  // This is done so the user will see the UI update when selecting a different UI language, but the selection will revert if the user doesn't press Save.
-  const handleCloseSettingsRevertLanguage = () => {
-    i18n.changeLanguage(previousLanguage.current);
-    setOpenSettings(false);
-    toast({
-      title: t("settings.canceled"),
-      description: t("settings.canceled_description"),
-      variant: "default",
-    });
-  };
-
-  // Close the settings for the Save function (update language ref)
   const handleCloseSettings = () => {
     setOpenSettings(false);
-    previousLanguage.current = i18n.language;
   };
 
   // 处理语言对话框打开/关闭
@@ -285,9 +265,26 @@ function App() {
   }, []);
 
   // 处理文本变化
-  const handleTextChange = useCallback((text: string) => {
-    setResult(text);
-  }, []);
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setResult(text);
+      setAutoResult((prev: AutoResponse | null) => {
+        if (!prev) return prev;
+        const idx = prev.candidates.findIndex(
+          (candidate: AutoCandidate) =>
+            candidate.action === (displayPrompt as AutoAction)
+        );
+        if (idx === -1) return prev;
+        return {
+          ...prev,
+          candidates: prev.candidates.map((candidate, index) =>
+            index === idx ? { ...candidate, result: text } : candidate
+          ),
+        };
+      });
+    },
+    [displayPrompt]
+  );
 
   // 处理模型变化
   const handleModelChange = useCallback(
@@ -324,8 +321,6 @@ function App() {
       setDisplayPrompt(prompt);
       setOnError(false);
       setShouldAutoPin(false);
-      setTextMode(false);
-      setTextInput("");
       setscreenShotResult(base64);
 
       try {
@@ -402,7 +397,7 @@ function App() {
   );
 
   const buildPrompt = useCallback(
-    (textModePrompt = false, promptOverride = prompt) => {
+    (promptOverride = prompt) => {
       const customPromptId = promptOverride.startsWith("custom:")
         ? promptOverride.replace("custom:", "")
         : null;
@@ -424,17 +419,7 @@ function App() {
           : targetLang;
 
       if (promptOverride === "Translate" && effectiveLang) {
-        return textModePrompt
-          ? `Please translate this text to ${effectiveLang}. Only return the translated text.`
-          : `Please translate the text in this image to ${effectiveLang}. Only return the translated text.`;
-      }
-
-      if (promptOverride === "Calendar" && textModePrompt) {
-        return "Identify schedule or event information in this text and return a valid iCalendar (.ics) VCALENDAR document. Only return the ICS data.";
-      }
-
-      if (promptOverride === "Auto" && textModePrompt) {
-        return `${fullPrompt} The user input is plain text, not an image. Populate candidate result fields from the text content. Please answer in ${language}.`;
+        return `Please translate the text in this image to ${effectiveLang}. Only return the translated text.`;
       }
 
       return `${fullPrompt} Please answer in ${language}.`;
@@ -473,7 +458,7 @@ function App() {
       aiModels
         .create(model)
         .then((modelInstance) => {
-          const fullPrompt = buildPrompt(false, activePrompt);
+          const fullPrompt = buildPrompt(activePrompt);
           const providerConfig = getProviderConfig();
 
           if (providerConfig) {
@@ -588,106 +573,29 @@ function App() {
     [prompt, model, buildPrompt, getProviderConfig, apiKey, toast, t, shouldAutoPin, screenShotResult, posthog, autoCopyResult, copyTextResult]
   );
 
-  const recognizeText = useCallback(
-    (value: string, promptOverride = prompt) => {
-      const trimmedValue = value.trim();
-      if (!trimmedValue) {
-        return;
-      }
-
-      const activePrompt = promptOverride;
-      setResult(null);
-      if (activePrompt === "Auto") {
-        setAutoResult(null);
-      }
-      setDisplayPrompt(activePrompt);
-      setOnError(false);
-      setLoading(true);
-
-      aiModels
-        .create(model)
-        .then((modelInstance) => {
-          const fullPrompt = buildPrompt(true, activePrompt);
-          const providerConfig = getProviderConfig();
-
-          if (providerConfig) {
-            return modelInstance.runText(
-              trimmedValue,
-              fullPrompt,
-              providerConfig.provider.apiKey,
-              providerConfig.provider.baseURL,
-              providerConfig.modelName,
-              providerConfig.provider.orgId
-            );
-          }
-
-          if (getBaseModel(model)?.requireApiKey) {
-            return modelInstance.runText(trimmedValue, fullPrompt, apiKey);
-          }
-          return modelInstance.runText(trimmedValue, fullPrompt);
-        })
-        .then((res: string) => {
-          const parsedAuto = activePrompt === "Auto" ? parseAutoResponse(res) : null;
-          const primaryCandidate = parsedAuto
-            ? getAutoPrimaryCandidate(parsedAuto)
-            : null;
-          const finalPrompt = primaryCandidate?.action ?? activePrompt;
-          const finalResult = primaryCandidate?.result ?? res;
-
-          setLoading(false);
-          setAutoResult((currentAutoResult) =>
-            parsedAuto ?? (activePrompt === "Auto" ? null : currentAutoResult)
-          );
-          setDisplayPrompt(finalPrompt);
-          setResult(finalResult);
-          setOnError(false);
-          if (autoCopyResult) {
-            void copyTextResult(finalResult);
-          }
-        })
-        .catch((error: unknown) => {
-          console.error("Text model error:", error);
-          const message = getErrorMessage(error);
-          setLoading(false);
-          if (activePrompt === "Auto") {
-            setAutoResult(null);
-          }
-          setDisplayPrompt(activePrompt);
-          setOnError(true);
-          toast({
-            title: t('error'),
-            description: t('error_description', { error: message }),
-          });
-        });
-    },
-    [prompt, model, buildPrompt, getProviderConfig, apiKey, toast, t, autoCopyResult, copyTextResult]
-  );
-
   // 当提示或截图或语言变化时，重新识别截图
   useEffect(() => {
     // 在钉图模式下不重新请求API识别结果
-    if (screenShotResult !== null && !isStickyMode && !textMode) {
+    if (screenShotResult !== null && !isStickyMode) {
       if (skipNextRecognitionRef.current) {
         skipNextRecognitionRef.current = false;
         return;
       }
+      const recognitionKey = JSON.stringify([
+        screenShotResult,
+        prompt,
+        language,
+        targetLang,
+        model,
+        apiKey,
+      ]);
+      if (lastRecognitionKeyRef.current === recognitionKey) {
+        return;
+      }
+      lastRecognitionKeyRef.current = recognitionKey;
       recoginzeScreenshot(screenShotResult);
     }
-  }, [prompt, screenShotResult, language, recoginzeScreenshot, isStickyMode, textMode]);
-
-  useEffect(() => {
-    if (!textMode || !textInput.trim() || isStickyMode) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      recognizeText(textInput);
-    }, 500);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [prompt, language, targetLang, textMode, textInput, recognizeText, isStickyMode]);
+  }, [prompt, screenShotResult, language, targetLang, model, apiKey, recoginzeScreenshot, isStickyMode]);
 
   // 设置工作线程
   useEffect(() => {
@@ -719,8 +627,6 @@ function App() {
         ? value.split(",")[1]
         : value;
 
-      setTextMode(false);
-      setTextInput("");
       setAutoResult(null);
       setDisplayPrompt(prompt);
       setscreenShotResult(rawValue);
@@ -984,46 +890,8 @@ function App() {
     setAutoResult(null);
     setDisplayPrompt(prompt);
     setOnError(false);
-    setTextMode(false);
-    setTextInput("");
+    lastRecognitionKeyRef.current = null;
   }, [prompt]);
-
-  const pasteTextFromClipboard = useCallback(async () => {
-    try {
-      const text =
-        (await window.electronAPI?.readClipboardText?.()) ??
-        (await navigator.clipboard.readText());
-
-      if (!text.trim()) {
-        toast({
-          title: t("text_input.empty"),
-          description: t("text_input.empty_description"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setscreenShotResult(null);
-      setShouldAutoPin(false);
-      setTextMode(true);
-      setTextInput(text);
-      setResult(null);
-      setAutoResult(null);
-      setDisplayPrompt(prompt);
-      setOnError(false);
-    } catch (error) {
-      console.error("Failed to read clipboard text:", error);
-      toast({
-        title: t("text_input.read_failed"),
-        description: t("text_input.read_failed_description"),
-        variant: "destructive",
-      });
-    }
-  }, [toast, t]);
-
-  const retryTextRecognition = useCallback(() => {
-    recognizeText(textInput);
-  }, [recognizeText, textInput]);
 
   const handleCustomPromptsChange = useCallback((prompts: CustomPrompt[]) => {
     setCustomPrompts(prompts);
@@ -1047,25 +915,26 @@ function App() {
     setAutoResult(null);
   }, []);
 
-  const handleAutoActionSelect = useCallback(
-    (action: AutoAction) => {
-      setDisplayPrompt(action);
-
-      const existingCandidate = autoResult?.candidates.find(
-        (candidate) => candidate.action === action
+  const handlePreviewPromptChange = useCallback(
+    (value: string) => {
+      setDisplayPrompt(value);
+      const candidate = autoResult?.candidates?.find(
+        (item: AutoCandidate) => item.action === (value as AutoAction)
       );
-      if (existingCandidate) {
-        setResult(existingCandidate.result);
-        return;
-      }
-
-      if (screenShotResult) {
-        recoginzeScreenshot(screenShotResult, action);
-      } else if (textMode && textInput.trim()) {
-        recognizeText(textInput, action);
+      if (candidate) {
+        setResult(candidate.result);
       }
     },
-    [autoResult, screenShotResult, textMode, textInput, recoginzeScreenshot, recognizeText]
+    [autoResult]
+  );
+
+  const handleAutoRunPromptChange = useCallback(
+    (value: string) => {
+      if (screenShotResult) {
+        recoginzeScreenshot(screenShotResult, value);
+      }
+    },
+    [recoginzeScreenshot, screenShotResult]
   );
 
   // 处理登录对话框打开
@@ -1153,10 +1022,10 @@ function App() {
         )}
         {/* 显示logo或引导文本 */}
         <div
-          className={` flex-1 flex flex-col items-center w-full ${!screenShotResult && !textMode ? "justify-center" : ""
+          className={` flex-1 flex flex-col items-center w-full ${!screenShotResult ? "justify-center" : ""
             }`}
         >
-          {!isStickyMode && !screenShotResult && !textMode && (
+          {!isStickyMode && !screenShotResult && (
             <>
               <img
                 src={logo}
@@ -1192,21 +1061,22 @@ function App() {
                 loading={loading}
                 model={model}
                 result={result}
+                autoResult={autoResult}
+                displayPrompt={displayPrompt}
+                handlePreviewPromptChange={handlePreviewPromptChange}
+                handleAutoRunPromptChange={handleAutoRunPromptChange}
                 onError={onError}
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
                 customPrompts={customPrompts}
                 promptVersion={promptVersion}
                 recoginzeScreenshot={recoginzeScreenshot}
-                retryTextRecognition={retryTextRecognition}
-                pasteTextFromClipboard={pasteTextFromClipboard}
                 copyImageToClipboard={copyImageToClipboard}
                 imageCopied={imageCopied}
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
                 openPromptDialog={openPromptManager}
-                textMode={textMode}
               />
             </div>
           )}
@@ -1221,72 +1091,26 @@ function App() {
                 loading={loading}
                 model={model}
                 result={result}
+                autoResult={autoResult}
+                displayPrompt={displayPrompt}
+                handlePreviewPromptChange={handlePreviewPromptChange}
+                handleAutoRunPromptChange={handleAutoRunPromptChange}
                 onError={onError}
                 screenShotResult={screenShotResult}
                 handlePromptChange={handlePromptChange}
                 customPrompts={customPrompts}
                 promptVersion={promptVersion}
                 recoginzeScreenshot={recoginzeScreenshot}
-                retryTextRecognition={retryTextRecognition}
-                pasteTextFromClipboard={pasteTextFromClipboard}
                 copyImageToClipboard={copyImageToClipboard}
                 imageCopied={imageCopied}
                 pinToScreen={pinToScreen}
                 clearScreenshot={clearScreenshot}
                 openApiKeyDialog={openApiKeyDialog}
                 openPromptDialog={openPromptManager}
-                textMode={textMode}
                 responsivePromptSelect={true}
               />
             </div>
           ) : null}
-          {textMode && !screenShotResult && (
-            <div className="w-full max-w-4xl flex-1 px-4 pb-6 overflow-y-auto">
-              <div className="pt-4">
-                <Badge
-                  variant="secondary"
-                  className="mb-3 antialiased font-medium"
-                >
-                  {t("text_input.source")}
-                </Badge>
-                <Textarea
-                  value={textInput}
-                  onChange={(event) => setTextInput(event.target.value)}
-                  className="min-h-[140px] bg-[#111] text-white border-[#333]"
-                  placeholder={t("text_input.placeholder")}
-                />
-                <div className="mt-3 flex justify-end">
-                  <Button
-                    size="sm"
-                    disabled={loading || !textInput.trim()}
-                    onClick={() => recognizeText(textInput)}
-                  >
-                    {t("text_input.analyze")}
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-5">
-                {autoResult && (
-                  <AutoCandidateTabs
-                    autoResult={autoResult}
-                    selectedAction={displayPrompt as AutoAction}
-                    disabled={loading}
-                    onSelect={handleAutoActionSelect}
-                  />
-                )}
-                <ResultDisplay
-                  loading={loading}
-                  result={result}
-                  prompt={displayPrompt}
-                  handleTextChange={handleTextChange}
-                  isStickyMode={isStickyMode}
-                  horizontalLayout={false}
-                  targetLang={targetLang}
-                  onTargetLangChange={setTargetLang}
-                />
-              </div>
-            </div>
-          )}
           {/* 截图和结果并排显示 */}
           {screenShotResult && (
             <div className="w-full flex-1 flex flex-col h-full mt-[0.3rem]">
@@ -1324,14 +1148,6 @@ function App() {
                       }`}
                     style={{ flexGrow: 1 }}
                   >
-                    {autoResult && (
-                      <AutoCandidateTabs
-                        autoResult={autoResult}
-                        selectedAction={displayPrompt as AutoAction}
-                        disabled={loading}
-                        onSelect={handleAutoActionSelect}
-                      />
-                    )}
                     <ResultDisplay
                       loading={loading}
                       result={result}
@@ -1383,21 +1199,22 @@ function App() {
                           loading={loading}
                           model={model}
                           result={result}
+                          autoResult={autoResult}
+                          displayPrompt={displayPrompt}
+                          handlePreviewPromptChange={handlePreviewPromptChange}
+                          handleAutoRunPromptChange={handleAutoRunPromptChange}
                           onError={onError}
                           screenShotResult={screenShotResult}
                           handlePromptChange={handlePromptChange}
                           customPrompts={customPrompts}
                           promptVersion={promptVersion}
                           recoginzeScreenshot={recoginzeScreenshot}
-                          retryTextRecognition={retryTextRecognition}
-                          pasteTextFromClipboard={pasteTextFromClipboard}
                           copyImageToClipboard={copyImageToClipboard}
                           imageCopied={imageCopied}
                           pinToScreen={pinToScreen}
                           clearScreenshot={clearScreenshot}
                           openApiKeyDialog={openApiKeyDialog}
                           openPromptDialog={openPromptManager}
-                          textMode={textMode}
                         />
                       </div>
                     )}
@@ -1405,14 +1222,6 @@ function App() {
                     {/* 结果显示 */}
 
                     <div className="flex-1 w-full flex flex-col">
-                      {autoResult && (
-                        <AutoCandidateTabs
-                          autoResult={autoResult}
-                          selectedAction={displayPrompt as AutoAction}
-                          disabled={loading}
-                          onSelect={handleAutoActionSelect}
-                        />
-                      )}
                       <ResultDisplay
                         loading={loading}
                         result={result}
@@ -1450,8 +1259,7 @@ function App() {
           />
           <SettingsPage
             open={openSettings}
-            onClose={handleCloseSettingsRevertLanguage}
-            onCloseSave={handleCloseSettings}
+            onClose={handleCloseSettings}
             onSettingsUpdate={(settings) => {
               // Update layout setting immediately without restart
               if (settings.general?.horizontalLayout !== undefined) {

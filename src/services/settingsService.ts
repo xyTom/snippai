@@ -167,6 +167,17 @@ export class SettingsService {
       logger.warn('Detected malformed llmProviders settings block. Reset to defaults.');
     }
 
+    const general = savedSettings.general;
+    if (
+      this.isPlainObject(general) &&
+      general.autoCopyToClipboard === true &&
+      general.autoCopyResult === true
+    ) {
+      general.autoCopyResult = false;
+      settingsChanged = true;
+      logger.warn('Detected mutually enabled auto-copy settings. Kept screenshot auto-copy enabled.');
+    }
+
     return settingsChanged;
   }
 
@@ -281,6 +292,16 @@ export class SettingsService {
       ) {
         logger.error('Invalid settings data received');
         return false;
+      }
+
+      if (settings.general.autoCopyToClipboard && settings.general.autoCopyResult) {
+        settings = {
+          ...settings,
+          general: {
+            ...settings.general,
+            autoCopyResult: false
+          }
+        };
       }
 
       // Handle auto-start setting

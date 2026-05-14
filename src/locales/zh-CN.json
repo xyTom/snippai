@@ -89,6 +89,8 @@
     "stop": "停止",
     "cancel": "取消",
     "save": "保存",
+    "edit": "编辑",
+    "optional": "可选",
     "reset": "重置",
     "reset_all": "全部重置",
     "about_version": "版本",
@@ -115,16 +117,6 @@
     "language_invalid": "请输入有效的语言"
   },
   "drop_overlay_message": "拖放图片开始识别",
-  "text_input": {
-    "paste": "粘贴文本",
-    "source": "文本输入",
-    "placeholder": "粘贴或输入要分析的文本...",
-    "analyze": "分析文本",
-    "empty": "剪贴板为空",
-    "empty_description": "请先复制文本，再粘贴到 Snippai。",
-    "read_failed": "无法读取剪贴板",
-    "read_failed_description": "请允许剪贴板访问，或手动粘贴文本。"
-  },
   "custom_prompts": {
     "title": "自定义 Prompt",
     "manage": "管理 Prompt",

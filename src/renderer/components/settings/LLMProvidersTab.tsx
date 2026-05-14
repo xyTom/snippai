@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowDown, ArrowUp, Check, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import {
@@ -16,8 +16,6 @@ import { LLMProvider } from "../../types/settings";
 interface LLMProvidersTabProps {
   providers: LLMProvider[];
   onProvidersChange: (providers: LLMProvider[]) => void;
-  onSave: () => Promise<void>;
-  onCancel: () => void;
 }
 
 interface ProviderDraft {
@@ -63,13 +61,11 @@ const toProvider = (draft: ProviderDraft, previous?: LLMProvider): LLMProvider =
 });
 
 const isDraftValid = (draft: ProviderDraft): boolean =>
-  Boolean(draft.baseURL.trim() && draft.apiKey.trim() && toModelList(draft.models).length);
+  Boolean(draft.baseURL.trim() && toModelList(draft.models).length);
 
 const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
   providers,
   onProvidersChange,
-  onSave,
-  onCancel,
 }) => {
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -141,7 +137,7 @@ const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
             <div className="flex items-start justify-between gap-4">
               <button
                 type="button"
-                className="min-w-0 text-left"
+                className="min-w-0 flex-1 text-left"
                 onClick={() => openEditDialog(provider)}
               >
                 <div className="truncate text-sm font-medium">
@@ -162,6 +158,14 @@ const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
                     setEnabled(provider.id, checked)
                   }
                 />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => openEditDialog(provider)}
+                  title={t("settings.llm_provider_edit")}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="outline"
                   size="icon"
@@ -197,20 +201,11 @@ const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
         )}
       </div>
 
-      <div className="pt-2 flex justify-between gap-2">
+      <div className="pt-2 flex justify-start">
         <Button variant="outline" onClick={openCreateDialog} size="sm">
           <Plus className="h-4 w-4" />
           {t("settings.llm_provider_add")}
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel} size="sm">
-            {t("settings.cancel")}
-          </Button>
-          <Button onClick={onSave} size="sm" className="gap-1">
-            <Check className="h-4 w-4" />
-            {t("settings.save")}
-          </Button>
-        </div>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -252,6 +247,7 @@ const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
               <Input
                 id="provider-api-key"
                 type="password"
+                placeholder={t("settings.optional")}
                 value={draft.apiKey}
                 onChange={(event) => updateDraft("apiKey", event.target.value)}
               />

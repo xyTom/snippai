@@ -43,7 +43,6 @@ declare global {
     getAppSettings?: () => Promise<AppSettings>;
     saveAppSettings?: (data: AppSettings) => Promise<boolean>;
     getAppVersion?: () => Promise<string>;
-    readClipboardText?: () => Promise<string>;
     writeClipboardText?: (text: string) => Promise<boolean>;
     openExternal?: (url: string) => void;
     exportExcelTables?: (data: {

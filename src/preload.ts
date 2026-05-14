@@ -27,7 +27,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
     saveAppSettings: (data: any) => ipcRenderer.invoke('save-app-settings', data),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-    readClipboardText: () => ipcRenderer.invoke('read-clipboard-text'),
     writeClipboardText: (text: string) => ipcRenderer.invoke('write-clipboard-text', text),
     exportExcelTables: (data: { tables: TableData[]; defaultFileName?: string }) => ipcRenderer.invoke('export-excel-tables', data),
 })

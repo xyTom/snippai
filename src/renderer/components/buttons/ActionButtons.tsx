@@ -6,30 +6,31 @@ import { RetryButton } from "./RetryButton";
 import { CopyImageButton } from "./CopyImageButton";
 import { PinButton } from "./PinButton";
 import { TrashButton } from "./TrashButton";
-import { PasteTextButton } from "./PasteTextButton";
 import { PromptEditButton } from "./PromptEditButton";
 import { CustomPrompt } from "../CustomPromptDialog";
+import { AutoResponse } from "../../lib/auto-response";
 
 interface ActionButtonsProps {
   isStickyMode: boolean;
   loading: boolean;
   model: string;
   result: string | null;
+  autoResult?: AutoResponse | null;
+  displayPrompt?: string;
+  handlePreviewPromptChange?: (value: string) => void;
+  handleAutoRunPromptChange?: (value: string) => void;
   onError: boolean;
   screenShotResult: string | null;
   handlePromptChange: (value: string) => void;
   customPrompts?: CustomPrompt[];
   promptVersion?: number;
   recoginzeScreenshot: (value: string) => void;
-  retryTextRecognition?: () => void;
-  pasteTextFromClipboard?: () => void;
   copyImageToClipboard: () => void;
   imageCopied: boolean;
   pinToScreen: () => void;
   clearScreenshot: () => void;
   openApiKeyDialog: () => void;
   openPromptDialog?: () => void;
-  textMode?: boolean;
   responsivePromptSelect?: boolean;
 }
 
@@ -38,21 +39,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   loading,
   model,
   result,
+  autoResult,
+  displayPrompt,
+  handlePreviewPromptChange,
+  handleAutoRunPromptChange,
   onError,
   screenShotResult,
   handlePromptChange,
   customPrompts,
   promptVersion,
   recoginzeScreenshot,
-  retryTextRecognition,
-  pasteTextFromClipboard,
   copyImageToClipboard,
   imageCopied,
   pinToScreen,
   clearScreenshot,
   openApiKeyDialog,
   openPromptDialog,
-  textMode,
   responsivePromptSelect,
 }) => {
   if (isStickyMode) return null;
@@ -62,6 +64,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <div className="flex items-center">
         <PromptSelect
           handlePromptChange={handlePromptChange}
+          handlePreviewPromptChange={handlePreviewPromptChange}
+          handleAutoRunPromptChange={handleAutoRunPromptChange}
+          autoResult={autoResult}
+          displayPrompt={displayPrompt}
           model={model}
           disabled={loading}
           responsiveMode={responsivePromptSelect ?? false}
@@ -71,18 +77,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
       <div className="flex flex-nowrap gap-2 items-center">
         {openPromptDialog && <PromptEditButton onClick={openPromptDialog} />}
-        {(result || onError) && (
-          <RetryButton
-            onClick={() => {
-              if (textMode) {
-                retryTextRecognition?.();
-              } else if (screenShotResult) {
-                recoginzeScreenshot(screenShotResult);
-              }
-            }}
-          />
+        {(result || onError) && screenShotResult && (
+          <RetryButton onClick={() => recoginzeScreenshot(screenShotResult)} />
         )}
-        {pasteTextFromClipboard && <PasteTextButton onClick={pasteTextFromClipboard} />}
         {screenShotResult && <CopyImageButton onClick={copyImageToClipboard} copied={imageCopied} variant="secondary" />}
         {screenShotResult && <PinButton onClick={pinToScreen} />}
         {result && <TrashButton onClick={clearScreenshot} />}

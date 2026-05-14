@@ -138,6 +138,57 @@ describe('SettingsService', () => {
     );
   });
 
+  it('keeps screenshot and result auto-copy settings mutually exclusive', async () => {
+    const { service, tempDir, mockLogger } = await createService();
+    cleanupDirs.push(tempDir);
+    const settingsPath = path.join(tempDir, 'app-settings.json');
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        shortcuts: {
+          screenshot: 'CommandOrControl+Shift+A',
+          fullscreenScreenshot: 'CommandOrControl+Shift+F',
+          hideAllStickyNotes: 'CommandOrControl+Shift+H',
+          pinToScreen: 'CommandOrControl+Shift+P',
+          disabledShortcuts: {}
+        },
+        general: {
+          autoCopyToClipboard: true,
+          autoCopyResult: true,
+          autoStart: false,
+          uiLanguage: 'default',
+          horizontalLayout: false,
+          hiddenFromScreenCapture: false,
+          useSystemScreenshot: true
+        },
+        llmProviders: []
+      })
+    );
+
+    const settings = service.getSettings();
+
+    expect(settings.general.autoCopyToClipboard).toBe(true);
+    expect(settings.general.autoCopyResult).toBe(false);
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      'Detected mutually enabled auto-copy settings. Kept screenshot auto-copy enabled.'
+    );
+  });
+
+  it('normalizes mutually enabled auto-copy settings when saving', async () => {
+    const { service, tempDir } = await createService();
+    cleanupDirs.push(tempDir);
+    const settingsPath = path.join(tempDir, 'app-settings.json');
+    const settings = service.getSettings();
+
+    settings.general.autoCopyToClipboard = true;
+    settings.general.autoCopyResult = true;
+    expect(service.saveSettings(settings)).toBe(true);
+
+    const saved = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    expect(saved.general.autoCopyToClipboard).toBe(true);
+    expect(saved.general.autoCopyResult).toBe(false);
+  });
+
   it('continues saving when enabling autoStart fails', async () => {
     const { service, tempDir } = await createService({ setAutoStartThrows: true });
     cleanupDirs.push(tempDir);

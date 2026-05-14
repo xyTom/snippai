@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Switch } from "../ui/switch";
-import { Button } from "../ui/button";
 import {
   Select,
   SelectContent,
@@ -8,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 // Import types
@@ -103,8 +101,6 @@ const SettingSelect: React.FC<SettingSelectProps> = ({
 interface GeneralTabProps {
   settings: GeneralSettings;
   onSettingsChange: (settings: GeneralSettings) => void;
-  onSave: () => Promise<void>;
-  onCancel: () => void;
 }
 
 /**
@@ -113,8 +109,6 @@ interface GeneralTabProps {
 const GeneralTab: React.FC<GeneralTabProps> = ({
   settings,
   onSettingsChange,
-  onSave,
-  onCancel,
 }) => {
   const { t, i18n } = useTranslation();
   const systemScreenshotSupported =
@@ -122,24 +116,28 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
     window.electronAPI?.platform === "win32";
 
   const handleSettingChange = (key: keyof GeneralSettings, value: boolean) => {
-    onSettingsChange({
+    const nextSettings = {
       ...settings,
       [key]: value,
+    };
+
+    if (key === "autoCopyToClipboard" && value) {
+      nextSettings.autoCopyResult = false;
+    }
+
+    if (key === "autoCopyResult" && value) {
+      nextSettings.autoCopyToClipboard = false;
+    }
+
+    onSettingsChange({
+      ...nextSettings,
     });
   };
-
-  // This is to revert the language back to the previous one, in case the user presses the Cancel button
-  const previousLanguage = React.useRef(i18n.language);
 
   const handleLanguageChange = (value: LanguageCode) => {
     const locale = value === "default" ? navigator.language : value;
     i18n.changeLanguage(locale);
     onSettingsChange({ ...settings, uiLanguage: value });
-  };
-
-  const handleCancel = () => {
-    i18n.changeLanguage(previousLanguage.current);
-    onCancel();
   };
 
   return (
@@ -227,15 +225,6 @@ const GeneralTab: React.FC<GeneralTabProps> = ({
         />
       </div>
 
-      <div className="pt-4 flex justify-end gap-2">
-        <Button variant="outline" onClick={handleCancel} size="sm">
-          {t("settings.cancel")}
-        </Button>
-        <Button onClick={onSave} size="sm" className="gap-1">
-          <Check className="h-4 w-4" />
-          {t("settings.save")}
-        </Button>
-      </div>
     </div>
   );
 };

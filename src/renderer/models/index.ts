@@ -35,31 +35,12 @@ export default class aiModel {
         modelName?: string,
         orgId?: string
     ): Promise<string> {
+        if (baseURL || modelName || orgId) {
+            return this.model(image, prompt, apiKey, baseURL, modelName, orgId);
+        }
         if (apiKey) {
-            if (baseURL) {
-                return this.model(image, prompt, apiKey, baseURL, modelName, orgId);
-            }
             return this.model(image, prompt, apiKey);
         }
         return this.model(image, prompt);
-    }
-
-    async runText(
-        text: string,
-        prompt: string,
-        apiKey?: string,
-        baseURL?: string,
-        modelName?: string,
-        orgId?: string
-    ): Promise<string> {
-        const module = await import(`./model-${this.importPath}-text.ts`) as { default: ModelRunner };
-        const model = module.default;
-        if (apiKey) {
-            if (baseURL) {
-                return model(text, prompt, apiKey, baseURL, modelName, orgId);
-            }
-            return model(text, prompt, apiKey);
-        }
-        return model(text, prompt);
     }
 }

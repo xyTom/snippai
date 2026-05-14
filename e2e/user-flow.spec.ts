@@ -66,7 +66,6 @@ async function installElectronApiMock(page: Page) {
       getAppSettings: async () => defaultSettings,
       saveAppSettings: async () => true,
       getAppVersion: async () => "0.2.0",
-      readClipboardText: async () => "Meeting at 10 AM tomorrow",
       writeClipboardText: async () => true,
       pinToScreen: async () => true,
       exportExcelTables: async () => ({ success: true, fileName: "tables.xlsx" }),
@@ -140,14 +139,13 @@ test("normal image analysis flow supports Auto candidates and rerun", async ({ p
   await expect(page.getByTestId("screenshot-preview")).toBeVisible();
   await expect(page.getByTestId("result-textarea")).toHaveValue("Recognized text from E2E");
 
-  await page.getByTestId("auto-action-code").click();
+  await page.getByRole("tab", { name: "Code" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("console.log('hello from e2e')");
 
-  await page.getByTestId("auto-action-formula").click();
+  await page.getByRole("tab", { name: "Formula" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("x^2");
 
-  await expect(page.getByTestId("auto-candidate-tabs")).toBeVisible();
-  await page.getByTestId("auto-action-text").click();
+  await page.getByRole("tab", { name: "Text" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("Recognized text from E2E");
 });
 

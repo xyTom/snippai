@@ -48,6 +48,8 @@ export default function ModelSelect(props:{
     ? savedModel
     : "auto"
   const [value, setValue] = React.useState(initialModel)
+  const selectedLabel =
+    allModels.find((model) => model.value === value)?.label ?? "";
 
   React.useEffect(() => {
     const saved = localStorage.getItem("model");
@@ -80,15 +82,16 @@ export default function ModelSelect(props:{
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-[220px] justify-between gap-2"
+          title={selectedLabel}
         >
-          {value
-            ? allModels.find((model) => model.value === value)?.label
-            : ""}
+          <span className="min-w-0 flex-1 truncate text-left">
+            {selectedLabel}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0 dark">
+      <PopoverContent className="w-[260px] p-0 dark">
         <Command>
           <CommandInput placeholder={`${t("search_model")}`} />
           <CommandEmpty>{t("no_model_found")}</CommandEmpty>
@@ -97,8 +100,9 @@ export default function ModelSelect(props:{
               <CommandItem
                 key={model.value}
                 value={model.value}
+                className="min-w-0"
                 onSelect={(currentValue) => {
-                  setValue(currentValue === value ? "" : currentValue)
+                  setValue(currentValue)
                   setOpen(false)
                   try {
                     posthog?.capture("model_selected", { model: currentValue })
@@ -113,7 +117,9 @@ export default function ModelSelect(props:{
                     value === model.value ? "opacity-100" : "opacity-0"
                   )}
                 />
-                {model.label}
+                <span className="min-w-0 truncate" title={model.label}>
+                  {model.label}
+                </span>
               </CommandItem>
             ))}
           </CommandGroup>

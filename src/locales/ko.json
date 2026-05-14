@@ -89,6 +89,8 @@
     "stop": "중지",
     "cancel": "취소",
     "save": "저장",
+    "edit": "수정",
+    "optional": "선택 사항",
     "reset": "재설정",
     "reset_all": "모두 재설정",
     "about_version": "버전",
@@ -115,16 +117,6 @@
     "language_invalid": "유효한 언어를 입력해주세요"
   },
   "drop_overlay_message": "이미지를 놓아 분석하기",
-  "text_input": {
-    "paste": "텍스트 붙여넣기",
-    "source": "텍스트 입력",
-    "placeholder": "분석할 텍스트를 붙여넣거나 입력하세요...",
-    "analyze": "텍스트 분석",
-    "empty": "클립보드가 비어 있습니다",
-    "empty_description": "먼저 텍스트를 복사한 다음 Snippai에 붙여넣으세요.",
-    "read_failed": "클립보드를 읽을 수 없습니다",
-    "read_failed_description": "클립보드 접근을 허용하거나 텍스트를 직접 붙여넣으세요."
-  },
   "custom_prompts": {
     "title": "사용자 Prompt",
     "manage": "Prompt 관리",

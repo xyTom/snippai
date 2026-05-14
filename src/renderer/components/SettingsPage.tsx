@@ -34,16 +34,16 @@ const DEFAULT_SETTINGS: AppSettings = {
 interface SettingsPageProps {
   open: boolean;
   onClose: () => void;
-  onCloseSave: () => void; // onClose function for the saveSettings function (just close without reverting the language)
   onSettingsUpdate?: (settings: AppSettings) => void;
 }
 
 /**
  * Settings page component that provides a UI for customizing application settings
  */
-const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave, onSettingsUpdate }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUpdate }) => {
   // State management
   const [appSettings, setAppSettings] = React.useState<AppSettings>(DEFAULT_SETTINGS);
+  const appSettingsRef = React.useRef<AppSettings>(DEFAULT_SETTINGS);
   const [activeTab, setActiveTab] = React.useState<SettingsTab>('general');
   const [appVersion, setAppVersion] = React.useState<string>('1.0.0');
   const { t } = useTranslation();
@@ -67,6 +67,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
         // Load app settings
         const savedSettings = await window.electronAPI?.getAppSettings();
         if (savedSettings) {
+          appSettingsRef.current = savedSettings;
           setAppSettings(savedSettings);
         }
         
@@ -93,15 +94,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
   /**
    * Save settings to storage
    */
-  const saveSettings = async (): Promise<void> => {
+  const saveSettings = async (settings: AppSettings): Promise<void> => {
     try {
-      await window.electronAPI?.saveAppSettings(appSettings);
-      
-      toast({
-        title: t('settings.saved'),
-        description: t('settings.saved_description'),
-      });
-      onCloseSave();
+      await window.electronAPI?.saveAppSettings(settings);
     } catch (error) {
       console.error('Failed to save application settings:', error);
       toast({
@@ -116,19 +111,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
    * Update specific settings category
    */
   const updateSettings = <T extends keyof AppSettings>(category: T, newSettings: AppSettings[T]): void => {
-    setAppSettings((prevSettings: AppSettings) => {
-      const updatedSettings = {
-        ...prevSettings,
-        [category]: newSettings
-      };
-      
-      // Notify parent component about settings changes
-      if (onSettingsUpdate) {
-        onSettingsUpdate(updatedSettings);
-      }
-      
-      return updatedSettings;
-    });
+    const updatedSettings = {
+      ...appSettingsRef.current,
+      [category]: newSettings
+    };
+
+    appSettingsRef.current = updatedSettings;
+    setAppSettings(updatedSettings);
+    onSettingsUpdate?.(updatedSettings);
+    void saveSettings(updatedSettings);
   };
   
   // Handler functions
@@ -158,7 +149,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
         <div className="flex h-[80vh] max-h-[600px]">
           {/* Left navigation sidebar */}
@@ -181,8 +179,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
               <GeneralTab
                 settings={appSettings.general}
                 onSettingsChange={handleGeneralChange}
-                onSave={saveSettings}
-                onCancel={onClose}
               />
             )}
 
@@ -190,8 +186,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
               <KeyboardShortcutsTab 
                 settings={appSettings.shortcuts}
                 onSettingsChange={handleShortcutChange}
-                onSave={saveSettings}
-                onCancel={onClose}
                 onReset={handleResetShortcuts}
               />
             )}
@@ -202,8 +196,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onCloseSave,
                 onProvidersChange={(providers) =>
                   updateSettings('llmProviders', providers)
                 }
-                onSave={saveSettings}
-                onCancel={onClose}
               />
             )}
 

@@ -88,6 +88,8 @@
     "stop": "Detener",
     "cancel": "Cancelar",
     "save": "Guardar",
+    "edit": "Editar",
+    "optional": "Opcional",
     "reset": "Restablecer",
     "reset_all": "Restablecer todo",
     "about_version": "Versión",
@@ -115,16 +117,6 @@
     "language_invalid": "Por favor ingresa un idioma válido"
   },
   "drop_overlay_message": "Suelta la imagen para analizarla",
-  "text_input": {
-    "paste": "Pegar texto",
-    "source": "Entrada de texto",
-    "placeholder": "Pega o escribe texto para analizar...",
-    "analyze": "Analizar texto",
-    "empty": "El portapapeles está vacío",
-    "empty_description": "Copia texto primero y luego pégalo en Snippai.",
-    "read_failed": "No se pudo leer el portapapeles",
-    "read_failed_description": "Permite el acceso al portapapeles o pega el texto manualmente."
-  },
   "custom_prompts": {
     "title": "Prompts personalizados",
     "manage": "Gestionar prompts",

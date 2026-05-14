@@ -89,6 +89,8 @@
     "stop": "停止",
     "cancel": "キャンセル",
     "save": "保存",
+    "edit": "編集",
+    "optional": "任意",
     "reset": "リセット",
     "reset_all": "すべてリセット",
     "about_version": "バージョン",
@@ -115,16 +117,6 @@
     "language_invalid": "有効な言語を入力してください"
   },
   "drop_overlay_message": "画像をドロップして解析",
-  "text_input": {
-    "paste": "テキストを貼り付け",
-    "source": "テキスト入力",
-    "placeholder": "解析するテキストを貼り付けるか入力してください...",
-    "analyze": "テキストを解析",
-    "empty": "クリップボードが空です",
-    "empty_description": "先にテキストをコピーしてから Snippai に貼り付けてください。",
-    "read_failed": "クリップボードを読み取れません",
-    "read_failed_description": "クリップボードアクセスを許可するか、手動で貼り付けてください。"
-  },
   "custom_prompts": {
     "title": "カスタムPrompt",
     "manage": "Promptを管理",

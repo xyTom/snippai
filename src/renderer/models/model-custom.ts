@@ -8,15 +8,17 @@ const toChatCompletionsURL = (baseURL: string): string => {
 export default async function customModel(
   image: string,
   prompt: string,
-  apiKey: string,
-  baseURL: string,
+  apiKey = "",
+  baseURL = "",
   modelName = "gpt-4o",
   orgId?: string
 ): Promise<string> {
   const headers: Record<string, string> = {
-    authorization: `Bearer ${apiKey}`,
     "content-type": "application/json",
   };
+  if (apiKey) {
+    headers.authorization = `Bearer ${apiKey}`;
+  }
   if (orgId) {
     headers["OpenAI-Organization"] = orgId;
   }
