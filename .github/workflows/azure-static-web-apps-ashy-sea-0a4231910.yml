@@ -15,19 +15,27 @@ on:
 
 jobs:
   build_and_deploy_job:
-    if: (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')) && secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 != ''
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+    env:
+      AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Skip deploy when Azure token is missing
+        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN == ''
+        run: echo "AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 is not configured; skipping docs deploy."
+
+      - uses: actions/checkout@v6
+        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN != ''
         with:
           submodules: true
           lfs: false
       - name: Build And Deploy
+        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN != ''
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
@@ -41,10 +49,17 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+    env:
+      AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 }}
     steps:
+      - name: Skip close when Azure token is missing
+        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN == ''
+        run: echo "AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 is not configured; skipping docs preview close."
+
       - name: Close Pull Request
+        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN != ''
         id: closepullrequest
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ASHY_SEA_0A4231910 }}
+          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "close"
