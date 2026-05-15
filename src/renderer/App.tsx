@@ -396,6 +396,10 @@ function App() {
     []
   );
 
+  const notifyScreenshotAnalysisComplete = useCallback(() => {
+    window.electronAPI?.sendMessage?.("screenshot-analysis-complete");
+  }, []);
+
   const buildPrompt = useCallback(
     (promptOverride = prompt) => {
       const customPromptId = promptOverride.startsWith("custom:")
@@ -519,40 +523,35 @@ function App() {
           // 如果这是一个需要自动钉图的截图（通常是全屏截图）
           if (shouldAutoPin && window.electronAPI?.pinToScreen) {
             setShouldAutoPin(false); // 重置标记
+            const pinCurrentScreenshot = window.electronAPI.pinToScreen;
 
             // 延迟一点时间确保UI更新
             setTimeout(async () => {
-              if (window.electronAPI?.pinToScreen) {
-                try {
-                  // 等待便签窗口创建完成
-                  await window.electronAPI.pinToScreen({
-                    screenshot: screenShotResult,
-                    result: finalResult,
-                  });
-                  toast({
-                    title: t('screenshot.pinned'),
-                    description: t('screenshot.pinned_description'),
-                  });
-                } catch (error) {
-                  console.error("Failed to auto pin to screen:", error);
-                  toast({
-                    title: t("screenshot.pin_failed"),
-                    description: t("screenshot.pin_failed_description"),
-                    variant: "destructive",
-                  });
-                } finally {
-                  // 无论成功或失败，都在此之后隐藏loading窗口
-                  if (window.electronAPI?.sendMessage) {
-                    window.electronAPI.sendMessage('screenshot-analysis-complete');
-                  }
-                }
+              try {
+                // 等待便签窗口创建完成
+                await pinCurrentScreenshot({
+                  screenshot: value,
+                  result: finalResult,
+                });
+                toast({
+                  title: t('screenshot.pinned'),
+                  description: t('screenshot.pinned_description'),
+                });
+              } catch (error) {
+                console.error("Failed to auto pin to screen:", error);
+                toast({
+                  title: t("screenshot.pin_failed"),
+                  description: t("screenshot.pin_failed_description"),
+                  variant: "destructive",
+                });
+              } finally {
+                // 无论成功或失败，都在此之后隐藏loading窗口
+                notifyScreenshotAnalysisComplete();
               }
             }, 100);
           } else {
             // 如果不需要钉图，则直接隐藏loading窗口
-            if (window.electronAPI?.sendMessage) {
-              window.electronAPI.sendMessage('screenshot-analysis-complete');
-            }
+            notifyScreenshotAnalysisComplete();
           }
         })
         .catch((error: unknown) => {
@@ -562,15 +561,19 @@ function App() {
           if (activePrompt === "Auto") {
             setAutoResult(null);
           }
+          if (shouldAutoPin) {
+            setShouldAutoPin(false);
+          }
           setDisplayPrompt(activePrompt);
           setOnError(true);
           toast({
             title: t('error'),
             description: t('error_description', { error: message }),
           });
+          notifyScreenshotAnalysisComplete();
         });
     },
-    [prompt, model, buildPrompt, getProviderConfig, apiKey, toast, t, shouldAutoPin, screenShotResult, posthog, autoCopyResult, copyTextResult]
+    [prompt, model, buildPrompt, getProviderConfig, apiKey, toast, t, shouldAutoPin, posthog, autoCopyResult, copyTextResult, notifyScreenshotAnalysisComplete]
   );
 
   // 当提示或截图或语言变化时，重新识别截图
