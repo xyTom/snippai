@@ -6,8 +6,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const binExt = process.platform === "win32" ? ".cmd" : "";
 const binDir = path.join(root, "node_modules", ".bin");
-const runNodeBin = (binName, args) =>
-  run(process.execPath, [path.join(binDir, `${binName}${binExt}`), ...args]);
+const runNodeBin = (binName, args) => {
+  const binPath = path.join(binDir, `${binName}${binExt}`);
+  return process.platform === "win32"
+    ? run(binPath, args, { shell: true })
+    : run(process.execPath, [binPath, ...args]);
+};
 
 const run = (command, args, options = {}) =>
   new Promise((resolve, reject) => {

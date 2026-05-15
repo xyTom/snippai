@@ -9,9 +9,11 @@ declare global {
 export default function displayLatexResult(props: { latex: string}) {
   //rerender the latex result when props.latex is changed
   useEffect(() => {
-    // Assuming MathJax object is available globally
-    if (window.MathJax) {
-      window.MathJax.typesetPromise();
+    const typesetPromise = window.MathJax?.typesetPromise;
+    if (typeof typesetPromise === "function") {
+      void typesetPromise.call(window.MathJax).catch((error: unknown) => {
+        console.error("Failed to typeset LaTeX:", error);
+      });
     }
   }, [props.latex]);
   return (
