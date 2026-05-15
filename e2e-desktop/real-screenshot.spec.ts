@@ -310,6 +310,48 @@ Start-Sleep -Milliseconds 60
   ]);
 }
 
+async function clickOverlayWithElectronInput(
+  electronApp: ElectronApplication,
+  overlayId: number,
+  point: Point
+) {
+  await electronApp.evaluate(
+    async ({ BrowserWindow }, { overlayId, point }) => {
+      const overlayWindow = BrowserWindow.fromId(overlayId);
+      if (!overlayWindow || overlayWindow.isDestroyed()) {
+        return false;
+      }
+
+      const windowBounds = overlayWindow.getBounds();
+      const [browserView] = overlayWindow.getBrowserViews();
+      const viewBounds = browserView?.getBounds() ?? { x: 0, y: 0 };
+      const webContents = browserView?.webContents ?? overlayWindow.webContents;
+      const x = Math.max(0, Math.round(point.x - windowBounds.x - viewBounds.x));
+      const y = Math.max(0, Math.round(point.y - windowBounds.y - viewBounds.y));
+
+      webContents.sendInputEvent({ type: "mouseMove", x, y, button: "left" });
+      webContents.sendInputEvent({
+        type: "mouseDown",
+        x,
+        y,
+        button: "left",
+        clickCount: 1,
+      });
+      webContents.sendInputEvent({
+        type: "mouseUp",
+        x,
+        y,
+        button: "left",
+        clickCount: 1,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return true;
+    },
+    { overlayId, point }
+  );
+}
+
 test("real area screenshot flow uses global shortcut and mouse drag @real-screenshot", async ({ browserName }, testInfo) => {
   test.skip(
     !runRealScreenshotE2E,
@@ -365,6 +407,9 @@ test("real area screenshot flow uses global shortcut and mouse drag @real-screen
       contentType: "application/json",
     });
     await dragSelectionAndConfirm(start, end, confirm);
+    if (process.platform === "darwin") {
+      await clickOverlayWithElectronInput(electronApp, overlay.id, confirm);
+    }
 
     await page.bringToFront();
     await expect(page.getByTestId("screenshot-preview")).toBeVisible({
