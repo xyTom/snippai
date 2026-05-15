@@ -187,3 +187,60 @@ jobs:
             playwright-report/desktop
             test-results/desktop
           retention-days: 14
+
+  desktop-real-screenshot-platform:
+    name: Real Screenshot E2E (${{ matrix.artifact_suffix }})
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+          - os: macos-latest
+            artifact_suffix: macos
+          - os: windows-latest
+            artifact_suffix: windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Linux virtual desktop dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth xdotool libgtk-3-0 libxss1 libxtst6 libnss3 libasound2t64
+          npx playwright install-deps chromium
+
+      - name: Run real screenshot flow on Linux
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          RUN_REAL_SCREENSHOT_E2E: "1"
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:desktop -- --grep @real-screenshot
+
+      - name: Run real screenshot flow
+        if: matrix.os != 'ubuntu-latest'
+        env:
+          RUN_REAL_SCREENSHOT_E2E: "1"
+        run: npm run test:desktop -- --grep @real-screenshot
+
+      - name: Upload real screenshot report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-real-screenshot-report-${{ matrix.artifact_suffix }}
+          path: |
+            playwright-report/desktop
+            test-results/desktop
+          retention-days: 14
