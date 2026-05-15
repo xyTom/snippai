@@ -10,6 +10,9 @@ on:
       - "beta/**"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   VITE_SUPABASE_URL: https://example.supabase.co
   VITE_SUPABASE_ANON_KEY: test-anon-key
@@ -25,10 +28,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -44,7 +47,7 @@ jobs:
 
       - name: Upload web report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-web-report
           path: |
@@ -58,10 +61,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -80,7 +83,7 @@ jobs:
 
       - name: Upload desktop report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-desktop-report
           path: |
@@ -108,10 +111,10 @@ jobs:
             playwright_install_command: npx playwright install chromium
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -127,7 +130,7 @@ jobs:
 
       - name: Upload web report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-web-report-${{ matrix.artifact_suffix }}
           path: |
@@ -152,10 +155,10 @@ jobs:
             artifact_suffix: windows
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -180,7 +183,7 @@ jobs:
 
       - name: Upload desktop report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-desktop-report-${{ matrix.artifact_suffix }}
           path: |
@@ -205,10 +208,10 @@ jobs:
             artifact_suffix: windows
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -237,7 +240,7 @@ jobs:
 
       - name: Upload real screenshot report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-real-screenshot-report-${{ matrix.artifact_suffix }}
           path: |
