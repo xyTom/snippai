@@ -1,4 +1,4 @@
-import { expect, Page, test } from "@playwright/test";
+import { expect, Page, test, type TestInfo } from "@playwright/test";
 import type { AppSettings } from "../src/renderer/types/settings";
 
 type MockElectronWindow = Window & {
@@ -38,6 +38,23 @@ DTEND:20260514T110000Z
 SUMMARY:Snippai E2E Review
 END:VEVENT
 END:VCALENDAR`;
+
+const shouldAttachEvidence = process.env.PLAYWRIGHT_RECORD_ARTIFACTS === "1";
+
+async function attachEvidenceScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  name: string
+) {
+  if (!shouldAttachEvidence) {
+    return;
+  }
+
+  await testInfo.attach(`${name}.png`, {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+}
 
 async function installElectronApiMock(page: Page) {
   await page.addInitScript(() => {
@@ -132,31 +149,37 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId("app-shell")).toBeVisible();
 });
 
-test("normal image analysis flow supports Auto candidates and rerun", async ({ page }) => {
+test("normal image analysis flow supports Auto candidates and rerun", async ({ page }, testInfo) => {
   await expect(page.getByTestId("empty-state-logo")).toBeVisible();
+  await attachEvidenceScreenshot(page, testInfo, "01-empty-state");
 
   await dropImage(page);
   await expect(page.getByTestId("screenshot-preview")).toBeVisible();
   await expect(page.getByTestId("result-textarea")).toHaveValue("Recognized text from E2E");
+  await attachEvidenceScreenshot(page, testInfo, "02-auto-text-result");
 
   await page.getByRole("tab", { name: "Code" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("console.log('hello from e2e')");
+  await attachEvidenceScreenshot(page, testInfo, "03-code-result");
 
   await page.getByRole("tab", { name: "Formula" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("x^2");
+  await attachEvidenceScreenshot(page, testInfo, "04-formula-result");
 
   await page.getByRole("tab", { name: "Text" }).click();
   await expect(page.getByTestId("result-textarea")).toHaveValue("Recognized text from E2E");
 });
 
-test("settings and calendar export path are reachable", async ({ page }) => {
+test("settings and calendar export path are reachable", async ({ page }, testInfo) => {
   await page.getByTestId("settings-button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByTestId("settings-general-tab")).toBeVisible();
+  await attachEvidenceScreenshot(page, testInfo, "01-settings-dialog");
   await page.keyboard.press("Escape");
 
   await page.getByRole("tab", { name: "Calendar" }).click();
   await dropImage(page);
   await expect(page.getByTestId("result-textarea")).toHaveValue(icsResult);
   await expect(page.getByRole("button", { name: /save \.ics/i })).toBeVisible();
+  await attachEvidenceScreenshot(page, testInfo, "02-calendar-result");
 });

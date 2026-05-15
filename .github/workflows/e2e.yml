@@ -16,9 +16,11 @@ env:
   VITE_PUBLIC_POSTHOG_KEY: ""
   VITE_PUBLIC_POSTHOG_HOST: ""
   VITE_PORTKEY_API_KEY: test-portkey-key
+  PLAYWRIGHT_RECORD_ARTIFACTS: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
 
 jobs:
   web-user-flow:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -47,10 +49,11 @@ jobs:
           name: playwright-web-report
           path: |
             playwright-report/web
-            test-results
+            test-results/web
           retention-days: 14
 
   desktop-user-flow:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -80,6 +83,106 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-desktop-report
+          path: |
+            playwright-report/desktop
+            test-results/desktop
+          retention-days: 14
+
+  web-user-flow-platform:
+    name: Web E2E (${{ matrix.artifact_suffix }})
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+            playwright_install_command: npx playwright install --with-deps chromium
+          - os: macos-latest
+            artifact_suffix: macos
+            playwright_install_command: npx playwright install chromium
+          - os: windows-latest
+            artifact_suffix: windows
+            playwright_install_command: npx playwright install chromium
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: ${{ matrix.playwright_install_command }}
+
+      - name: Run web user-flow tests
+        run: npm run test:e2e
+
+      - name: Upload web report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-web-report-${{ matrix.artifact_suffix }}
+          path: |
+            playwright-report/web
+            test-results/web
+          retention-days: 14
+
+  desktop-user-flow-platform:
+    name: Desktop E2E (${{ matrix.artifact_suffix }})
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_suffix: linux
+          - os: macos-latest
+            artifact_suffix: macos
+          - os: windows-latest
+            artifact_suffix: windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Linux virtual desktop dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libgtk-3-0 libxss1 libxtst6 libnss3 libasound2t64
+          npx playwright install-deps chromium
+
+      - name: Run desktop user-flow tests on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:desktop
+
+      - name: Run desktop user-flow tests
+        if: matrix.os != 'ubuntu-latest'
+        run: npm run test:desktop
+
+      - name: Upload desktop report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-desktop-report-${{ matrix.artifact_suffix }}
           path: |
             playwright-report/desktop
             test-results/desktop

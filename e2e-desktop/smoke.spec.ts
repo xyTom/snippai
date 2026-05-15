@@ -23,6 +23,23 @@ const autoResponse = {
   ],
 };
 
+const shouldAttachEvidence = process.env.PLAYWRIGHT_RECORD_ARTIFACTS === "1";
+
+async function attachEvidenceScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  name: string
+) {
+  if (!shouldAttachEvidence) {
+    return;
+  }
+
+  await testInfo.attach(`${name}.png`, {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+}
+
 async function mockNetwork(electronApp: ElectronApplication) {
   const context = electronApp.context();
   await context.route("https://api.portkey.ai/v1/chat/completions", (route) =>
@@ -111,15 +128,19 @@ test("desktop app opens settings, analyzes an image, pins a result, and hides on
   const { electronApp, page } = await launchSnippai(testInfo);
 
   try {
+    await attachEvidenceScreenshot(page, testInfo, "01-main-window");
+
     await page.getByTestId("settings-button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByTestId("settings-general-tab")).toBeVisible();
+    await attachEvidenceScreenshot(page, testInfo, "02-settings-dialog");
     await page.keyboard.press("Escape");
 
     await dropImage(page);
     await expect(page.getByTestId("result-textarea")).toHaveValue(
       "Recognized text from desktop E2E"
     );
+    await attachEvidenceScreenshot(page, testInfo, "03-analysis-result");
 
     const stickyWindowPromise = electronApp.waitForEvent("window");
     await page.getByTestId("pin-button").click();
@@ -129,6 +150,7 @@ test("desktop app opens settings, analyzes an image, pins a result, and hides on
     await expect(stickyWindow.getByTestId("result-textarea")).toHaveValue(
       "Recognized text from desktop E2E"
     );
+    await attachEvidenceScreenshot(stickyWindow, testInfo, "04-sticky-window");
 
     const closeState = await electronApp.evaluate(({ BrowserWindow }) => {
       const mainWindow = BrowserWindow.getAllWindows().find(
