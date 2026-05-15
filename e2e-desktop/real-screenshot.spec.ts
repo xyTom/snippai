@@ -300,12 +300,13 @@ Move-To ${center.x} ${center.y}
   ]);
 }
 
-test("real area screenshot flow uses global shortcut and mouse drag @real-screenshot", async (_, testInfo) => {
+test("real area screenshot flow uses global shortcut and mouse drag @real-screenshot", async ({ browserName }, testInfo) => {
   test.skip(
     !runRealScreenshotE2E,
     "Set RUN_REAL_SCREENSHOT_E2E=1 to run OS-level screenshot automation."
   );
   test.setTimeout(90_000);
+  testInfo.annotations.push({ type: "browser", description: browserName });
 
   const { electronApp, page } = await launchSnippai(testInfo, {
     settings: realScreenshotSettings,
