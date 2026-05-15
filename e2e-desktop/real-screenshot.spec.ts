@@ -233,6 +233,7 @@ for step in 1...8 {
 }
 post(.leftMouseUp, ${end.x}, ${end.y}, 1)
 usleep(250_000)
+post(.mouseMoved, ${confirm.x}, ${confirm.y})
 post(.leftMouseDown, ${confirm.x}, ${confirm.y}, 1)
 post(.leftMouseUp, ${confirm.x}, ${confirm.y}, 1)
       `,
