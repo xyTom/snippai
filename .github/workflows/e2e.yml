@@ -69,7 +69,7 @@ jobs:
       - name: Install virtual desktop dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth libgtk-3-0 libxss1 libxtst6 libnss3 libasound2
+          sudo apt-get install -y xvfb xauth libgtk-3-0 libxss1 libxtst6 libnss3 libasound2t64
           npx playwright install-deps chromium
 
       - name: Run desktop user-flow tests
