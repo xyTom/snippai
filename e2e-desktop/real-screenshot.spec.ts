@@ -156,8 +156,12 @@ function getSelectionPoints(bounds: WindowSnapshot["bounds"]) {
     x: Math.round((start.x + end.x) / 2),
     y: Math.round((start.y + end.y) / 2),
   };
+  const confirm = {
+    x: Math.round(Math.min(bounds.x + bounds.width - 24, end.x - 20)),
+    y: Math.round(Math.min(bounds.y + bounds.height - 24, end.y + 28)),
+  };
 
-  return { start, end, center };
+  return { start, end, center, confirm };
 }
 
 async function pressAreaScreenshotShortcut() {
@@ -196,7 +200,7 @@ Add-Type -AssemblyName System.Windows.Forms
   await runCommand("xdotool", ["key", "--clearmodifiers", "ctrl+shift+a"]);
 }
 
-async function dragSelectionAndConfirm(start: Point, end: Point, center: Point) {
+async function dragSelectionAndConfirm(start: Point, end: Point, confirm: Point) {
   if (process.platform === "darwin") {
     await runCommand("swift", [
       "-e",
@@ -228,10 +232,9 @@ for step in 1...8 {
   post(.leftMouseDragged, x, y, 1)
 }
 post(.leftMouseUp, ${end.x}, ${end.y}, 1)
-post(.leftMouseDown, ${center.x}, ${center.y}, 1)
-post(.leftMouseUp, ${center.x}, ${center.y}, 1)
-post(.leftMouseDown, ${center.x}, ${center.y}, 2)
-post(.leftMouseUp, ${center.x}, ${center.y}, 2)
+usleep(250_000)
+post(.leftMouseDown, ${confirm.x}, ${confirm.y}, 1)
+post(.leftMouseUp, ${confirm.x}, ${confirm.y}, 1)
       `,
     ]);
     return;
@@ -265,37 +268,43 @@ for ($step = 1; $step -le 8; $step++) {
   Move-To $x $y
 }
 [NativeMouse]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
-Move-To ${center.x} ${center.y}
-1..2 | ForEach-Object {
-  [NativeMouse]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
-  Start-Sleep -Milliseconds 60
-  [NativeMouse]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
-  Start-Sleep -Milliseconds 60
-}
+Start-Sleep -Milliseconds 250
+Move-To ${confirm.x} ${confirm.y}
+[NativeMouse]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
+Start-Sleep -Milliseconds 60
+[NativeMouse]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
       `,
     ]);
     return;
   }
 
+  const steps = Array.from({ length: 8 }, (_, index) => {
+    const ratio = (index + 1) / 8;
+    return [
+      "mousemove",
+      "--sync",
+      String(Math.round(start.x + (end.x - start.x) * ratio)),
+      String(Math.round(start.y + (end.y - start.y) * ratio)),
+    ];
+  }).flat();
+
   await runCommand("xdotool", [
     "mousemove",
+    "--sync",
     String(start.x),
     String(start.y),
     "mousedown",
     "1",
-    "mousemove",
-    String(end.x),
-    String(end.y),
+    ...steps,
     "mouseup",
     "1",
+    "sleep",
+    "0.25",
     "mousemove",
-    String(center.x),
-    String(center.y),
+    "--sync",
+    String(confirm.x),
+    String(confirm.y),
     "click",
-    "--repeat",
-    "2",
-    "--delay",
-    "70",
     "1",
   ]);
 }
@@ -349,12 +358,12 @@ test("real area screenshot flow uses global shortcut and mouse drag @real-screen
       "02-overlay-before-drag"
     );
 
-    const { start, end, center } = getSelectionPoints(overlay.bounds);
+    const { start, end, center, confirm } = getSelectionPoints(overlay.bounds);
     await testInfo.attach("selection-points.json", {
-      body: JSON.stringify({ start, end, center }, null, 2),
+      body: JSON.stringify({ start, end, center, confirm }, null, 2),
       contentType: "application/json",
     });
-    await dragSelectionAndConfirm(start, end, center);
+    await dragSelectionAndConfirm(start, end, confirm);
 
     await page.bringToFront();
     await expect(page.getByTestId("screenshot-preview")).toBeVisible({
