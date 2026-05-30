@@ -94,19 +94,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
   /**
    * Save settings to storage
    */
-  const saveSettings = async (settings: AppSettings): Promise<void> => {
+  const saveSettings = async (settings: AppSettings): Promise<boolean> => {
     try {
       await window.electronAPI?.saveAppSettings(settings);
+      return true;
     } catch (error) {
       console.error('Failed to save application settings:', error);
-      toast({
-        title: t('settings.save_failed'),
-        description: t('settings.save_failed_description'),
-        variant: "destructive",
-      });
+      return false;
     }
   };
-  
+
   /**
    * Update specific settings category
    */
@@ -119,7 +116,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
     appSettingsRef.current = updatedSettings;
     setAppSettings(updatedSettings);
     onSettingsUpdate?.(updatedSettings);
-    void saveSettings(updatedSettings);
+    void saveSettings(updatedSettings).then((success) => {
+      if (!success) {
+        toast({
+          title: t("settings.save_failed"),
+          description: t("settings.save_failed_description"),
+          variant: "destructive",
+        });
+      }
+    });
   };
   
   // Handler functions
