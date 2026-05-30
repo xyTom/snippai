@@ -14,6 +14,7 @@ const isMiniMaxURL = (baseURL: string): boolean => {
 
 const toMiniMaxVLMURL = (baseURL: string): string => {
     const normalized = baseURL.replace(/\/$/, "");
+    // 确保去掉 /v1/chat/completions 后缀
     return normalized.replace(/\/v1\/chat\/completions$/, "") + "/v1/coding_plan/vlm";
 };
 
@@ -50,6 +51,7 @@ export default async function customModel(
             checkResponseStatus(vlmResponse, "MiniMax VLM request");
             const vlmResult = await vlmResponse.json();
 
+            // MiniMax VLM returns { content: "..." }
             const content = vlmResult?.content;
             if (typeof content !== "string" || !content) {
                 const errorMsg = vlmResult?.base_resp?.status_msg;

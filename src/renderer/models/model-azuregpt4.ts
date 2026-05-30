@@ -1,4 +1,5 @@
 import AzureOpenAI from "openai";
+import { checkResponseStatus } from "./utils";
 
 async function GPT(
     image: string,

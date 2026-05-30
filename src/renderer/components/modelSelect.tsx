@@ -39,6 +39,10 @@ export default function ModelSelect(props:{
         }))
       );
 
+    console.log('[ModelSelect] allModels computed:', [...models, ...providerModels].length, 'total');
+    console.log('[ModelSelect] providers:', props.providers);
+    console.log('[ModelSelect] providerModels:', providerModels);
+
     return [...models, ...providerModels];
   }, [props.providers]);
 

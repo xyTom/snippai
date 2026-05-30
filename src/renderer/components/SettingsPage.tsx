@@ -67,10 +67,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
         // Load app settings
         const savedSettings = await window.electronAPI?.getAppSettings();
         if (savedSettings) {
+          console.log('[SettingsPage] Loaded settings:', savedSettings);
+          console.log('[SettingsPage] llmProviders count:', savedSettings.llmProviders?.length);
           appSettingsRef.current = savedSettings;
           setAppSettings(savedSettings);
         }
-        
+
         // Load app version
         const version = await window.electronAPI?.getAppVersion();
         if (version) {
@@ -96,14 +98,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
    */
   const saveSettings = async (settings: AppSettings): Promise<boolean> => {
     try {
+      console.log('[SettingsPage] Saving settings, llmProviders:', settings.llmProviders?.length);
       await window.electronAPI?.saveAppSettings(settings);
+      console.log('[SettingsPage] Settings saved successfully');
       return true;
     } catch (error) {
-      console.error('Failed to save application settings:', error);
+      console.error('[SettingsPage] Failed to save application settings:', error);
       return false;
     }
   };
-
+  
   /**
    * Update specific settings category
    */
@@ -116,6 +120,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
     appSettingsRef.current = updatedSettings;
     setAppSettings(updatedSettings);
     onSettingsUpdate?.(updatedSettings);
+    // Save settings and handle errors
     void saveSettings(updatedSettings).then((success) => {
       if (!success) {
         toast({

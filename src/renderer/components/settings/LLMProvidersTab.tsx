@@ -87,17 +87,20 @@ const LLMProvidersTab: React.FC<LLMProvidersTabProps> = ({
 
   const upsertProvider = () => {
     if (!isDraftValid(draft)) {
+      console.log('[LLMProvidersTab] Draft invalid, draft.models:', JSON.stringify(draft.models));
       return;
     }
 
     const existing = providers.find((provider) => provider.id === draft.id);
     const nextProvider = toProvider(draft, existing);
+    console.log('[LLMProvidersTab] Saving provider:', JSON.stringify(nextProvider));
     const nextProviders = existing
       ? providers.map((provider) =>
           provider.id === nextProvider.id ? nextProvider : provider
         )
       : [...providers, nextProvider];
 
+    console.log('[LLMProvidersTab] Calling onProvidersChange with:', JSON.stringify(nextProviders));
     onProvidersChange(nextProviders);
     setDialogOpen(false);
   };

@@ -298,8 +298,16 @@ function App() {
         setApiKey(keyMap.get(value));
         isApiKeyEmpty();
       }
+
+      // Debug logging for providers
+      console.log('[ModelSelect] Model changed to:', value);
+      console.log('[ModelSelect] Current providers:', providers);
+      console.log('[ModelSelect] Provider count:', providers.length);
+      providers.forEach((p) => {
+        console.log(`[Provider] ${p.name}: enabled=${p.enabled}, models=${p.models.join(',')}, id=${p.id}`);
+      });
     },
-    [model, keyMap]
+    [model, keyMap, providers]
   );
 
   // 处理语言变化
