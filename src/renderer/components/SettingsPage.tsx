@@ -70,7 +70,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
           appSettingsRef.current = savedSettings;
           setAppSettings(savedSettings);
         }
-        
+
         // Load app version
         const version = await window.electronAPI?.getAppVersion();
         if (version) {
@@ -94,16 +94,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
   /**
    * Save settings to storage
    */
-  const saveSettings = async (settings: AppSettings): Promise<void> => {
+  const saveSettings = async (settings: AppSettings): Promise<boolean> => {
     try {
       await window.electronAPI?.saveAppSettings(settings);
+      return true;
     } catch (error) {
-      console.error('Failed to save application settings:', error);
-      toast({
-        title: t('settings.save_failed'),
-        description: t('settings.save_failed_description'),
-        variant: "destructive",
-      });
+      console.error('[SettingsPage] Failed to save application settings:', error);
+      return false;
     }
   };
   
@@ -119,7 +116,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose, onSettingsUp
     appSettingsRef.current = updatedSettings;
     setAppSettings(updatedSettings);
     onSettingsUpdate?.(updatedSettings);
-    void saveSettings(updatedSettings);
+    // Save settings and handle errors
+    void saveSettings(updatedSettings).then((success) => {
+      if (!success) {
+        toast({
+          title: t("settings.save_failed"),
+          description: t("settings.save_failed_description"),
+          variant: "destructive",
+        });
+      }
+    });
   };
   
   // Handler functions

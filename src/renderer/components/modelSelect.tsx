@@ -39,6 +39,7 @@ export default function ModelSelect(props:{
         }))
       );
 
+
     return [...models, ...providerModels];
   }, [props.providers]);
 
@@ -101,11 +102,11 @@ export default function ModelSelect(props:{
                 key={model.value}
                 value={model.value}
                 className="min-w-0"
-                onSelect={(currentValue) => {
-                  setValue(currentValue)
+                onSelect={() => {
+                  setValue(model.value)
                   setOpen(false)
                   try {
-                    posthog?.capture("model_selected", { model: currentValue })
+                    posthog?.capture("model_selected", { model: model.value })
                   } catch (e) {
                     console.error(e);
                   }
